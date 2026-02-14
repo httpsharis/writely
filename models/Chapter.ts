@@ -1,7 +1,8 @@
 import mongoose, { Schema, model, models, Document, Types } from 'mongoose';
 import type { IWriterComment, ContentType } from '@/types/chapter';
+import { ContentUtils } from '../lib/contentUtils';
 
-// ─── 1. Document Interface ──────────────────────────────────────────
+// ─── Document Interface ─────────────────────────────────────────────
 
 export interface IChapterDocument extends Document {
   projectId: Types.ObjectId;
@@ -16,70 +17,7 @@ export interface IChapterDocument extends Document {
   updatedAt: Date;
 }
 
-// ─── 2. Types & Utilities ────────────────────────────────────────────
-
-/** Represents a node in the Tiptap JSON document tree. */
-interface TiptapNode {
-  type?: string;
-  text?: string;
-  content?: TiptapNode[];
-  [key: string]: unknown;
-}
-
-type ChapterContent = TiptapNode | TiptapNode[] | string;
-
-const ContentUtils = {
-  /**
-   * Recursively extracts plain text from a Tiptap JSON structure.
-   */
-  extractTextFromTiptap(node: ChapterContent | null | undefined): string {
-    if (!node) return '';
-    if (typeof node === 'string') return node;
-
-    let text = '';
-
-    if (Array.isArray(node)) {
-      return node.map(ContentUtils.extractTextFromTiptap).join(' ');
-    }
-
-    if (typeof node === 'object') {
-      if (node.text) text += ` ${node.text}`;
-      if (node.content) text += ` ${ContentUtils.extractTextFromTiptap(node.content)}`;
-    }
-
-    return text.trim();
-  },
-
-  /**
-   * Counts words based on content type.
-   */
-  countWords(content: ChapterContent, type: string): number {
-    let plainText = '';
-
-    switch (type) {
-      case 'tiptap':
-        plainText = ContentUtils.extractTextFromTiptap(content);
-        break;
-      case 'html':
-        // Basic HTML tag stripping
-        plainText = typeof content === 'string' 
-          ? content.replace(/<[^>]*>/g, ' ') 
-          : '';
-        break;
-      case 'markdown':
-        // Markdown is mostly text, but this is a rough approximation
-        plainText = typeof content === 'string' ? content : '';
-        break;
-      default:
-        plainText = typeof content === 'string' ? content : '';
-    }
-
-    // Split by whitespace and filter empty strings
-    return plainText.trim().split(/\s+/).filter(Boolean).length;
-  }
-};
-
-// ─── 3. Schemas ──────────────────────────────────────────────────────
+// ─── Schemas ─────────────────────────────────────────────────────────
 
 const WriterCommentSchema = new Schema<IWriterComment>(
   {
@@ -138,7 +76,7 @@ const ChapterSchema = new Schema<IChapterDocument>(
   { timestamps: true }
 );
 
-// ─── 4. Pre-save Middleware (auto word count) ───────────────────────
+// ─── Pre-save Middleware (auto word count) ───────────────────────────
 
 ChapterSchema.pre('save', function (this: IChapterDocument) {
   if (!this.isModified('content') && !this.isModified('contentType') && !this.isNew) {
@@ -147,7 +85,7 @@ ChapterSchema.pre('save', function (this: IChapterDocument) {
 
   try {
     this.wordCount = ContentUtils.countWords(
-      this.content,
+      this.content as string,
       this.contentType || 'tiptap'
     );
   } catch (err) {
@@ -156,7 +94,7 @@ ChapterSchema.pre('save', function (this: IChapterDocument) {
   }
 });
 
-// ─── 5. Export ───────────────────────────────────────────────────────
+// ─── Export ──────────────────────────────────────────────────────────
 
 const Chapter = (models.Chapter as mongoose.Model<IChapterDocument>) ||
   model<IChapterDocument>('Chapter', ChapterSchema);
