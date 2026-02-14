@@ -68,3 +68,32 @@ export function sanitizeString(input: string): string {
 export function isValidLength(input: string, min: number, max: number): boolean {
     return input.length >= min && input.length <= max;
 }
+
+// ─── No-Cache Response ──────────────────────────────────────────────
+
+/**
+ * Headers that tell the browser:
+ *   - no-store:        don't save this response anywhere (disk or memory)
+ *   - no-cache:        always revalidate with the server
+ *   - must-revalidate: if the cached copy expires, don't use it
+ *   - private:         only the user's browser may cache (not CDNs/proxies)
+ *   - Pragma: no-cache: HTTP/1.0 fallback for older clients
+ *
+ * This prevents chapter content from sitting in browser cache files
+ * where someone with disk access could read the user's writing.
+ */
+const NO_CACHE_HEADERS = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+    'Pragma': 'no-cache',
+};
+
+/**
+ * Return a JSON response with no-cache headers.
+ * Use this for any endpoint that returns sensitive content.
+ */
+export function noCacheJson<T>(data: T, status = 200): NextResponse<T> {
+    return NextResponse.json(data, {
+        status,
+        headers: NO_CACHE_HEADERS,
+    });
+}

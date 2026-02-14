@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, models, Document, Types } from 'mongoose';
 import type { IWriterComment, ContentType } from '@/types/chapter';
 import { ContentUtils } from '../lib/contentUtils';
+import { isEncrypted } from '@/lib/encryption';
 
 // ─── Document Interface ─────────────────────────────────────────────
 
@@ -77,9 +78,18 @@ const ChapterSchema = new Schema<IChapterDocument>(
 );
 
 // ─── Pre-save Middleware (auto word count) ───────────────────────────
+//
+// Calculates word count from content. But if content is encrypted
+// (a hex string like "iv:authTag:data"), we skip — the route handler
+// calculates word count from the plaintext before encrypting.
 
 ChapterSchema.pre('save', function (this: IChapterDocument) {
   if (!this.isModified('content') && !this.isModified('contentType') && !this.isNew) {
+    return;
+  }
+
+  // Skip if content is encrypted — word count is set by the route
+  if (isEncrypted(this.content)) {
     return;
   }
 
