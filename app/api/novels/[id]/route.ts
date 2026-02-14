@@ -13,7 +13,7 @@ import {
   isValidLength,
 } from '@/lib/api-helpers';
 import type { RouteParams } from '@/types/api';
-import type { UpdateProjectInput, ProjectStatus } from '@/types/project';
+import type { UpdateProjectInput, ProjectStatus, ICharacter } from '@/types/project';
 
 // ─── Helpers ────────────────────────────────────────────────────────
 
@@ -103,6 +103,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       allowedUpdates.status = body.status;
     }
 
+    if (body.isPublished !== undefined) {
+      allowedUpdates.isPublished = Boolean(body.isPublished);
+    }
+
     if (body.stats !== undefined) {
       // Use dot notation for partial stats updates (prevents overwriting the other field)
       if (body.stats.currentWordCount !== undefined) {
@@ -121,13 +125,66 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       }
     }
 
-    if (Object.keys(allowedUpdates).length === 0) {
+    if (Object.keys(allowedUpdates).length === 0 && !body.addCharacter && body.removeCharacterIndex === undefined && !body.addAuthorNote && body.removeAuthorNoteIndex === undefined) {
       return badRequestResponse('No valid fields provided for update');
+    }
+
+    // ── Character operations (run before final save) ──
+    const ops: Record<string, unknown> = { $set: allowedUpdates };
+
+    if (body.addCharacter) {
+      const { name, role, description } = body.addCharacter;
+      if (!name || name.trim().length === 0) {
+        return badRequestResponse('Character name is required');
+      }
+      const char: Partial<ICharacter> = {
+        name: sanitizeString(name).slice(0, 100),
+        role: (['Protagonist', 'Antagonist', 'Support', 'Minor'].includes(role) ? role : 'Support') as ICharacter['role'],
+        description: description ? sanitizeString(description).slice(0, 1000) : '',
+      };
+      ops.$push = { characters: char };
+    }
+
+    if (body.removeCharacterIndex !== undefined) {
+      const idx = Number(body.removeCharacterIndex);
+      if (isNaN(idx) || idx < 0) {
+        return badRequestResponse('removeCharacterIndex must be a non-negative number');
+      }
+      // MongoDB $unset + $pull pattern for array index removal
+      await Project.findByIdAndUpdate(id, {
+        $unset: { [`characters.${idx}`]: 1 },
+      });
+      await Project.findByIdAndUpdate(id, {
+        $pull: { characters: null },
+      });
+    }
+
+    // ── Author note operations ──
+    if (body.addAuthorNote) {
+      const noteText = sanitizeString(body.addAuthorNote);
+      if (!isValidLength(noteText, 1, 2000)) {
+        return badRequestResponse('Note must be between 1 and 2000 characters');
+      }
+      if (!ops.$push) ops.$push = {};
+      (ops.$push as Record<string, unknown>).authorNotes = { text: noteText, createdAt: new Date() };
+    }
+
+    if (body.removeAuthorNoteIndex !== undefined) {
+      const idx = Number(body.removeAuthorNoteIndex);
+      if (isNaN(idx) || idx < 0) {
+        return badRequestResponse('removeAuthorNoteIndex must be a non-negative number');
+      }
+      await Project.findByIdAndUpdate(id, {
+        $unset: { [`authorNotes.${idx}`]: 1 },
+      });
+      await Project.findByIdAndUpdate(id, {
+        $pull: { authorNotes: null },
+      });
     }
 
     const updatedProject = await Project.findByIdAndUpdate(
       id,
-      { $set: allowedUpdates },
+      ops,
       { new: true, runValidators: true }
     );
 

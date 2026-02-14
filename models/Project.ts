@@ -64,6 +64,19 @@ const ProjectSchema = new Schema<IProjectDocument>(
                 avatar: { type: String },
             },
         ],
+        authorNotes: [
+            {
+                text: {
+                    type: String,
+                    required: [true, 'Note text is required'],
+                    maxlength: [2000, 'Note cannot exceed 2000 characters'],
+                },
+                createdAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+            },
+        ],
     },
     {
         timestamps: true,

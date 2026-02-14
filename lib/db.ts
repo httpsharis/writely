@@ -6,6 +6,10 @@
  */
 
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+// Use public DNS servers so SRV lookups work on restrictive networks
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 // Environment variable validation
 const MONGODB_URI = process.env.MONGODB_URI;

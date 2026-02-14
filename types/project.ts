@@ -17,6 +17,11 @@ export interface ICharacter {
     avatar?: string;
 }
 
+export interface IAuthorNote {
+    text: string;
+    createdAt: Date;
+}
+
 // ─── Project Document ───────────────────────────────────────────────
 
 export interface IProject {
@@ -27,6 +32,7 @@ export interface IProject {
     status: ProjectStatus;
     stats: IProjectStats;
     characters: ICharacter[];
+    authorNotes: IAuthorNote[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -43,6 +49,11 @@ export interface CreateProjectInput {
 export interface UpdateProjectInput {
     title?: string;
     description?: string;
+    isPublished?: boolean;
     status?: ProjectStatus;
     stats?: Partial<IProjectStats>;
+    addCharacter?: Omit<ICharacter, 'avatar'>;
+    removeCharacterIndex?: number;
+    addAuthorNote?: string;
+    removeAuthorNoteIndex?: number;
 }

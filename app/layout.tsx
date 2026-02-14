@@ -1,16 +1,25 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { JetBrains_Mono, Space_Grotesk, Merriweather } from 'next/font/google';
 import './globals.css';
 import { Providers } from './provider';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const spaceGrotesk = Space_Grotesk({
+  variable: '--font-sans',
   subsets: ['latin'],
+  display: 'swap',
+});
+
+const merriweather = Merriweather({
+  variable: '--font-serif',
+  weight: ['300', '400', '700'],
+  subsets: ['latin'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -26,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${jetbrainsMono.variable} ${spaceGrotesk.variable} ${merriweather.variable}`}
       >
         <Providers>
           {children}

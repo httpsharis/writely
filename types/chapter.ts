@@ -55,4 +55,23 @@ export interface UpdateChapterInput {
   title?: string;
   content?: Record<string, unknown> | string;
   order?: number;
+  status?: ChapterStatus;
+}
+
+/** Fields for adding a writer comment */
+export interface AddCommentInput {
+  text: string;
+  anchor: CommentAnchor;
+}
+
+/** Client-safe writer comment (string _id) */
+export interface WriterComment {
+  _id: string;
+  userId: string;
+  userName: string;
+  text: string;
+  anchor: CommentAnchor;
+  isResolved: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

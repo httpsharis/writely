@@ -1,26 +1,177 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ─── Design Tokens ──────────────────────────────────────────────── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #ffeb3b;
+  --color-secondary: #ff2e93;
+  --color-danger: #ff4444;
+  --color-success: #00e676;
+  --color-draft: #9e9e9e;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Merriweather', serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ─── Base ────────────────────────────────────────────────────────── */
+
+body {
+  font-family: var(--font-sans);
+  color: #171717;
+}
+
+/* ─── Engineering Grid Background ────────────────────────────────── */
+
+.bg-grid {
+  background-color: #f3f4f6;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ─── Tiptap Prose Styles ────────────────────────────────────────── */
+
+.tiptap.ProseMirror {
+  outline: none;
+  min-height: 400px;
+  font-family: var(--font-serif);
+  font-size: inherit;
+  line-height: 1.8;
+  color: #333;
+}
+
+.tiptap.ProseMirror p {
+  margin-bottom: 20px;
+}
+
+.tiptap.ProseMirror h1 {
+  font-family: var(--font-sans);
+  font-size: 1.6em;
+  font-weight: 800;
+  margin: 28px 0 14px;
+}
+
+.tiptap.ProseMirror h2 {
+  font-family: var(--font-sans);
+  font-size: 1.3em;
+  font-weight: 700;
+  margin: 24px 0 12px;
+}
+
+.tiptap.ProseMirror h3 {
+  font-family: var(--font-sans);
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 20px 0 10px;
+}
+
+.tiptap.ProseMirror blockquote {
+  border-left: 4px solid black;
+  padding-left: 20px;
+  margin: 20px 0;
+  font-style: italic;
+  color: #555;
+}
+
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  padding-left: 24px;
+  margin-bottom: 20px;
+}
+
+.tiptap.ProseMirror li {
+  margin-bottom: 4px;
+}
+
+.tiptap.ProseMirror hr {
+  border: none;
+  border-top: 2px solid #eee;
+  margin: 32px 0;
+}
+
+.tiptap.ProseMirror code {
+  font-family: var(--font-mono);
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  font-size: 0.9em;
+}
+
+.tiptap.ProseMirror pre {
+  font-family: var(--font-mono);
+  background: #1a1a1a;
+  color: #e0e0e0;
+  padding: 16px 20px;
+  border: 2px solid black;
+  margin: 20px 0;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Tiptap placeholder */
+.tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  font-style: italic;
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+/* ─── Responsive Tiptap ─────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .tiptap.ProseMirror {
+    line-height: 1.75;
+    min-height: 300px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (max-width: 480px) {
+  .tiptap.ProseMirror {
+    min-height: 200px;
+  }
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────── */
+
+/* ─── Reader Prose (re-uses Tiptap styles for consistency) ───────── */
+
+.reader-prose {
+  font-family: var(--font-serif);
+  line-height: 1.85;
+  color: #333;
+}
+
+.reader-prose p       { margin-bottom: 20px; }
+.reader-prose h1      { font-family: var(--font-sans); font-size: 1.6em; font-weight: 800; margin: 28px 0 14px; }
+.reader-prose h2      { font-family: var(--font-sans); font-size: 1.3em; font-weight: 700; margin: 24px 0 12px; }
+.reader-prose h3      { font-family: var(--font-sans); font-size: 1.1em; font-weight: 700; margin: 20px 0 10px; }
+.reader-prose blockquote { border-left: 4px solid black; padding-left: 20px; margin: 20px 0; font-style: italic; color: #555; }
+.reader-prose ul,
+.reader-prose ol      { padding-left: 24px; margin-bottom: 20px; }
+.reader-prose li      { margin-bottom: 4px; }
+.reader-prose hr      { border: none; border-top: 2px solid #eee; margin: 32px 0; }
+.reader-prose code    { font-family: var(--font-mono); background: #f5f5f5; padding: 2px 6px; border: 1px solid #ddd; font-size: 0.9em; }
+.reader-prose pre     { font-family: var(--font-mono); background: #1a1a1a; color: #e0e0e0; padding: 16px 20px; border: 2px solid black; margin: 20px 0; overflow-x: auto; font-size: 14px; line-height: 1.5; }
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────── */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }

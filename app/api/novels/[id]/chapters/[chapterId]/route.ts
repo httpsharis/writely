@@ -17,7 +17,7 @@ import {
 import { encryptContent, decryptContent, isEncrypted } from '@/lib/encryption';
 import { ContentUtils } from '@/lib/contentUtils';
 import type { NestedRouteParams } from '@/types/api';
-import type { UpdateChapterInput } from '@/types/chapter';
+import type { UpdateChapterInput, AddCommentInput } from '@/types/chapter';
 
 // ─── Helper: Verify the full ownership chain ───────────────────────
 //
@@ -147,7 +147,11 @@ export async function PATCH(req: Request, { params }: NestedRouteParams) {
     if ('error' in result) return result.error;
 
     // Parse request body
-    let body: UpdateChapterInput;
+    let body: UpdateChapterInput & {
+      addComment?: AddCommentInput;
+      removeCommentId?: string;
+      resolveCommentId?: string;
+    };
     try {
       body = await req.json();
     } catch {
@@ -156,7 +160,42 @@ export async function PATCH(req: Request, { params }: NestedRouteParams) {
 
     const { chapter } = result;
 
-    // Apply only allowed fields (whitelist)
+    // ── Comment operations ──────────────────────────────────────────
+    if (body.addComment) {
+      const { text, anchor } = body.addComment;
+      if (!text || text.trim().length === 0) {
+        return badRequestResponse('Comment text is required');
+      }
+      if (!anchor || anchor.from === undefined || anchor.to === undefined) {
+        return badRequestResponse('Comment anchor (from, to) is required');
+      }
+      chapter.writerComments.push({
+        userId: email,
+        userName: email.split('@')[0],
+        text: sanitizeString(text).slice(0, 5000),
+        anchor: {
+          from: Number(anchor.from),
+          to: Number(anchor.to),
+          quotedText: anchor.quotedText ? sanitizeString(anchor.quotedText).slice(0, 500) : '',
+        },
+        isResolved: false,
+      } as unknown as import('@/types/chapter').IWriterComment);
+    }
+
+    if (body.removeCommentId) {
+      chapter.writerComments = chapter.writerComments.filter(
+        (c: { _id?: { toString(): string } }) => c._id?.toString() !== body.removeCommentId
+      );
+    }
+
+    if (body.resolveCommentId) {
+      const comment = chapter.writerComments.find(
+        (c: { _id?: { toString(): string } }) => c._id?.toString() === body.resolveCommentId
+      );
+      if (comment) comment.isResolved = !comment.isResolved;
+    }
+
+    // ── Field updates (whitelist) ───────────────────────────────────
     if (body.title !== undefined) {
       const title = sanitizeString(body.title);
       if (!isValidLength(title, 1, 200)) {
@@ -182,6 +221,13 @@ export async function PATCH(req: Request, { params }: NestedRouteParams) {
         return badRequestResponse('Order must be a non-negative number');
       }
       chapter.order = order;
+    }
+
+    if (body.status !== undefined) {
+      if (!['draft', 'published'].includes(body.status)) {
+        return badRequestResponse('Status must be "draft" or "published"');
+      }
+      chapter.status = body.status;
     }
 
     // .save() triggers the pre-save hook → recalculates wordCount
