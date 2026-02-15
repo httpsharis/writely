@@ -177,8 +177,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
     <>
       <EditorToolbar editor={editor} fontSize={fontSize} onFontSizeChange={setFontSize} />
 
-      <div className="flex flex-1 justify-center overflow-y-auto p-4 md:p-10 max-md:bg-white max-md:p-0 md:bg-grid">
-        <div className="mb-20 w-full max-w-195 min-h-225 border-[3px] border-black bg-white p-6 shadow-[10px_10px_0px_rgba(0,0,0,0.08)] md:px-12.5 md:py-15 max-md:min-h-0 max-md:mb-0 max-md:border-0 max-md:shadow-none">
+      <div className="flex flex-1 justify-center overflow-y-auto bg-white p-0">
+        <div className="w-full max-w-195 bg-white p-6 md:px-12.5 md:py-15">
           <input
             type="text"
             value={title}
