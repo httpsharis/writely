@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { JetBrains_Mono, Space_Grotesk, Merriweather } from 'next/font/google';
 import './globals.css';
 import { Providers } from './provider';
+import { Analytics } from '@vercel/analytics/react';
 
 const jetbrainsMono = JetBrains_Mono({
   variable: '--font-mono',
@@ -40,6 +41,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
