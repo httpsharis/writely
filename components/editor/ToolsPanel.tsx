@@ -7,6 +7,8 @@ import type { ICharacter } from '@/types/project';
 import type { WriterComment } from '@/types/chapter';
 import type { EditorSelection } from './TiptapEditor';
 
+export type ToolsTab = 'characters' | 'comments';
+
 interface Props {
   characters: ICharacter[];
   comments: WriterComment[];
@@ -16,9 +18,10 @@ interface Props {
   onAddComment: (comment: { text: string; anchor: { from: number; to: number; quotedText: string } }) => void;
   onRemoveComment: (commentId: string) => void;
   onResolveComment: (commentId: string) => void;
+  activeTab?: ToolsTab;
+  onTabChange?: (tab: ToolsTab) => void;
+  onClose?: () => void;
 }
-
-type Tab = 'characters' | 'comments';
 
 const ROLES = ['Protagonist', 'Antagonist', 'Support', 'Minor'] as const;
 
@@ -38,8 +41,13 @@ export default function ToolsPanel({
   onAddComment,
   onRemoveComment,
   onResolveComment,
+  activeTab,
+  onTabChange,
+  onClose,
 }: Props) {
-  const [tab, setTab] = useState<Tab>('characters');
+  const [internalTab, setInternalTab] = useState<ToolsTab>('characters');
+  const tab = activeTab ?? internalTab;
+  const setTab = onTabChange ?? setInternalTab;
 
   // Character form
   const [showCharForm, setShowCharForm] = useState(false);
@@ -86,12 +94,12 @@ export default function ToolsPanel({
     <aside className="flex h-full flex-col overflow-hidden border-l-[3px] border-black bg-white">
       {/* Tab bar */}
       <div className="flex shrink-0 border-b-[3px] border-black">
-        {(['characters', 'comments'] as Tab[]).map((t) => (
+        {(['characters', 'comments'] as ToolsTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-r border-black px-2 py-3 text-center font-mono text-[10px] font-bold tracking-[0.5px] transition-colors last:border-r-0',
+              'flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-r border-black px-2 py-3 text-center font-mono text-[10px] font-bold tracking-[0.5px] transition-colors',
               tab === t ? 'bg-secondary text-white' : 'bg-gray-100 hover:bg-gray-200',
             )}
           >
@@ -124,6 +132,15 @@ export default function ToolsPanel({
             )}
           </button>
         ))}
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close tools"
+            className="flex cursor-pointer items-center justify-center px-3 bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-black lg:hidden"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Tab content */}

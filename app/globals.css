@@ -157,6 +157,32 @@ body {
 .reader-prose code    { font-family: var(--font-mono); background: #f5f5f5; padding: 2px 6px; border: 1px solid #ddd; font-size: 0.9em; }
 .reader-prose pre     { font-family: var(--font-mono); background: #1a1a1a; color: #e0e0e0; padding: 16px 20px; border: 2px solid black; margin: 20px 0; overflow-x: auto; font-size: 14px; line-height: 1.5; }
 
+/* ─── Content Protection ─────────────────────────────────────────── */
+
+.content-shield {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Block printing protected content */
+@media print {
+  .content-shield {
+    display: none !important;
+  }
+  body::after {
+    content: "Printing is disabled for protected content.";
+    display: block;
+    text-align: center;
+    padding: 40px;
+    font-family: monospace;
+    font-size: 14px;
+  }
+}
+
 /* ─── Custom Scrollbar ───────────────────────────────────────────── */
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -174,4 +200,29 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #999;
+}
+
+/* ─── Sonner Toast Overrides (brutalist theme) ───────────────────── */
+
+[data-sonner-toaster] {
+  --normal-bg: white;
+  --normal-border: black;
+  font-family: var(--font-mono) !important;
+}
+
+[data-sonner-toaster] [data-close-button] {
+  border: 1px solid #ccc !important;
+  background: white !important;
+  cursor: pointer;
+}
+
+[data-sonner-toaster] [data-close-button]:hover {
+  border-color: black !important;
+  background: #f5f5f5 !important;
+}
+
+/* ─── Reading Progress Bar ───────────────────────────────────────── */
+
+.reading-progress-bar {
+  transition: width 150ms ease-out;
 }

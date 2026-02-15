@@ -62,11 +62,18 @@ export async function GET(_req: Request, { params }: NestedRouteParams) {
         ? publishedChapters[currentIdx + 1]
         : null;
 
+    // Obfuscate content for transport — encode as base64 so it's not
+    // plain-readable in the browser Network tab. The client decodes it.
+    const contentPayload = Buffer.from(
+      JSON.stringify(content),
+    ).toString('base64');
+
     return NextResponse.json({
       _id: chapter._id,
       title: chapter.title,
-      content,
+      content: contentPayload,
       contentType: chapter.contentType,
+      contentEncoding: 'base64',
       order: chapter.order,
       wordCount: chapter.wordCount,
       novelTitle: project.title,

@@ -215,8 +215,13 @@ export default function ReaderLanding({ params }: Props) {
       </div>
 
       {/* Footer */}
-      <footer className="border-t-[3px] border-black bg-white py-4 text-center font-mono text-[9px] uppercase tracking-wider text-gray-400">
-        Powered by WRITELY_
+      <footer className="border-t-[3px] border-black bg-white py-6 text-center">
+        <p className="font-mono text-[9px] uppercase tracking-wider text-gray-400">
+          Powered by WRITELY_
+        </p>
+        <p className="mt-1 font-mono text-[8px] tracking-wider text-gray-300">
+          &copy; {new Date().getFullYear()} DevHarry. All rights reserved.
+        </p>
       </footer>
     </div>
   );

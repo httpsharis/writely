@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   fetchNovel,
   fetchChapters,
@@ -16,6 +16,7 @@ import {
   resolveComment as apiResolveComment,
   addCharacter as apiAddCharacter,
   removeCharacter as apiRemoveCharacter,
+  fetchEditorData,
   type NovelData,
   type ChapterSummary,
   type ChapterFull,
@@ -49,32 +50,36 @@ export function useEditor(novelId: string) {
     error: null,
   });
 
-  // ── Load novel + chapter list on mount ────────────────────────────
+  // ── Chapter cache — avoids refetching when switching chapters ─────
+  const chapterCache = useRef<Map<string, ChapterFull>>(new Map());
+  const novelIdRef = useRef(novelId);
+  novelIdRef.current = novelId;
+
+  // ── Load everything in ONE request ────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+    chapterCache.current.clear();
 
-    async function loadNovel() {
+    async function init() {
       try {
-        setState((s) => ({ ...s, isLoading: true, error: null }));
-
-        const [novel, chapters] = await Promise.all([
-          fetchNovel(novelId),
-          fetchChapters(novelId),
-        ]);
-
+        // Single batch request replaces 3 sequential calls
+        const { novel, chapters, firstChapter } = await fetchEditorData(novelId);
         if (cancelled) return;
 
-        setState((s) => ({
-          ...s,
+        // Cache first chapter if available
+        if (firstChapter) {
+          chapterCache.current.set(firstChapter._id, firstChapter);
+        }
+
+        setState({
           novel,
           chapters,
+          activeChapter: firstChapter,
+          activeChapterId: firstChapter?._id ?? null,
+          saveStatus: 'idle',
           isLoading: false,
-        }));
-
-        // Auto-open first chapter if available
-        if (chapters.length > 0) {
-          loadChapter(chapters[0]._id);
-        }
+          error: null,
+        });
       } catch (err) {
         if (cancelled) return;
         setState((s) => ({
@@ -85,14 +90,26 @@ export function useEditor(novelId: string) {
       }
     }
 
-    loadNovel();
+    init();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [novelId]);
 
-  // ── Load a chapter into the editor ────────────────────────────────
+  // ── Load a chapter (cache-first → instant switching) ──────────────
   const loadChapter = useCallback(
     async (chapterId: string) => {
+      // Instant switch if cached
+      const cached = chapterCache.current.get(chapterId);
+      if (cached) {
+        setState((s) => ({
+          ...s,
+          activeChapter: cached,
+          activeChapterId: chapterId,
+          saveStatus: 'idle',
+        }));
+        return;
+      }
+
+      // Otherwise fetch (only the first time)
       try {
         setState((s) => ({
           ...s,
@@ -100,7 +117,8 @@ export function useEditor(novelId: string) {
           saveStatus: 'idle',
         }));
 
-        const chapter = await fetchChapter(novelId, chapterId);
+        const chapter = await fetchChapter(novelIdRef.current, chapterId);
+        chapterCache.current.set(chapterId, chapter);
 
         setState((s) => ({
           ...s,
@@ -113,7 +131,7 @@ export function useEditor(novelId: string) {
         }));
       }
     },
-    [novelId]
+    [],
   );
 
   // ── Auto-save chapter (called by editor on debounce) ──────────────
@@ -124,10 +142,12 @@ export function useEditor(novelId: string) {
       try {
         setState((s) => ({ ...s, saveStatus: 'saving' }));
 
-        const updated = await saveChapter(novelId, state.activeChapterId, data);
+        const updated = await saveChapter(novelIdRef.current, state.activeChapterId, data);
+
+        // Update cache with saved version
+        chapterCache.current.set(updated._id, updated);
 
         setState((s) => {
-          // Update the chapter list with new title/wordCount
           const chapters = s.chapters.map((ch) =>
             ch._id === updated._id
               ? {
@@ -144,7 +164,6 @@ export function useEditor(novelId: string) {
             activeChapter: updated,
             chapters,
             saveStatus: 'saved',
-            // Update novel word count (sum of all chapters)
             novel: s.novel
               ? {
                   ...s.novel,
@@ -163,13 +182,13 @@ export function useEditor(novelId: string) {
         setState((s) => ({ ...s, saveStatus: 'error' }));
       }
     },
-    [novelId, state.activeChapterId]
+    [state.activeChapterId],
   );
 
-  // ── Add a new chapter ─────────────────────────────────────────────
+  // ── Add a new chapter (optimistic) ────────────────────────────────
   const addChapter = useCallback(async () => {
     try {
-      const created = await createChapter(novelId);
+      const created = await createChapter(novelIdRef.current);
 
       const summary: ChapterSummary = {
         _id: created._id,
@@ -181,52 +200,57 @@ export function useEditor(novelId: string) {
         updatedAt: created.updatedAt as unknown as string,
       };
 
+      // Cache immediately — no refetch when opening it
+      chapterCache.current.set(created._id, created);
+
       setState((s) => ({
         ...s,
         chapters: [...s.chapters, summary],
+        activeChapter: created,
+        activeChapterId: created._id,
+        saveStatus: 'idle',
       }));
-
-      // Open the new chapter
-      await loadChapter(created._id);
     } catch (err) {
       setState((s) => ({
         ...s,
         error: err instanceof Error ? err.message : 'Failed to create chapter',
       }));
     }
-  }, [novelId, loadChapter]);
+  }, []);
 
-  // ── Delete a chapter ──────────────────────────────────────────────
+  // ── Delete a chapter (optimistic) ─────────────────────────────────
   const removeChapter = useCallback(
     async (chapterId: string) => {
+      // Determine next chapter before removing
+      const wasActive = state.activeChapterId === chapterId;
+      const remaining = state.chapters.filter((ch) => ch._id !== chapterId);
+      const nextId = wasActive && remaining.length > 0 ? remaining[0]._id : null;
+
+      // Optimistic removal from UI
+      chapterCache.current.delete(chapterId);
+      setState((s) => ({
+        ...s,
+        chapters: s.chapters.filter((ch) => ch._id !== chapterId),
+        activeChapterId: wasActive ? nextId : s.activeChapterId,
+        activeChapter: wasActive ? null : s.activeChapter,
+      }));
+
+      // Load next chapter if needed
+      if (wasActive && nextId) loadChapter(nextId);
+
       try {
-        await deleteChapter(novelId, chapterId);
-
-        // Determine next chapter before updating state
-        const wasActive = state.activeChapterId === chapterId;
-        const remaining = state.chapters.filter((ch) => ch._id !== chapterId);
-        const nextId = wasActive && remaining.length > 0 ? remaining[0]._id : null;
-
-        setState((s) => ({
-          ...s,
-          chapters: s.chapters.filter((ch) => ch._id !== chapterId),
-          activeChapterId: wasActive ? nextId : s.activeChapterId,
-          activeChapter: wasActive ? null : s.activeChapter,
-        }));
-
-        // Load next chapter outside of setState to avoid cascading renders
-        if (wasActive && nextId) loadChapter(nextId);
+        await deleteChapter(novelIdRef.current, chapterId);
       } catch (err) {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to delete chapter',
-        }));
+        // Revert on failure — refetch fresh list
+        console.error('[useEditor] removeChapter failed:', err);
+        const fresh = await fetchChapters(novelIdRef.current);
+        setState((s) => ({ ...s, chapters: fresh }));
       }
     },
-    [novelId, loadChapter, state.activeChapterId, state.chapters]
+    [loadChapter, state.activeChapterId, state.chapters],
   );
 
-  // ── Toggle chapter status (draft ↔ published) ────────────────────
+  // ── Toggle chapter status (optimistic) ────────────────────────────
   const toggleStatus = useCallback(
     async (chapterId: string) => {
       const ch = state.chapters.find((c) => c._id === chapterId);
@@ -234,84 +258,184 @@ export function useEditor(novelId: string) {
 
       const newStatus = ch.status === 'published' ? 'draft' : 'published';
 
+      // Optimistic update
+      setState((s) => ({
+        ...s,
+        chapters: s.chapters.map((c) =>
+          c._id === chapterId ? { ...c, status: newStatus } : c,
+        ),
+        activeChapter:
+          s.activeChapter?._id === chapterId
+            ? { ...s.activeChapter, status: newStatus }
+            : s.activeChapter,
+      }));
+
+      // Update cache
+      const cached = chapterCache.current.get(chapterId);
+      if (cached) {
+        chapterCache.current.set(chapterId, { ...cached, status: newStatus });
+      }
+
       try {
-        await toggleChapterStatus(novelId, chapterId, newStatus);
+        await toggleChapterStatus(novelIdRef.current, chapterId, newStatus);
+      } catch (err) {
+        // Revert on failure
+        console.error('[useEditor] toggleStatus failed:', err);
         setState((s) => ({
           ...s,
           chapters: s.chapters.map((c) =>
-            c._id === chapterId ? { ...c, status: newStatus } : c,
+            c._id === chapterId ? { ...c, status: ch.status } : c,
           ),
           activeChapter:
             s.activeChapter?._id === chapterId
-              ? { ...s.activeChapter, status: newStatus }
+              ? { ...s.activeChapter, status: ch.status }
               : s.activeChapter,
         }));
-      } catch (err) {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to update status',
-        }));
       }
     },
-    [novelId, state.chapters],
+    [state.chapters],
   );
 
-  // ── Add comment ───────────────────────────────────────────────────
+  // ── Add comment (optimistic) ──────────────────────────────────────
   const addComment = useCallback(
     async (comment: AddCommentInput) => {
-      if (!state.activeChapterId) return;
+      if (!state.activeChapterId || !state.activeChapter) return;
+
+      // Build optimistic comment
+      const tempId = `temp_${Date.now()}`;
+      const optimisticComment = {
+        _id: tempId,
+        userId: 'me',
+        userName: 'you',
+        text: comment.text,
+        anchor: comment.anchor,
+        isResolved: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Optimistic: add immediately
+      setState((s) => {
+        if (!s.activeChapter) return s;
+        const updated = {
+          ...s.activeChapter,
+          writerComments: [...(s.activeChapter.writerComments ?? []), optimisticComment],
+        };
+        return { ...s, activeChapter: updated as ChapterFull };
+      });
+
       try {
-        const updated = await apiAddComment(novelId, state.activeChapterId, comment);
+        const updated = await apiAddComment(novelIdRef.current, state.activeChapterId, comment);
+        chapterCache.current.set(updated._id, updated);
         setState((s) => ({ ...s, activeChapter: updated }));
       } catch (err) {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to add comment',
-        }));
+        // Revert optimistic add
+        setState((s) => {
+          if (!s.activeChapter) return s;
+          const reverted = {
+            ...s.activeChapter,
+            writerComments: (s.activeChapter.writerComments ?? []).filter(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (c: any) => c._id !== tempId,
+            ),
+          };
+          return {
+            ...s,
+            activeChapter: reverted as ChapterFull,
+            error: err instanceof Error ? err.message : 'Failed to add comment',
+          };
+        });
       }
     },
-    [novelId, state.activeChapterId],
+    [state.activeChapterId, state.activeChapter],
   );
 
-  // ── Remove comment ────────────────────────────────────────────────
+  // ── Remove comment (optimistic) ───────────────────────────────────
   const removeComment = useCallback(
     async (commentId: string) => {
-      if (!state.activeChapterId) return;
+      if (!state.activeChapterId || !state.activeChapter) return;
+
+      // Snapshot for revert
+      const prevComments = state.activeChapter.writerComments ?? [];
+
+      // Optimistic: remove immediately
+      setState((s) => {
+        if (!s.activeChapter) return s;
+        const updated = {
+          ...s.activeChapter,
+          writerComments: (s.activeChapter.writerComments ?? []).filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (c: any) => c._id !== commentId,
+          ),
+        };
+        return { ...s, activeChapter: updated as ChapterFull };
+      });
+
       try {
-        const updated = await apiRemoveComment(novelId, state.activeChapterId, commentId);
+        const updated = await apiRemoveComment(novelIdRef.current, state.activeChapterId, commentId);
+        chapterCache.current.set(updated._id, updated);
         setState((s) => ({ ...s, activeChapter: updated }));
       } catch (err) {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to remove comment',
-        }));
+        // Revert
+        setState((s) => {
+          if (!s.activeChapter) return s;
+          return {
+            ...s,
+            activeChapter: { ...s.activeChapter, writerComments: prevComments } as ChapterFull,
+            error: err instanceof Error ? err.message : 'Failed to remove comment',
+          };
+        });
       }
     },
-    [novelId, state.activeChapterId],
+    [state.activeChapterId, state.activeChapter],
   );
 
-  // ── Resolve/unresolve comment ─────────────────────────────────────
+  // ── Resolve/unresolve comment (optimistic) ────────────────────────
   const toggleResolveComment = useCallback(
     async (commentId: string) => {
-      if (!state.activeChapterId) return;
+      if (!state.activeChapterId || !state.activeChapter) return;
+
+      // Snapshot for revert
+      const prevComments = state.activeChapter.writerComments ?? [];
+
+      // Optimistic: toggle immediately
+      setState((s) => {
+        if (!s.activeChapter) return s;
+        const updated = {
+          ...s.activeChapter,
+          writerComments: (s.activeChapter.writerComments ?? []).map(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (c: any) =>
+              c._id === commentId ? { ...c, isResolved: !c.isResolved } : c,
+          ),
+        };
+        return { ...s, activeChapter: updated as ChapterFull };
+      });
+
       try {
-        const updated = await apiResolveComment(novelId, state.activeChapterId, commentId);
+        const updated = await apiResolveComment(novelIdRef.current, state.activeChapterId, commentId);
+        chapterCache.current.set(updated._id, updated);
         setState((s) => ({ ...s, activeChapter: updated }));
       } catch (err) {
-        setState((s) => ({
-          ...s,
-          error: err instanceof Error ? err.message : 'Failed to update comment',
-        }));
+        // Revert
+        setState((s) => {
+          if (!s.activeChapter) return s;
+          return {
+            ...s,
+            activeChapter: { ...s.activeChapter, writerComments: prevComments } as ChapterFull,
+            error: err instanceof Error ? err.message : 'Failed to update comment',
+          };
+        });
       }
     },
-    [novelId, state.activeChapterId],
+    [state.activeChapterId, state.activeChapter],
   );
 
   // ── Add character ─────────────────────────────────────────────────
   const addCharacterToNovel = useCallback(
     async (char: { name: string; role: string; description?: string }) => {
       try {
-        const updated = await apiAddCharacter(novelId, char);
+        const updated = await apiAddCharacter(novelIdRef.current, char);
         setState((s) => ({ ...s, novel: updated }));
       } catch (err) {
         setState((s) => ({
@@ -320,14 +444,14 @@ export function useEditor(novelId: string) {
         }));
       }
     },
-    [novelId],
+    [],
   );
 
   // ── Remove character ──────────────────────────────────────────────
   const removeCharacterFromNovel = useCallback(
     async (index: number) => {
       try {
-        const updated = await apiRemoveCharacter(novelId, index);
+        const updated = await apiRemoveCharacter(novelIdRef.current, index);
         setState((s) => ({ ...s, novel: updated }));
       } catch (err) {
         setState((s) => ({
@@ -336,38 +460,55 @@ export function useEditor(novelId: string) {
         }));
       }
     },
-    [novelId],
+    [],
   );
 
-  // ── Rename novel ──────────────────────────────────────────────────
+  // ── Rename novel (optimistic) ─────────────────────────────────────
   const renameNovel = useCallback(
     async (title: string) => {
+      const oldTitle = state.novel?.title;
+
+      // Optimistic
+      setState((s) => ({
+        ...s,
+        novel: s.novel ? { ...s.novel, title } : s.novel,
+      }));
+
       try {
-        const updated = await updateNovel(novelId, { title });
-        setState((s) => ({ ...s, novel: updated }));
+        await updateNovel(novelIdRef.current, { title });
       } catch (err) {
+        // Revert
+        console.error('[useEditor] renameNovel failed:', err);
         setState((s) => ({
           ...s,
-          error: err instanceof Error ? err.message : 'Failed to rename novel',
+          novel: s.novel ? { ...s.novel, title: oldTitle ?? '' } : s.novel,
         }));
       }
     },
-    [novelId],
+    [state.novel?.title],
   );
 
-  // ── Toggle publish ────────────────────────────────────────────────
+  // ── Toggle publish (optimistic) ───────────────────────────────────
   const togglePublish = useCallback(async () => {
     const current = state.novel?.isPublished ?? false;
+
+    // Optimistic
+    setState((s) => ({
+      ...s,
+      novel: s.novel ? { ...s.novel, isPublished: !current } : s.novel,
+    }));
+
     try {
-      const updated = await apiTogglePublish(novelId, !current);
-      setState((s) => ({ ...s, novel: updated }));
+      await apiTogglePublish(novelIdRef.current, !current);
     } catch (err) {
+      // Revert
+      console.error('[useEditor] togglePublish failed:', err);
       setState((s) => ({
         ...s,
-        error: err instanceof Error ? err.message : 'Failed to toggle publish',
+        novel: s.novel ? { ...s.novel, isPublished: current } : s.novel,
       }));
     }
-  }, [novelId, state.novel?.isPublished]);
+  }, [state.novel?.isPublished]);
 
   return {
     ...state,

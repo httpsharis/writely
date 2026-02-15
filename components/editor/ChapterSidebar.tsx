@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Trash2, BookOpen, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { ChapterSummary } from '@/lib/api-client';
@@ -13,6 +13,7 @@ interface Props {
   onAddChapter: () => void;
   onDeleteChapter: (id: string) => void;
   onToggleStatus: (id: string) => void;
+  onClose?: () => void;
 }
 
 const STATUS_TAG: Record<string, { label: string; cls: string }> = {
@@ -27,6 +28,7 @@ export default function ChapterSidebar({
   onAddChapter,
   onDeleteChapter,
   onToggleStatus,
+  onClose,
 }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
@@ -37,14 +39,25 @@ export default function ChapterSidebar({
         <h2 className="font-mono text-xs font-bold uppercase tracking-[1.5px]">
           Chapters
         </h2>
-        <button
-          onClick={onAddChapter}
-          title="Add new chapter"
-          className="inline-flex cursor-pointer items-center gap-1 rounded border-2 border-black bg-black px-2 py-1 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black"
-        >
-          <Plus size={12} />
-          <span className="hidden sm:inline">NEW</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onAddChapter}
+            title="Add new chapter"
+            className="inline-flex cursor-pointer items-center gap-1 rounded border-2 border-black bg-black px-2 py-1 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black"
+          >
+            <Plus size={12} />
+            <span className="hidden sm:inline">NEW</span>
+          </button>
+          {onClose && (
+            <button
+              onClick={onClose}
+              aria-label="Close chapters"
+              className="flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 text-gray-500 transition-all hover:border-black hover:text-black lg:hidden"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chapter list */}

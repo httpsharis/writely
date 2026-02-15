@@ -73,7 +73,7 @@ export default function MetaStrip({
       <Link
         href="/"
         title="Back to novels"
-        className="hidden items-center justify-center rounded border-2 border-transparent p-1 text-black transition-all hover:border-black hover:bg-gray-100 sm:inline-flex"
+        className="inline-flex items-center justify-center rounded border-2 border-transparent p-1 text-black transition-all hover:border-black hover:bg-gray-100"
       >
         <ArrowLeft size={15} />
       </Link>
@@ -90,13 +90,13 @@ export default function MetaStrip({
             if (e.key === 'Escape') setEditing(false);
           }}
           spellCheck={false}
-          className="max-w-[140px] border-b-2 border-secondary bg-transparent font-bold uppercase outline-none sm:max-w-[200px] md:max-w-[260px]"
+          className="max-w-35 border-b-2 border-secondary bg-transparent font-bold uppercase outline-none sm:max-w-50 md:max-w-65"
         />
       ) : (
         <button
           onClick={startEdit}
           title="Click to rename novel"
-          className="group flex max-w-[120px] cursor-pointer items-center gap-1 truncate border-none bg-transparent font-bold uppercase sm:max-w-[180px] md:max-w-[250px]"
+          className="group flex max-w-30 cursor-pointer items-center gap-1 truncate border-none bg-transparent font-bold uppercase sm:max-w-45 md:max-w-62.5"
         >
           <span className="truncate">{novel?.title || '...'}</span>
           <Pencil size={9} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />

@@ -1,10 +1,9 @@
 'use client';
 
-import { use, useState, useMemo, useRef } from 'react';
+import { use, useState, useMemo, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useEditor } from '@/hooks/useEditor';
 import Link from 'next/link';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/Spinner';
 import ChapterSidebar from '@/components/editor/ChapterSidebar';
@@ -12,6 +11,7 @@ import TiptapEditor from '@/components/editor/TiptapEditor';
 import type { TiptapEditorHandle } from '@/components/editor/TiptapEditor';
 import MetaStrip from '@/components/editor/MetaStrip';
 import ToolsPanel from '@/components/editor/ToolsPanel';
+import type { ToolsTab } from '@/components/editor/ToolsPanel';
 import PublishDialog from '@/components/editor/PublishDialog';
 
 interface Props {
@@ -25,7 +25,18 @@ export default function EditorPage({ params }: Props) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [toolsTab, setToolsTab] = useState<ToolsTab>('characters');
   const editorRef = useRef<TiptapEditorHandle>(null);
+
+  // Open right sidebar and switch to comments tab
+  const handleToggleRight = useCallback(() => {
+    setRightOpen((v) => !v);
+  }, []);
+
+  const handleOpenComments = useCallback(() => {
+    setToolsTab('comments');
+    setRightOpen(true);
+  }, []);
 
   const {
     novel, chapters, activeChapter, activeChapterId,
@@ -97,24 +108,17 @@ export default function EditorPage({ params }: Props) {
       {/* Mobile overlay */}
       {(leftOpen || rightOpen) && (
         <div
-          className="fixed inset-0 z-55 bg-black/35 lg:hidden"
+          className="fixed inset-0 z-55 bg-black/20 lg:hidden"
           onClick={() => { setLeftOpen(false); setRightOpen(false); }}
         />
       )}
 
       {/* Left sidebar */}
       <div className={cn(
-        'fixed inset-y-0 left-0 z-60 w-70 -translate-x-full transition-transform duration-200 max-[480px]:w-full',
+        'fixed inset-y-0 left-0 z-60 w-70 transition-transform duration-200 max-[480px]:w-full',
         'lg:static lg:z-auto lg:translate-x-0 lg:transition-none',
-        leftOpen && 'translate-x-0 shadow-xl',
+        leftOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
       )}>
-        <button
-          className="absolute right-4 top-4 z-10 flex cursor-pointer items-center justify-center rounded border-2 border-black bg-white p-1 lg:hidden"
-          onClick={() => setLeftOpen(false)}
-          aria-label="Close chapters"
-        >
-          <X size={18} />
-        </button>
         <ChapterSidebar
           chapters={chapters}
           activeChapterId={activeChapterId}
@@ -122,6 +126,7 @@ export default function EditorPage({ params }: Props) {
           onAddChapter={addChapter}
           onDeleteChapter={removeChapter}
           onToggleStatus={toggleStatus}
+          onClose={() => setLeftOpen(false)}
         />
       </div>
 
@@ -133,7 +138,7 @@ export default function EditorPage({ params }: Props) {
           saveStatus={saveStatus}
           commentCount={unresolvedComments}
           onToggleLeft={() => setLeftOpen((v) => !v)}
-          onToggleRight={() => setRightOpen((v) => !v)}
+          onToggleRight={handleOpenComments}
           onOpenPublish={() => setPublishOpen(true)}
           onRenameNovel={renameNovel}
         />
@@ -147,17 +152,10 @@ export default function EditorPage({ params }: Props) {
 
       {/* Right sidebar */}
       <div className={cn(
-        'fixed inset-y-0 right-0 z-60 w-70 translate-x-full transition-transform duration-200 max-[480px]:w-full lg:w-75',
+        'fixed inset-y-0 right-0 z-60 w-70 transition-transform duration-200 max-[480px]:w-full lg:w-75',
         'lg:static lg:z-auto lg:translate-x-0 lg:transition-none',
-        rightOpen && 'translate-x-0 shadow-xl',
+        rightOpen ? 'translate-x-0 shadow-xl' : 'translate-x-full',
       )}>
-        <button
-          className="absolute right-4 top-4 z-10 flex cursor-pointer items-center justify-center rounded border-2 border-black bg-white p-1 lg:hidden"
-          onClick={() => setRightOpen(false)}
-          aria-label="Close tools"
-        >
-          <X size={18} />
-        </button>
         <ToolsPanel
           characters={novel?.characters ?? []}
           comments={(activeChapter?.writerComments as unknown as import('@/types/chapter').WriterComment[]) ?? []}
@@ -167,6 +165,9 @@ export default function EditorPage({ params }: Props) {
           onAddComment={addComment}
           onRemoveComment={removeComment}
           onResolveComment={toggleResolveComment}
+          activeTab={toolsTab}
+          onTabChange={setToolsTab}
+          onClose={() => setRightOpen(false)}
         />
       </div>
 

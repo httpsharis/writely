@@ -52,8 +52,22 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ─── Novel endpoints ────────────────────────────────────────────────
 
+// In-memory cache for the novels list (avoids refetch on back-navigation)
+let novelsCache: { data: NovelData[]; timestamp: number } | null = null;
+const NOVELS_CACHE_TTL = 5000; // 5 seconds
+
 export async function fetchNovels(): Promise<NovelData[]> {
-  return apiFetch<NovelData[]>('/api/novels');
+  if (novelsCache && Date.now() - novelsCache.timestamp < NOVELS_CACHE_TTL) {
+    return novelsCache.data;
+  }
+  const data = await apiFetch<NovelData[]>('/api/novels');
+  novelsCache = { data, timestamp: Date.now() };
+  return data;
+}
+
+/** Call after create / delete to force a fresh fetch next time */
+export function invalidateNovelsCache() {
+  novelsCache = null;
 }
 
 export async function fetchNovel(novelId: string): Promise<NovelData> {
@@ -215,6 +229,22 @@ export async function removeAuthorNote(
   return updateNovel(novelId, { removeAuthorNoteIndex: index });
 }
 
+// ─── Editor bootstrap (single batch request) ───────────────────────
+
+export interface EditorInitData {
+  novel: NovelData;
+  chapters: ChapterSummary[];
+  firstChapter: ChapterFull | null;
+}
+
+/**
+ * Fetch novel + chapter list + first chapter content in ONE request.
+ * Replaces the 3 sequential calls that slowed down editor init.
+ */
+export async function fetchEditorData(novelId: string): Promise<EditorInitData> {
+  return apiFetch<EditorInitData>(`/api/novels/${novelId}/editor-data`);
+}
+
 // ─── Public reader endpoints (no auth required) ─────────────────────
 
 export interface PublicNovel {
@@ -246,6 +276,7 @@ export interface PublicChapter {
   title: string;
   content: Record<string, unknown> | string;
   contentType: string;
+  contentEncoding?: string;
   order: number;
   wordCount: number;
   novelTitle: string;
@@ -268,5 +299,16 @@ export async function fetchPublicChapter(
   novelId: string,
   chapterId: string,
 ): Promise<PublicChapter> {
-  return apiFetch<PublicChapter>(`/api/public/novels/${novelId}/chapters/${chapterId}`);
+  const data = await apiFetch<PublicChapter>(`/api/public/novels/${novelId}/chapters/${chapterId}`);
+
+  // Decode base64-obfuscated content from server
+  if (data.contentEncoding === 'base64' && typeof data.content === 'string') {
+    try {
+      data.content = JSON.parse(atob(data.content));
+    } catch {
+      // If decode fails, keep content as-is
+    }
+  }
+
+  return data;
 }

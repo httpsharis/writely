@@ -48,61 +48,51 @@ if (!globalForMongoose.mongoose) {
 }
 
 /**
- * MongoDB connection options
+ * MongoDB connection options — tuned for performance
  */
 const connectionOptions: mongoose.ConnectOptions = {
-    bufferCommands: false, // Disable buffering for serverless
-    maxPoolSize: 10,       // Connection pool size
+    maxPoolSize: 10,                  // reuse up to 10 connections
+    minPoolSize: 2,                   // keep 2 warm connections ready
+    serverSelectionTimeoutMS: 5000,   // fail fast on unreachable server
+    socketTimeoutMS: 45000,           // long-running queries allowed
+    bufferCommands: true,             // queue commands until connected
+    autoIndex: process.env.NODE_ENV !== 'production', // skip in prod
 };
 
 /**
- * Connect to MongoDB with connection caching
- * 
- * @returns Promise<typeof mongoose> - The mongoose instance
- * @throws Error if connection fails
- * 
- * @example
- * ```ts
- * import connectDB from '@/lib/db';
- * 
- * export async function GET() {
- *   await connectDB();
- *   // ... your database operations
- * }
- * ```
+ * Connect to MongoDB with connection caching.
+ *
+ * Uses readyState check to instantly return when already connected,
+ * avoiding unnecessary promise awaits on hot paths.
  */
 async function connectDB(): Promise<typeof mongoose> {
-    // Return existing connection if available
-    if (cached.conn) {
-        console.log('[DB] Using cached connection');
+    // Fast path: already connected → instant return
+    if (cached.conn && mongoose.connection.readyState === 1) {
         return cached.conn;
     }
 
-    // Create new connection promise if none exists
-    if (!cached.promise) {
-        console.log('[DB] Creating new connection...');
-
-        cached.promise = mongoose
-            .connect(MONGODB_URI!, connectionOptions)
-            .then((mongooseInstance) => {
-                console.log('[DB] Connected successfully');
-                return mongooseInstance;
-            });
-    }
-
-    // Wait for connection and cache it
-    try {
+    // Connection in progress → wait for it
+    if (cached.promise) {
         cached.conn = await cached.promise;
-    } catch (error) {
-        // Reset promise on error so next call can retry
-        cached.promise = null;
-
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[DB] Connection failed:', errorMessage);
-
-        throw new Error(`[DB] Failed to connect to MongoDB: ${errorMessage}`);
+        return cached.conn;
     }
 
+    // New connection
+    console.log('[DB] Creating new connection...');
+    cached.promise = mongoose
+        .connect(MONGODB_URI!, connectionOptions)
+        .then((m) => {
+            console.log('[DB] Connected successfully');
+            return m;
+        })
+        .catch((err) => {
+            cached.promise = null;
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error('[DB] Connection failed:', msg);
+            throw new Error(`[DB] Failed to connect to MongoDB: ${msg}`);
+        });
+
+    cached.conn = await cached.promise;
     return cached.conn;
 }
 

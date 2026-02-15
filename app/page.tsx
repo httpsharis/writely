@@ -4,9 +4,10 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, LogOut, Trash2, BookOpen } from 'lucide-react';
-import { fetchNovels, createNovel, deleteNovel } from '@/lib/api-client';
+import { fetchNovels, createNovel, deleteNovel, invalidateNovelsCache } from '@/lib/api-client';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Spinner } from '@/components/ui/Spinner';
+import { toast } from 'sonner';
 import type { NovelData } from '@/lib/api-client';
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
     try {
       setLoading(true);
       setNovels(await fetchNovels());
-    } catch { /* empty list shown */ } finally {
+    } catch { toast.error('Failed to load novels'); } finally {
       setLoading(false);
     }
   }, []);
@@ -36,15 +37,21 @@ export default function Home() {
     try {
       setCreating(true);
       const novel = await createNovel();
+      invalidateNovelsCache();
       router.push(`/editor/${novel._id}`);
-    } catch { setCreating(false); }
+    } catch {
+      toast.error('Failed to create novel');
+      setCreating(false);
+    }
   }
 
   async function handleDelete() {
     if (!deleteTarget) return;
     try {
       await deleteNovel(deleteTarget._id);
+      invalidateNovelsCache();
       setNovels((prev) => prev.filter((n) => n._id !== deleteTarget._id));
+      toast.success('Novel deleted');
     } finally { setDeleteTarget(null); }
   }
 

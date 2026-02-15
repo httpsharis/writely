@@ -2,8 +2,9 @@
 
 import { use, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, ChevronUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
+import { ContentShield } from '@/components/ui/ContentShield';
 import { fetchPublicChapter, type PublicChapter } from '@/lib/api-client';
 
 interface Props {
@@ -92,6 +93,26 @@ export default function ChapterReader({ params }: Props) {
   const [chapter, setChapter] = useState<PublicChapter | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [showTop, setShowTop] = useState(false);
+
+  // Reading progress + back-to-top visibility
+  useEffect(() => {
+    function handleScroll() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (docHeight > 0) {
+        setProgress(Math.min(100, Math.round((scrollTop / docHeight) * 100)));
+      }
+      setShowTop(scrollTop > 400);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -173,6 +194,14 @@ export default function ChapterReader({ params }: Props) {
 
   return (
     <div className="min-h-dvh bg-grid">
+      {/* Reading progress bar */}
+      <div className="fixed left-0 top-0 z-[100] h-1 w-full bg-gray-200">
+        <div
+          className="h-full bg-black reading-progress-bar"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
       {/* Top bar */}
       <header className="sticky top-0 z-50 border-b-[3px] border-black bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-2.5 sm:px-6">
@@ -206,9 +235,11 @@ export default function ChapterReader({ params }: Props) {
         </div>
 
         {/* Prose */}
-        <div className="reader-prose" style={{ fontSize: '14px' }}>
-          {renderedContent}
-        </div>
+        <ContentShield>
+          <div className="reader-prose" style={{ fontSize: '14px' }}>
+            {renderedContent}
+          </div>
+        </ContentShield>
 
         {/* Navigation */}
         <nav className="mt-12 flex items-stretch gap-3 border-t-[3px] border-black pt-6 sm:mt-16">
@@ -261,9 +292,26 @@ export default function ChapterReader({ params }: Props) {
       </article>
 
       {/* Footer */}
-      <footer className="border-t-[3px] border-black bg-white py-4 text-center font-mono text-[9px] uppercase tracking-wider text-gray-400">
-        Powered by WRITELY_
+      <footer className="border-t-[3px] border-black bg-white py-6 text-center">
+        <p className="font-mono text-[9px] uppercase tracking-wider text-gray-400">
+          Powered by WRITELY_
+        </p>
+        <p className="mt-1 font-mono text-[8px] tracking-wider text-gray-300">
+          &copy; {new Date().getFullYear()} DevHarry. All rights reserved.
+        </p>
       </footer>
+
+      {/* Back to top button */}
+      {showTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 flex h-10 w-10 cursor-pointer items-center justify-center border-2 border-black bg-white shadow-[2px_2px_0px_black] transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-[3px_3px_0px_black]"
+          title="Back to top"
+          aria-label="Back to top"
+        >
+          <ChevronUp size={18} />
+        </button>
+      )}
     </div>
   );
 }
