@@ -117,7 +117,7 @@ export async function fetchChapter(
   novelId: string,
   chapterId: string
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(`/api/novels/${novelId}/chapters/${chapterId}`);
+  return apiFetch<ChapterFull>(`/api/chapter/${chapterId}`);
 }
 
 export async function saveChapter(
@@ -126,7 +126,7 @@ export async function saveChapter(
   data: UpdateChapterInput
 ): Promise<ChapterFull> {
   return apiFetch<ChapterFull>(
-    `/api/novels/${novelId}/chapters/${chapterId}`,
+    `/api/chapter/${chapterId}`,
     {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -138,7 +138,7 @@ export async function deleteChapter(
   novelId: string,
   chapterId: string
 ): Promise<void> {
-  await apiFetch(`/api/novels/${novelId}/chapters/${chapterId}`, {
+  await apiFetch(`/api/chapter/${chapterId}`, {
     method: 'DELETE',
   });
 }
@@ -161,7 +161,7 @@ export async function addComment(
   comment: AddCommentInput,
 ): Promise<ChapterFull> {
   return apiFetch<ChapterFull>(
-    `/api/novels/${novelId}/chapters/${chapterId}`,
+    `/api/chapter/${chapterId}`,
     { method: 'PATCH', body: JSON.stringify({ addComment: comment }) },
   );
 }
@@ -172,7 +172,7 @@ export async function removeComment(
   commentId: string,
 ): Promise<ChapterFull> {
   return apiFetch<ChapterFull>(
-    `/api/novels/${novelId}/chapters/${chapterId}`,
+    `/api/chapter/${chapterId}`,
     { method: 'PATCH', body: JSON.stringify({ removeCommentId: commentId }) },
   );
 }
@@ -183,7 +183,7 @@ export async function resolveComment(
   commentId: string,
 ): Promise<ChapterFull> {
   return apiFetch<ChapterFull>(
-    `/api/novels/${novelId}/chapters/${chapterId}`,
+    `/api/chapter/${chapterId}`,
     { method: 'PATCH', body: JSON.stringify({ resolveCommentId: commentId }) },
   );
 }

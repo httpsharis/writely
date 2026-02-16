@@ -75,3 +75,11 @@ export interface WriterComment {
   createdAt: string;
   updatedAt: string;
 }
+
+// What the frontend sends when saving
+export interface UpdateChapterParams {
+  title?: string;
+  content?: Record<string, unknown>; // JSON object from Tiptap
+  order?: number;
+  status?: 'draft' | 'published';
+}

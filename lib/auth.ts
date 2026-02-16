@@ -3,13 +3,20 @@ import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
 import clientPromise from "./mongodb-client";
 
+// Validation for the ENV key
+function getEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`MISSING ENV VARIABLE: ${key}`)
+  }
+  return value
+}
+
 export const authOptions: NextAuthOptions = {
-  // 1. MongoDB adapter — persists user accounts & OAuth links in MongoDB.
-  //    Combined with JWT strategy so session tokens live in a browser cookie
-  //    (no DB lookup on every request) while account data stays in the DB.
+  // 1. ADAPTER: Connects authentication to your database
   adapter: MongoDBAdapter(clientPromise),
 
-  // 2. Configure one or more authentication providers
+  // 2. PROVIDERS: The services users can use to log in
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -17,17 +24,16 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
-  // 3. JWT sessions — token lives in a secure httpOnly cookie.
-  //    Survives browser restarts; no server-side session lookup needed.
+  // 3. SESSION STRATEGY: JWT for speed
   session: {
     strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
   },
 
-  // 4. Secret for signing & encrypting the JWT cookie
-  secret: process.env.NEXTAUTH_SECRET,
+  // 4. SECURITY: Key used to encrypt the JWT
+  secret: getEnv("NEXTAUTH_SECRET"),
 
-  // 5. Callbacks
+  // 5. CALLBACKS: Customize what data is available in the session
   callbacks: {
     // Persist user id + email into the JWT on sign-in
     async jwt({ token, user }) {

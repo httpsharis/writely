@@ -101,7 +101,7 @@ export default function EditorToolbar({ editor, fontSize, onFontSizeChange }: Pr
         >
           <AArrowDown size={15} />
         </button>
-        <span className="mx-1 font-mono text-[10px] font-bold text-gray-500 select-none min-w-[24px] text-center">
+        <span className="mx-1 font-mono text-[10px] font-bold text-gray-500 select-none min-w-6 text-center">
           {fontSize}
         </span>
         <button
