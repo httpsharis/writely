@@ -14,7 +14,7 @@ interface Props {
   comments: WriterComment[];
   getSelection: () => EditorSelection | null;
   onAddCharacter: (char: { name: string; role: string; description?: string }) => void;
-  onRemoveCharacter: (index: number) => void;
+  onRemoveCharacter: (id: string) => void;
   onAddComment: (comment: { text: string; anchor: { from: number; to: number; quotedText: string } }) => void;
   onRemoveComment: (commentId: string) => void;
   onResolveComment: (commentId: string) => void;
@@ -158,7 +158,7 @@ export default function ToolsPanel({
             )}
 
             {characters.map((char, i) => (
-              <div key={i} className="group mb-2 border-2 border-black bg-white p-2.5 shadow-[2px_2px_0px_#eee]">
+              <div key={char._id ?? i} className="group mb-2 border-2 border-black bg-white p-2.5 shadow-[2px_2px_0px_#eee]">
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-extrabold uppercase tracking-[0.3px]">
                     {char.name}
@@ -171,7 +171,7 @@ export default function ToolsPanel({
                       {char.role}
                     </span>
                     <button
-                      onClick={() => onRemoveCharacter(i)}
+                      onClick={() => char._id && onRemoveCharacter(char._id)}
                       title="Remove character"
                       className="cursor-pointer text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger max-lg:opacity-100"
                     >

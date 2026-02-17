@@ -1,7 +1,7 @@
 /**
- * /api/novels/[id]/chapters — Chapter list & create.
- * GET  → Lightweight chapter list for the sidebar.
- * POST → Creates a new blank chapter at the end.
+ * /api/chapters — Chapter list & create.
+ * GET  /api/chapters?novelId=xxx → Lightweight chapter list for the sidebar.
+ * POST /api/chapters             → Creates a new blank chapter (novelId in body).
  */
 
 import { NextResponse } from 'next/server';
@@ -15,19 +15,20 @@ import {
     sanitizeString,
     isValidLength,
 } from '@/lib/api-helpers';
-import type { RouteParams } from '@/types/api';
 
 // GET — Fetch chapter list (title, order, status — no content)
-export async function GET(_req: Request, { params }: RouteParams) {
+export async function GET(req: Request) {
     try {
         const email = await getAuthenticatedEmail();
         if (!email) return unauthorizedResponse();
 
-        const { id: novelId } = await params;
+        const { searchParams } = new URL(req.url);
+        const novelId = searchParams.get('novelId');
+        if (!novelId) return badRequestResponse('novelId query param is required');
+
         const result = await getOwnedProject(novelId, email, 'userEmail');
         if (result instanceof NextResponse) return result;
 
-        // Only select sidebar fields — skip heavy content field
         const chapters = await Chapter.find({ projectId: novelId })
             .select('_id title order status wordCount createdAt updatedAt')
             .sort({ order: 1 })
@@ -35,32 +36,34 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
         return NextResponse.json(chapters);
     } catch (error) {
-        console.error('[API] GET /api/novels/[id]/chapters error:', error);
+        console.error('[API] GET /api/chapters error:', error);
         return serverErrorResponse('Failed to fetch chapters');
     }
 }
 
 // POST — Create a new chapter at the end of the list
-export async function POST(req: Request, { params }: RouteParams) {
+export async function POST(req: Request) {
     try {
         const email = await getAuthenticatedEmail();
         if (!email) return unauthorizedResponse();
 
-        const { id: novelId } = await params;
+        let body;
+        try { body = await req.json(); } catch { return badRequestResponse('Invalid JSON'); }
+
+        const novelId = body.novelId;
+        if (!novelId) return badRequestResponse('novelId is required');
+
         const result = await getOwnedProject(novelId, email, 'userEmail');
         if (result instanceof NextResponse) return result;
 
-        // Parse optional body for a custom title
+        // Sanitize optional title
         let title = 'New Chapter';
-        try {
-            const body = await req.json();
-            if (body.title) {
-                title = sanitizeString(body.title);
-                if (!isValidLength(title, 1, 200)) {
-                    return badRequestResponse('Title must be between 1 and 200 characters');
-                }
+        if (body.title) {
+            title = sanitizeString(body.title);
+            if (!isValidLength(title, 1, 200)) {
+                return badRequestResponse('Title must be between 1 and 200 characters');
             }
-        } catch { /* No body → use default title */ }
+        }
 
         // Find the highest order and add 1 (avoids collisions from deleted chapters)
         const lastChapter = await Chapter.findOne({ projectId: novelId })
@@ -76,7 +79,7 @@ export async function POST(req: Request, { params }: RouteParams) {
 
         return NextResponse.json(newChapter, { status: 201 });
     } catch (error) {
-        console.error('[API] POST /api/novels/[id]/chapters error:', error);
+        console.error('[API] POST /api/chapters error:', error);
         return serverErrorResponse('Failed to create chapter');
     }
 }

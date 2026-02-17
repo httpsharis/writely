@@ -447,11 +447,11 @@ export function useEditor(novelId: string) {
     [],
   );
 
-  // ── Remove character ──────────────────────────────────────────────
+  // ── Remove character by _id (safe — doesn't depend on array index) ──
   const removeCharacterFromNovel = useCallback(
-    async (index: number) => {
+    async (id: string) => {
       try {
-        const updated = await apiRemoveCharacter(novelIdRef.current, index);
+        const updated = await apiRemoveCharacter(novelIdRef.current, id);
         setState((s) => ({ ...s, novel: updated }));
       } catch (err) {
         setState((s) => ({

@@ -15,12 +15,7 @@ export interface ApiDeleteResponse {
 
 // ─── Route Params ───────────────────────────────────────────────────
 
-/** For routes like /api/novels/[id] */
+/** For routes like /api/novels/[id] or /api/public/novels/[id] */
 export type RouteParams = {
     params: Promise<{ id: string }>;
-};
-
-/** For routes like /api/novels/[id]/chapters/[chapterId] */
-export type NestedRouteParams = {
-    params: Promise<{ id: string; chapterId: string }>;
 };

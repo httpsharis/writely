@@ -98,16 +98,16 @@ export async function updateNovel(
 // ─── Chapter list (sidebar) ─────────────────────────────────────────
 
 export async function fetchChapters(novelId: string): Promise<ChapterSummary[]> {
-  return apiFetch<ChapterSummary[]>(`/api/novels/${novelId}/chapters`);
+  return apiFetch<ChapterSummary[]>(`/api/chapters?novelId=${novelId}`);
 }
 
 export async function createChapter(
   novelId: string,
   title?: string
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(`/api/novels/${novelId}/chapters`, {
+  return apiFetch<ChapterFull>('/api/chapters', {
     method: 'POST',
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ novelId, title }),
   });
 }
 
@@ -117,7 +117,7 @@ export async function fetchChapter(
   novelId: string,
   chapterId: string
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(`/api/chapter/${chapterId}`);
+  return apiFetch<ChapterFull>(`/api/chapters/${chapterId}`);
 }
 
 export async function saveChapter(
@@ -125,22 +125,17 @@ export async function saveChapter(
   chapterId: string,
   data: UpdateChapterInput
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(
-    `/api/chapter/${chapterId}`,
-    {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }
-  );
+  return apiFetch<ChapterFull>(`/api/chapters/${chapterId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }
 
 export async function deleteChapter(
   novelId: string,
   chapterId: string
 ): Promise<void> {
-  await apiFetch(`/api/chapter/${chapterId}`, {
-    method: 'DELETE',
-  });
+  await apiFetch(`/api/chapters/${chapterId}`, { method: 'DELETE' });
 }
 
 // ─── Chapter status toggle ──────────────────────────────────────────
@@ -160,10 +155,10 @@ export async function addComment(
   chapterId: string,
   comment: AddCommentInput,
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(
-    `/api/chapter/${chapterId}`,
-    { method: 'PATCH', body: JSON.stringify({ addComment: comment }) },
-  );
+  return apiFetch<ChapterFull>(`/api/chapters/${chapterId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ addComment: comment }),
+  });
 }
 
 export async function removeComment(
@@ -171,10 +166,10 @@ export async function removeComment(
   chapterId: string,
   commentId: string,
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(
-    `/api/chapter/${chapterId}`,
-    { method: 'PATCH', body: JSON.stringify({ removeCommentId: commentId }) },
-  );
+  return apiFetch<ChapterFull>(`/api/chapters/${chapterId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ removeCommentId: commentId }),
+  });
 }
 
 export async function resolveComment(
@@ -182,10 +177,10 @@ export async function resolveComment(
   chapterId: string,
   commentId: string,
 ): Promise<ChapterFull> {
-  return apiFetch<ChapterFull>(
-    `/api/chapter/${chapterId}`,
-    { method: 'PATCH', body: JSON.stringify({ resolveCommentId: commentId }) },
-  );
+  return apiFetch<ChapterFull>(`/api/chapters/${chapterId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ resolveCommentId: commentId }),
+  });
 }
 
 // ─── Characters ─────────────────────────────────────────────────────
@@ -197,11 +192,12 @@ export async function addCharacter(
   return updateNovel(novelId, { addCharacter: char });
 }
 
+/** Remove a character by its subdocument _id (not array index — avoids race conditions) */
 export async function removeCharacter(
   novelId: string,
-  index: number,
+  characterId: string,
 ): Promise<NovelData> {
-  return updateNovel(novelId, { removeCharacterIndex: index });
+  return updateNovel(novelId, { removeCharacterId: characterId });
 }
 
 // ─── Publish toggle ─────────────────────────────────────────────────
@@ -222,11 +218,12 @@ export async function addAuthorNote(
   return updateNovel(novelId, { addAuthorNote: text });
 }
 
+/** Remove an author note by its subdocument _id (not array index — avoids race conditions) */
 export async function removeAuthorNote(
   novelId: string,
-  index: number,
+  noteId: string,
 ): Promise<NovelData> {
-  return updateNovel(novelId, { removeAuthorNoteIndex: index });
+  return updateNovel(novelId, { removeAuthorNoteId: noteId });
 }
 
 // ─── Editor bootstrap (single batch request) ───────────────────────
@@ -242,7 +239,7 @@ export interface EditorInitData {
  * Replaces the 3 sequential calls that slowed down editor init.
  */
 export async function fetchEditorData(novelId: string): Promise<EditorInitData> {
-  return apiFetch<EditorInitData>(`/api/novels/${novelId}/editor-data`);
+  return apiFetch<EditorInitData>(`/api/editor/${novelId}`);
 }
 
 // ─── Public reader endpoints (no auth required) ─────────────────────
@@ -292,14 +289,14 @@ export async function fetchPublicNovel(novelId: string): Promise<PublicNovel> {
 }
 
 export async function fetchPublicChapters(novelId: string): Promise<PublicChapterSummary[]> {
-  return apiFetch<PublicChapterSummary[]>(`/api/public/novels/${novelId}/chapters`);
+  return apiFetch<PublicChapterSummary[]>(`/api/public/chapters?novelId=${novelId}`);
 }
 
 export async function fetchPublicChapter(
   novelId: string,
   chapterId: string,
 ): Promise<PublicChapter> {
-  const data = await apiFetch<PublicChapter>(`/api/public/novels/${novelId}/chapters/${chapterId}`);
+  const data = await apiFetch<PublicChapter>(`/api/public/chapters/${chapterId}?novelId=${novelId}`);
 
   // Decode base64-obfuscated content from server
   if (data.contentEncoding === 'base64' && typeof data.content === 'string') {

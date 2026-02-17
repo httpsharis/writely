@@ -11,6 +11,7 @@ export interface IProjectStats {
 }
 
 export interface ICharacter {
+    _id?: string;  // Mongoose subdocument _id (auto-generated)
     name: string;
     role: CharacterRole;
     description?: string;
@@ -18,6 +19,7 @@ export interface ICharacter {
 }
 
 export interface IAuthorNote {
+    _id?: string;  // Mongoose subdocument _id (auto-generated)
     text: string;
     createdAt: Date;
 }
@@ -53,7 +55,9 @@ export interface UpdateProjectInput {
     status?: ProjectStatus;
     stats?: Partial<IProjectStats>;
     addCharacter?: Omit<ICharacter, 'avatar'>;
-    removeCharacterIndex?: number;
+    /** Subdocument _id of the character to remove (safe, index-independent) */
+    removeCharacterId?: string;
     addAuthorNote?: string;
-    removeAuthorNoteIndex?: number;
+    /** Subdocument _id of the author note to remove (safe, index-independent) */
+    removeAuthorNoteId?: string;
 }

@@ -1,5 +1,5 @@
 /**
- * /api/novels/[id]/editor-data — Bootstrap the editor in one request.
+ * /api/editor/[novelId] — Bootstrap the editor in one request.
  * Returns: novel metadata + chapter list + first chapter content (decrypted).
  * Saves 3 round trips on initial load.
  */
@@ -14,14 +14,15 @@ import {
     serverErrorResponse,
     noCacheJson,
 } from '@/lib/api-helpers';
-import type { RouteParams } from '@/types/api';
 
-export async function GET(_req: Request, { params }: RouteParams) {
+type Params = { params: Promise<{ novelId: string }> };
+
+export async function GET(_req: Request, { params }: Params) {
     try {
         const email = await getAuthenticatedEmail();
         if (!email) return unauthorizedResponse();
 
-        const { id: novelId } = await params;
+        const { novelId } = await params;
 
         // Fetch full project (the editor needs all fields)
         const project = await getOwnedProject(novelId, email);
@@ -49,7 +50,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
         return noCacheJson({ novel: project, chapters, firstChapter });
     } catch (error) {
-        console.error('[API] GET /api/novels/[id]/editor-data error:', error);
+        console.error('[API] GET /api/editor/[novelId] error:', error);
         return serverErrorResponse('Failed to fetch editor data');
     }
 }

@@ -1,12 +1,13 @@
-// Define the specific types of errors our app handles
+/** Error types that services can throw — mapped to HTTP status in api-helpers. */
 export type ErrorType = 'NOT_FOUND' | 'FORBIDDEN' | 'BAD_REQUEST' | 'UNAUTHORIZED' | 'INTERNAL';
 
+/** Thrown by service functions, caught by route handlers. */
 export class ServiceError extends Error {
-  type: ErrorType;
+    type: ErrorType;
 
-  constructor(message: string, type: ErrorType) {
-    super(message);
-    this.name = 'ServiceError'; // Specify that the error is in service 
-    this.type = type;
-  }
+    constructor(message: string, type: ErrorType) {
+        super(message);
+        this.name = 'ServiceError';
+        this.type = type;
+    }
 }

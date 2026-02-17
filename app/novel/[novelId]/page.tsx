@@ -67,7 +67,7 @@ export default function NovelDetailsPage() {
   const [creatingChapter, setCreatingChapter] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [addingNote, setAddingNote] = useState(false);
-  const [deleteNoteIndex, setDeleteNoteIndex] = useState<number | null>(null);
+  const [deleteNoteIndex, setDeleteNoteIndex] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -172,8 +172,8 @@ export default function NovelDetailsPage() {
     }
   }
 
-  async function handleRemoveNote(index: number) {
-    const updated = await removeAuthorNote(novelId, index);
+  async function handleRemoveNote(noteId: string) {
+    const updated = await removeAuthorNote(novelId, noteId);
     setNovel(updated);
     setDeleteNoteIndex(null);
   }
@@ -558,16 +558,15 @@ export default function NovelDetailsPage() {
           ) : (
             <div className="space-y-3">
               {[...novel.authorNotes].reverse().map((note, reversedIdx) => {
-                const realIndex = novel.authorNotes!.length - 1 - reversedIdx;
                 return (
                   <div
-                    key={reversedIdx}
+                    key={note._id ?? reversedIdx}
                     className="group border-[3px] border-black bg-white p-4 transition-all hover:shadow-[3px_3px_0px_black]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <p className="whitespace-pre-wrap text-sm leading-relaxed">{note.text}</p>
                       <button
-                        onClick={() => setDeleteNoteIndex(realIndex)}
+                        onClick={() => note._id && setDeleteNoteIndex(note._id)}
                         title="Delete note"
                         className="shrink-0 cursor-pointer text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger max-md:opacity-100"
                       >
