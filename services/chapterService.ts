@@ -5,7 +5,7 @@
  * encryption on write and decryption on read so callers never deal with it.
  */
 
-import mongoose from 'mongoose';
+import { Types } from 'mongoose';
 import Chapter from '@/models/Chapter';
 import Project from '@/models/Project';
 import connectDB from '@/lib/db';
@@ -27,7 +27,10 @@ function toDecryptedObject(chapter: InstanceType<typeof Chapter>) {
 }
 
 /** Finds a chapter by ID and verifies the caller owns it. */
-async function getOwnedChapter(chapterId: string, userEmail: string) {
+async function getOwnedChapter(chapterId: string, userEmail: string): Promise<{
+    chapter: InstanceType<typeof Chapter>;
+    projectId: Types.ObjectId;
+}> {
     await connectDB();
 
     const chapter = await Chapter.findById(chapterId);
@@ -41,7 +44,7 @@ async function getOwnedChapter(chapterId: string, userEmail: string) {
 }
 
 /** Recalculates total word count across all chapters in a project. */
-async function refreshProjectWordCount(projectId: mongoose.Types.ObjectId) {
+async function refreshProjectWordCount(projectId: Types.ObjectId) {
     const result = await Chapter.aggregate([
         { $match: { projectId } },
         { $group: { _id: null, total: { $sum: '$wordCount' } } },
@@ -96,7 +99,7 @@ export async function updateChapter(id: string, email: string, data: UpdateChapt
     }
 
     await chapter.save();
-    await refreshProjectWordCount(projectId as mongoose.Types.ObjectId);
+    await refreshProjectWordCount(projectId);
     return toDecryptedObject(chapter);
 }
 
@@ -104,7 +107,7 @@ export async function updateChapter(id: string, email: string, data: UpdateChapt
 export async function deleteChapter(id: string, email: string) {
     const { projectId } = await getOwnedChapter(id, email);
     await Chapter.findByIdAndDelete(id);
-    await refreshProjectWordCount(projectId as mongoose.Types.ObjectId);
+    await refreshProjectWordCount(projectId);
     return true;
 }
 
@@ -143,7 +146,7 @@ export async function removeComment(id: string, email: string, commentId: string
     const { chapter } = await getOwnedChapter(id, email);
 
     chapter.writerComments = chapter.writerComments.filter(
-        (c: { _id?: { toString(): string } }) => c._id?.toString() !== commentId,
+        (c: IWriterComment) => c._id?.toString() !== commentId,
     );
 
     await chapter.save();
@@ -154,7 +157,7 @@ export async function toggleCommentResolved(id: string, email: string, commentId
     const { chapter } = await getOwnedChapter(id, email);
 
     const comment = chapter.writerComments.find(
-        (c: { _id?: { toString(): string } }) => c._id?.toString() === commentId,
+        (c: IWriterComment) => c._id?.toString() === commentId,
     );
     if (!comment) throw new ServiceError('Comment not found', 'NOT_FOUND');
 
