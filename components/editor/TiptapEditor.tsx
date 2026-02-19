@@ -1,14 +1,19 @@
 'use client';
 
-import { useRef, useCallback, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, forwardRef, useEffect, useRef, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+
 import EditorToolbar from './EditorToolbar';
-import { toast } from 'sonner';
+import { useEditorAutoSave } from '@/hooks/useEditorAutoSave';
+import { useChapterSync } from '@/hooks/useChapterSync';
+
 import type { ChapterFull } from '@/lib/api-client';
 import type { UpdateChapterInput } from '@/types/chapter';
 import type { SaveStatus } from '@/hooks/useEditor';
+
+// ─── Public types ───────────────────────────────────────────────────
 
 export interface EditorSelection {
   from: number;
@@ -20,34 +25,37 @@ export interface TiptapEditorHandle {
   getSelection: () => EditorSelection | null;
 }
 
+// ─── Props ──────────────────────────────────────────────────────────
+
 interface Props {
   chapter: ChapterFull | null;
   onAutoSave: (data: UpdateChapterInput) => Promise<void>;
   saveStatus: SaveStatus;
 }
 
-const AUTOSAVE_MS = 1500;
 const DEFAULT_FONT_SIZE = 14;
+
+// ─── Component ──────────────────────────────────────────────────────
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor(
   { chapter, onAutoSave, saveStatus },
   ref,
 ) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevChapterIdRef = useRef<string | null>(null);
-  const pendingDataRef = useRef<UpdateChapterInput | null>(null);
-
-  const [title, setTitle] = useState('');
-  const [trackedId, setTrackedId] = useState<string | undefined>(undefined);
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
 
-  const currentId = chapter?._id;
-  if (currentId !== trackedId) {
-    setTrackedId(currentId);
-    setTitle(chapter?.title ?? '');
-  }
+  // Ref that always points at the latest editor instance so the
+  // auto-save hook can grab a content snapshot without needing
+  // `editor` in its closure (avoids the "used-before-declared" issue).
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
 
-  // Tiptap editor
+  // 1. Auto-save (debounced) — the content getter reads from the ref.
+  const getLatestContent = useCallback(
+    () => editorRef.current?.getJSON(),
+    [],
+  );
+  const { scheduleSave } = useEditorAutoSave(onAutoSave, saveStatus, getLatestContent);
+
+  // 2. Tiptap editor instance
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -58,111 +66,29 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
     onUpdate: ({ editor: ed }) => scheduleSave({ content: ed.getJSON() }),
   });
 
-  // Expose selection getter via ref
-  useImperativeHandle(ref, () => ({
-    getSelection(): EditorSelection | null {
-      if (!editor) return null;
-      const { from, to } = editor.state.selection;
-      if (from === to) return null; // no selection
-      const quotedText = editor.state.doc.textBetween(from, to, ' ');
-      return { from, to, quotedText };
-    },
-  }), [editor]);
+  // Keep the ref in sync — wrapped in useEffect to satisfy React compiler.
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
-  // Flush any pending save immediately (called on beforeunload / visibilitychange)
-  const flushSave = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (pendingDataRef.current) {
-      const data = pendingDataRef.current;
-      pendingDataRef.current = null;
-      onAutoSave(data);
-    }
-  }, [onAutoSave]);
+  // 3. Sync incoming DB data → local state
+  const { title, setTitle } = useChapterSync(chapter, editor);
 
-  // Debounced auto-save
-  const scheduleSave = useCallback(
-    (data: UpdateChapterInput) => {
-      pendingDataRef.current = data;
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        pendingDataRef.current = null;
-        onAutoSave(data);
-      }, AUTOSAVE_MS);
-    },
-    [onAutoSave],
+  // 4. Expose selection info to parent components
+  useImperativeHandle(
+    ref,
+    () => ({
+      getSelection(): EditorSelection | null {
+        if (!editor) return null;
+        const { from, to } = editor.state.selection;
+        if (from === to) return null;
+        return { from, to, quotedText: editor.state.doc.textBetween(from, to, ' ') };
+      },
+    }),
+    [editor],
   );
 
-  const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setTitle(val);
-      scheduleSave({ title: val });
-    },
-    [scheduleSave],
-  );
-
-  // Load chapter content into editor when chapter changes
-  useEffect(() => {
-    if (!chapter || !editor) return;
-    if (prevChapterIdRef.current === chapter._id) return;
-    prevChapterIdRef.current = chapter._id;
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    if (chapter.content && typeof chapter.content === 'object') {
-      editor.commands.setContent(chapter.content);
-    } else if (typeof chapter.content === 'string' && chapter.content.length > 0) {
-      editor.commands.setContent(chapter.content);
-    } else {
-      editor.commands.clearContent();
-    }
-  }, [chapter, editor]);
-
-  // Flush pending save on page unload / tab switch, and cleanup timer
-  useEffect(() => {
-    const handleBeforeUnload = () => flushSave();
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') flushSave();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      flushSave();
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [flushSave]);
-
-  // Ctrl+S manual save
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (pendingDataRef.current) {
-          flushSave();
-        } else if (editor && chapter) {
-          onAutoSave({ content: editor.getJSON() });
-        }
-        toast.success('Saved');
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editor, chapter, flushSave, onAutoSave]);
-
-  // Show toast on save error
-  useEffect(() => {
-    if (saveStatus === 'error') {
-      toast.error('Save failed — check your connection');
-    }
-  }, [saveStatus]);
-
-  // Empty state
+  // ── Empty state ───────────────────────────────────────────────────
   if (!chapter) {
     return (
       <div className="flex flex-1 items-center justify-center overflow-y-auto p-10 bg-grid">
@@ -173,20 +99,27 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
     );
   }
 
+  // ── Active editor ─────────────────────────────────────────────────
   return (
     <>
       <EditorToolbar editor={editor} fontSize={fontSize} onFontSizeChange={setFontSize} />
 
       <div className="flex flex-1 justify-center overflow-y-auto bg-white p-0">
         <div className="w-full max-w-195 bg-white p-6 md:px-12.5 md:py-15">
+          {/* Chapter title */}
           <input
             type="text"
             value={title}
-            onChange={handleTitleChange}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              scheduleSave({ title: e.target.value });
+            }}
             placeholder="CHAPTER TITLE"
             spellCheck={false}
             className="mb-6 w-full border-b-[3px] border-black bg-transparent pb-3 font-sans text-xl font-extrabold uppercase outline-none placeholder:italic placeholder:text-gray-300 sm:text-2xl md:text-[28px]"
           />
+
+          {/* Rich-text body */}
           <div style={{ fontSize: `${fontSize}px` }}>
             <EditorContent editor={editor} />
           </div>

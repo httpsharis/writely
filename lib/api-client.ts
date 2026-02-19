@@ -22,9 +22,12 @@ export interface ChapterSummary {
 }
 
 /** Full chapter with content (from editor endpoint) */
-export interface ChapterFull extends Omit<IChapter, '_id' | 'projectId'> {
+export interface ChapterFull extends Omit<IChapter, '_id' | 'projectId' | 'writerComments' | 'createdAt' | 'updatedAt'> {
   _id: string;
   projectId: string;
+  writerComments: WriterComment[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Novel with string IDs (from API, not Mongoose) */

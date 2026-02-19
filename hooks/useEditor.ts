@@ -54,6 +54,8 @@ export function useEditor(novelId: string) {
   const chapterCache = useRef<Map<string, ChapterFull>>(new Map());
   const novelIdRef = useRef(novelId);
   novelIdRef.current = novelId;
+  const activeChapterIdRef = useRef<string | null>(null);
+  activeChapterIdRef.current = state.activeChapterId;
 
   // ── Load everything in ONE request ────────────────────────────────
   useEffect(() => {
@@ -137,12 +139,13 @@ export function useEditor(novelId: string) {
   // ── Auto-save chapter (called by editor on debounce) ──────────────
   const autoSave = useCallback(
     async (data: UpdateChapterInput) => {
-      if (!state.activeChapterId) return;
+      const chapterId = activeChapterIdRef.current;
+      if (!chapterId) return;
 
       try {
         setState((s) => ({ ...s, saveStatus: 'saving' }));
 
-        const updated = await saveChapter(novelIdRef.current, state.activeChapterId, data);
+        const updated = await saveChapter(novelIdRef.current, chapterId, data);
 
         // Update cache with saved version
         chapterCache.current.set(updated._id, updated);
@@ -154,7 +157,7 @@ export function useEditor(novelId: string) {
                   ...ch,
                   title: updated.title,
                   wordCount: updated.wordCount,
-                  updatedAt: updated.updatedAt as unknown as string,
+                  updatedAt: updated.updatedAt,
                 }
               : ch
           );
@@ -182,7 +185,7 @@ export function useEditor(novelId: string) {
         setState((s) => ({ ...s, saveStatus: 'error' }));
       }
     },
-    [state.activeChapterId],
+    [],
   );
 
   // ── Add a new chapter (optimistic) ────────────────────────────────
@@ -335,8 +338,7 @@ export function useEditor(novelId: string) {
           const reverted = {
             ...s.activeChapter,
             writerComments: (s.activeChapter.writerComments ?? []).filter(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (c: any) => c._id !== tempId,
+              (c) => c._id !== tempId,
             ),
           };
           return {
@@ -364,8 +366,7 @@ export function useEditor(novelId: string) {
         const updated = {
           ...s.activeChapter,
           writerComments: (s.activeChapter.writerComments ?? []).filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (c: any) => c._id !== commentId,
+            (c) => c._id !== commentId,
           ),
         };
         return { ...s, activeChapter: updated as ChapterFull };
@@ -404,8 +405,7 @@ export function useEditor(novelId: string) {
         const updated = {
           ...s.activeChapter,
           writerComments: (s.activeChapter.writerComments ?? []).map(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (c: any) =>
+            (c) =>
               c._id === commentId ? { ...c, isResolved: !c.isResolved } : c,
           ),
         };
