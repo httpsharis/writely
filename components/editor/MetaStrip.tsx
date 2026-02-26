@@ -32,7 +32,7 @@ export default function MetaStrip({
   onToggleLeft, onToggleRight, onOpenPublish, onRenameNovel,
 }: Props) {
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2 border-b-[3px] border-black bg-white px-2 font-mono text-[10px] sm:gap-3 sm:px-3 md:gap-5 md:px-4">
+    <div className="sticky top-0 z-50 flex h-11 shrink-0 items-center gap-2 border-b-[3px] border-black bg-white px-2 font-mono text-[10px] sm:gap-3 sm:px-3 md:gap-5 md:px-4">
       
       <MobileLeftToggle onClick={onToggleLeft} />
 

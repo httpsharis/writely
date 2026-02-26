@@ -36,13 +36,13 @@ body {
   outline: none;
   min-height: 400px;
   font-family: var(--font-serif);
-  font-size: inherit;
+  font-size: 14px;
   line-height: 1.8;
   color: #333;
 }
 
 .tiptap.ProseMirror p {
-  margin-bottom: 20px;
+  margin-bottom: 1em;
 }
 
 .tiptap.ProseMirror h1 {
@@ -141,6 +141,7 @@ body {
 
 .reader-prose {
   font-family: var(--font-serif);
+  font-size: 14px;
   line-height: 1.85;
   color: #333;
 }
