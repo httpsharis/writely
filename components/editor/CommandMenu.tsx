@@ -125,7 +125,7 @@ const CommandMenu = forwardRef<CommandMenuRef, Props>(
         {[...grouped.entries()].map(([category, groupItems]) => (
           <div key={category}>
             {/* ── Category header ── */}
-            <div className="sticky top-0 z-10 border-b-[2px] border-black bg-gray-100 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
+            <div className="sticky top-0 z-10 border-b-2 border-black bg-gray-100 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
               {category}
             </div>
 
@@ -147,7 +147,7 @@ const CommandMenu = forwardRef<CommandMenuRef, Props>(
                   }`}
                 >
                   {/* Icon */}
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border-[2px] border-black bg-white">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 border-black bg-white">
                     {item.icon}
                   </span>
 

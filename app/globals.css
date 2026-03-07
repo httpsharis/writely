@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* ─── Dark mode (class-based) ────────────────────────────────────── */
+
+@custom-variant dark (&:is(.dark, .dark *));
+
 /* ─── Design Tokens ──────────────────────────────────────────────── */
 
 @theme inline {
@@ -20,6 +24,11 @@ body {
   color: #171717;
 }
 
+html.dark body {
+  color: #e5e5e5;
+  background-color: #0a0a0a;
+}
+
 /* ─── Engineering Grid Background ────────────────────────────────── */
 
 .bg-grid {
@@ -28,6 +37,13 @@ body {
     linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
   background-size: 20px 20px;
+}
+
+html.dark .bg-grid {
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
 }
 
 /* ─── Tiptap Prose Styles ────────────────────────────────────────── */
