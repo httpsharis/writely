@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard,
   BookOpen,
+  StickyNote,
   Plus,
   LogOut,
   Sun,
@@ -15,11 +16,13 @@ import type { SidebarProps, NavItem } from '@/types/dashboard';
 const NAV_ITEMS: Omit<NavItem, 'active' | 'icon'>[] = [
   { label: 'Dashboard', href: '/' },
   { label: 'Novels', href: '/novels' },
+  { label: 'Notes', href: '/notes' },
 ];
 
 const NAV_ICONS: Record<string, React.ReactNode> = {
   Dashboard: <LayoutDashboard size={18} />,
   Novels: <BookOpen size={18} />,
+  Notes: <StickyNote size={18} />,
 };
 
 export function Sidebar({
@@ -33,7 +36,7 @@ export function Sidebar({
   creating,
 }: SidebarProps) {
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-56 flex-col border-r-2 border-black bg-white dark:border-neutral-700 dark:bg-neutral-950 md:flex">
+    <aside className="fixed left-0 top-0 z-40 hidden h-dvh w-56 flex-col border-r-2 border-black bg-white dark:border-neutral-700 dark:bg-neutral-900 md:flex">
       {/* Logo */}
       <div className="flex h-16 items-center border-b-2 border-black px-6 dark:border-neutral-700">
         <span className="font-mono text-base font-extrabold tracking-[3px] dark:text-white">

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboard, BookOpen, Plus } from 'lucide-react';
+import { LayoutDashboard, BookOpen, StickyNote, Plus } from 'lucide-react';
 import type { MobileNavProps } from '@/types/dashboard';
 
 interface MobileNavItem {
@@ -14,12 +14,13 @@ interface MobileNavItem {
 export function MobileNav({ activeRoute, onCreateNovel, creating }: MobileNavProps) {
   const items: MobileNavItem[] = [
     { label: 'Home', icon: <LayoutDashboard size={20} />, href: '/' },
+    { label: 'Notes', icon: <StickyNote size={20} />, href: '/notes' },
     { label: 'Create', icon: <Plus size={22} />, href: '#create', isAction: true },
     { label: 'Novels', icon: <BookOpen size={20} />, href: '/novels' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t-2 border-black bg-white dark:border-neutral-700 dark:bg-neutral-950 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t-2 border-black bg-white dark:border-neutral-700 dark:bg-neutral-900 md:hidden">
       {items.map((item) => {
         if (item.isAction) {
           return (

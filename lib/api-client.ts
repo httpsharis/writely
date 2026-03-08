@@ -47,3 +47,6 @@ export { fetchEditorData } from './api/editor';
 
 export type { PublicNovel, PublicChapterSummary, PublicChapter } from './api/public';
 export { fetchPublicNovel, fetchPublicChapters, fetchPublicChapter } from './api/public';
+
+export type { NoteData } from './api/notes';
+export { fetchNotes, createNote, updateNote, deleteNote } from './api/notes';

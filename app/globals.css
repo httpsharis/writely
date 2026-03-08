@@ -25,8 +25,8 @@ body {
 }
 
 html.dark body {
-  color: #e5e5e5;
-  background-color: #0a0a0a;
+  color: #d4d4d4;
+  background-color: #141414;
 }
 
 /* ─── Engineering Grid Background ────────────────────────────────── */
@@ -40,7 +40,7 @@ html.dark body {
 }
 
 html.dark .bg-grid {
-  background-color: #0a0a0a;
+  background-color: #141414;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
@@ -55,6 +55,10 @@ html.dark .bg-grid {
   font-size: 14px;
   line-height: 1.8;
   color: #333;
+}
+
+html.dark .tiptap.ProseMirror {
+  color: #d0d0d0;
 }
 
 .tiptap.ProseMirror p {
@@ -90,6 +94,11 @@ html.dark .bg-grid {
   color: #555;
 }
 
+html.dark .tiptap.ProseMirror blockquote {
+  border-left-color: #555;
+  color: #aaa;
+}
+
 .tiptap.ProseMirror ul,
 .tiptap.ProseMirror ol {
   padding-left: 24px;
@@ -106,12 +115,22 @@ html.dark .bg-grid {
   margin: 32px 0;
 }
 
+html.dark .tiptap.ProseMirror hr {
+  border-top-color: #333;
+}
+
 .tiptap.ProseMirror code {
   font-family: var(--font-mono);
   background: #f5f5f5;
   padding: 2px 6px;
   border: 1px solid #ddd;
   font-size: 0.9em;
+}
+
+html.dark .tiptap.ProseMirror code {
+  background: #1e1e1e;
+  border-color: #444;
+  color: #e0e0e0;
 }
 
 .tiptap.ProseMirror pre {
@@ -126,6 +145,10 @@ html.dark .bg-grid {
   line-height: 1.5;
 }
 
+html.dark .tiptap.ProseMirror pre {
+  border-color: #444;
+}
+
 /* Tiptap placeholder */
 .tiptap.ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
@@ -134,6 +157,10 @@ html.dark .bg-grid {
   float: left;
   pointer-events: none;
   height: 0;
+}
+
+html.dark .tiptap.ProseMirror p.is-editor-empty:first-child::before {
+  color: #555;
 }
 
 /* ─── Responsive Tiptap ─────────────────────────────────────────── */
@@ -173,6 +200,12 @@ html.dark .bg-grid {
 .reader-prose hr      { border: none; border-top: 2px solid #eee; margin: 32px 0; }
 .reader-prose code    { font-family: var(--font-mono); background: #f5f5f5; padding: 2px 6px; border: 1px solid #ddd; font-size: 0.9em; }
 .reader-prose pre     { font-family: var(--font-mono); background: #1a1a1a; color: #e0e0e0; padding: 16px 20px; border: 2px solid black; margin: 20px 0; overflow-x: auto; font-size: 14px; line-height: 1.5; }
+
+html.dark .reader-prose { color: #d0d0d0; }
+html.dark .reader-prose blockquote { border-left-color: #555; color: #aaa; }
+html.dark .reader-prose hr { border-top-color: #333; }
+html.dark .reader-prose code { background: #1e1e1e; border-color: #444; color: #e0e0e0; }
+html.dark .reader-prose pre { border-color: #444; }
 
 /* ─── Content Protection ─────────────────────────────────────────── */
 
@@ -242,4 +275,60 @@ html.dark .bg-grid {
 
 .reading-progress-bar {
   transition: width 150ms ease-out;
+}
+
+/* ─── Note Editor Prose ──────────────────────────────────────────── */
+
+.note-editor-prose.ProseMirror {
+  outline: none;
+  min-height: 160px;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+}
+
+html.dark .note-editor-prose.ProseMirror {
+  color: #F3F4F6;
+}
+
+.note-editor-prose.ProseMirror p {
+  margin-bottom: 0.8em;
+}
+
+.note-editor-prose.ProseMirror h1 {
+  font-family: var(--font-sans);
+  font-size: 1.4em;
+  font-weight: 800;
+  margin: 20px 0 10px;
+}
+
+.note-editor-prose.ProseMirror h2 {
+  font-family: var(--font-sans);
+  font-size: 1.15em;
+  font-weight: 700;
+  margin: 16px 0 8px;
+}
+
+.note-editor-prose.ProseMirror ul,
+.note-editor-prose.ProseMirror ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.note-editor-prose.ProseMirror li {
+  margin-bottom: 4px;
+}
+
+.note-editor-prose.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  font-style: italic;
+  float: left;
+  pointer-events: none;
+  height: 0;
+}
+
+html.dark .note-editor-prose.ProseMirror p.is-editor-empty:first-child::before {
+  color: #555;
 }

@@ -17,7 +17,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MobileNav } from '@/components/dashboard/MobileNav';
 import { NovelGrid } from '@/components/dashboard/NovelGrid';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, Sun, Moon } from 'lucide-react';
 
 // ─── Dark-mode helpers ──────────────────────────────────────────────
 
@@ -101,14 +101,14 @@ export default function NovelsPage() {
 
   if (status === 'loading' || status === 'unauthenticated') {
     return (
-      <div className="flex h-dvh items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+      <div className="flex h-dvh items-center justify-center bg-neutral-50 dark:bg-neutral-900">
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
+    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900">
       <Sidebar
         userEmail={session?.user?.email ?? ''}
         userImage={session?.user?.image}
@@ -132,7 +132,7 @@ export default function NovelsPage() {
             onClick={toggleDarkMode}
             className="cursor-pointer p-1.5 text-neutral-500 dark:text-neutral-400"
           >
-            {darkMode ? '☀️' : '🌙'}
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </header>
 

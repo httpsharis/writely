@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, MessageSquare, Plus, Trash2, Check, X, Type } from 'lucide-react';
+import { Users, MessageSquare, StickyNote, Plus, Trash2, Check, X, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ICharacter } from '@/types/project';
 import type { WriterComment } from '@/types/chapter';
 import type { EditorSelection } from './TiptapEditor';
+import { EditorNotesTab } from './EditorNotesTab';
 
-export type ToolsTab = 'characters' | 'comments';
+export type ToolsTab = 'characters' | 'comments' | 'notes';
 
 interface Props {
   characters: ICharacter[];
@@ -18,6 +19,8 @@ interface Props {
   onAddComment: (comment: { text: string; anchor: { from: number; to: number; quotedText: string } }) => void;
   onRemoveComment: (commentId: string) => void;
   onResolveComment: (commentId: string) => void;
+  novelId?: string;
+  novelTitle?: string;
   activeTab?: ToolsTab;
   onTabChange?: (tab: ToolsTab) => void;
   onClose?: () => void;
@@ -36,7 +39,7 @@ const ROLE_STYLES: Record<string, string> = {
 
 export default function ToolsPanel({
   characters, comments, getSelection, onAddCharacter, onRemoveCharacter,
-  onAddComment, onRemoveComment, onResolveComment, activeTab, onTabChange, onClose,
+  onAddComment, onRemoveComment, onResolveComment, novelId, novelTitle, activeTab, onTabChange, onClose,
 }: Props) {
   const [internalTab, setInternalTab] = useState<ToolsTab>('characters');
   const tab = activeTab ?? internalTab;
@@ -45,7 +48,7 @@ export default function ToolsPanel({
   const unresolvedCount = comments.filter((c) => !c.isResolved).length;
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden border-l-[3px] border-black bg-white">
+    <aside className="flex h-full flex-col overflow-hidden border-l-[3px] border-black bg-white dark:border-neutral-700 dark:bg-neutral-900">
       
       <TabBar 
         tab={tab} 
@@ -73,6 +76,10 @@ export default function ToolsPanel({
             onResolve={onResolveComment} 
           />
         )}
+
+        {tab === 'notes' && novelId && novelTitle && (
+          <EditorNotesTab novelId={novelId} novelTitle={novelTitle} />
+        )}
       </div>
 
     </aside>
@@ -87,25 +94,25 @@ function TabBar({
   tab: ToolsTab; setTab: (t: ToolsTab) => void; charCount: number; unresolvedCount: number; onClose?: () => void;
 }) {
   return (
-    <div className="flex shrink-0 border-b-[3px] border-black">
-      {(['characters', 'comments'] as ToolsTab[]).map((t) => (
+    <div className="flex shrink-0 border-b-[3px] border-black dark:border-neutral-700">
+      {(['characters', 'comments', 'notes'] as ToolsTab[]).map((t) => (
         <button
           key={t} onClick={() => setTab(t)}
           className={cn(
-            'flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-r border-black px-2 py-3 text-center font-mono text-[10px] font-bold tracking-[0.5px] transition-colors',
-            tab === t ? 'bg-secondary text-white' : 'bg-gray-100 hover:bg-gray-200',
+            'flex flex-1 cursor-pointer items-center justify-center gap-1.5 border-r border-black px-2 py-3 text-center font-mono text-[10px] font-bold tracking-[0.5px] transition-colors dark:border-neutral-700',
+            tab === t ? 'bg-secondary text-white' : 'bg-gray-100 hover:bg-gray-200 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white',
           )}
         >
           {t === 'characters' ? (
             <>
               <Users size={11} /> CHARS
               {charCount > 0 && (
-                <span className={cn('ml-0.5 rounded-full px-1.5 py-px text-[8px] font-bold', tab === t ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600')}>
+                <span className={cn('ml-0.5 rounded-full px-1.5 py-px text-[8px] font-bold', tab === t ? 'bg-white/30 text-white' : 'bg-gray-300 text-gray-600 dark:bg-neutral-700 dark:text-neutral-300')}>
                   {charCount}
                 </span>
               )}
             </>
-          ) : (
+          ) : t === 'comments' ? (
             <>
               <MessageSquare size={11} /> NOTES
               {unresolvedCount > 0 && (
@@ -114,13 +121,17 @@ function TabBar({
                 </span>
               )}
             </>
+          ) : (
+            <>
+              <StickyNote size={11} /> IDEAS
+            </>
           )}
         </button>
       ))}
       {onClose && (
         <button
           onClick={onClose} aria-label="Close tools"
-          className="flex cursor-pointer items-center justify-center px-3 bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-black lg:hidden"
+          className="flex cursor-pointer items-center justify-center px-3 bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-black dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white lg:hidden"
         >
           <X size={14} />
         </button>
@@ -159,9 +170,9 @@ function CharactersTab({
       )}
 
       {characters.map((char, i) => (
-        <div key={char._id ?? i} className="group mb-2 border-2 border-black bg-white p-2.5 shadow-[2px_2px_0px_#eee]">
+        <div key={char._id ?? i} className="group mb-2 border-2 border-black bg-white p-2.5 shadow-[2px_2px_0px_#eee] dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-none">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] font-extrabold uppercase tracking-[0.3px]">{char.name}</span>
+            <span className="text-[12px] font-extrabold uppercase tracking-[0.3px] dark:text-white">{char.name}</span>
             <div className="flex items-center gap-1.5">
               <span className={cn('px-1.5 py-px font-mono text-[8px] font-bold uppercase tracking-wider', ROLE_STYLES[char.role] || ROLE_STYLES.Minor)}>
                 {char.role}
@@ -174,38 +185,38 @@ function CharactersTab({
               </button>
             </div>
           </div>
-          {char.description && <p className="mt-1 text-[11px] leading-relaxed text-gray-500">{char.description}</p>}
+          {char.description && <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-neutral-400">{char.description}</p>}
         </div>
       ))}
 
       {showForm ? (
-        <div className="mt-2 space-y-2 border-2 border-dashed border-gray-400 p-3">
+        <div className="mt-2 space-y-2 border-2 border-dashed border-gray-400 p-3 dark:border-neutral-600">
           <input
             type="text" value={name} onChange={(e) => setName(e.target.value)}
             placeholder="Character name" autoFocus
-            className="w-full border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400"
+            className="w-full border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-600"
           />
           <select
             value={role} onChange={(e) => setRole(e.target.value)}
-            className="w-full border-2 border-black bg-white px-2 py-1.5 font-mono text-[11px] outline-none"
+            className="w-full border-2 border-black bg-white px-2 py-1.5 font-mono text-[11px] outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
           >
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
           <textarea
             value={desc} onChange={(e) => setDesc(e.target.value)}
             placeholder="Description (optional)" rows={2}
-            className="w-full resize-none border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400"
+            className="w-full resize-none border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-600"
           />
           <div className="flex gap-2">
             <button
               onClick={handleSubmit} disabled={!name.trim()}
-              className="flex-1 cursor-pointer border-2 border-black bg-black py-1.5 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex-1 cursor-pointer border-2 border-black bg-black py-1.5 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               ADD
             </button>
             <button
               onClick={() => { setShowForm(false); setName(''); setDesc(''); }}
-              className="cursor-pointer border-2 border-black bg-white px-3 py-1.5 font-mono text-[10px] font-bold transition-colors hover:bg-gray-100"
+              className="cursor-pointer border-2 border-black bg-white px-3 py-1.5 font-mono text-[10px] font-bold transition-colors hover:bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
             >
               <X size={12} />
             </button>
@@ -214,7 +225,7 @@ function CharactersTab({
       ) : (
         <button
           onClick={() => setShowForm(true)}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1 border-2 border-black bg-black px-2 py-2 font-mono text-[10px] font-bold tracking-wider text-white transition-colors hover:bg-white hover:text-black"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1 border-2 border-black bg-black px-2 py-2 font-mono text-[10px] font-bold tracking-wider text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
         >
           <Plus size={12} /> ADD CHARACTER
         </button>
@@ -260,13 +271,13 @@ function CommentsTab({
       )}
 
       {comments.map((c) => (
-        <div key={c._id} className={cn('group mb-2 border-2 border-black p-2.5', c.isResolved ? 'border-gray-300 bg-gray-50 opacity-60' : 'bg-white shadow-[2px_2px_0px_#eee]')}>
+        <div key={c._id} className={cn('group mb-2 border-2 p-2.5', c.isResolved ? 'border-gray-300 bg-gray-50 opacity-60 dark:border-neutral-700 dark:bg-neutral-900' : 'border-black bg-white shadow-[2px_2px_0px_#eee] dark:border-neutral-700 dark:bg-neutral-900 dark:shadow-none')}>
           {c.anchor.quotedText && (
             <div className="mb-1.5 border-l-2 border-secondary pl-2 font-serif text-[11px] italic text-gray-400">
               &ldquo;{c.anchor.quotedText.slice(0, 80)}{c.anchor.quotedText.length > 80 ? '...' : ''}&rdquo;
             </div>
           )}
-          <p className="text-[12px] leading-relaxed">{c.text}</p>
+          <p className="text-[12px] leading-relaxed dark:text-white">{c.text}</p>
           <div className="mt-2 flex items-center justify-between">
             <span className="font-mono text-[8px] uppercase tracking-wider opacity-40">{c.userName}</span>
             <div className="flex gap-1.5">
@@ -288,11 +299,11 @@ function CommentsTab({
       ))}
 
       {showForm ? (
-        <div className="mt-2 space-y-2 border-2 border-dashed border-gray-400 p-3">
+        <div className="mt-2 space-y-2 border-2 border-dashed border-gray-400 p-3 dark:border-neutral-600">
           {selection?.quotedText && (
-            <div className="flex items-start gap-1.5 border-l-2 border-secondary bg-gray-50 px-2 py-1.5">
+            <div className="flex items-start gap-1.5 border-l-2 border-secondary bg-gray-50 px-2 py-1.5 dark:bg-neutral-800">
               <Type size={10} className="mt-0.5 shrink-0 text-secondary" />
-              <span className="font-serif text-[10px] italic text-gray-500">
+              <span className="font-serif text-[10px] italic text-gray-500 dark:text-neutral-400">
                 &ldquo;{selection.quotedText.slice(0, 100)}{selection.quotedText.length > 100 ? '...' : ''}&rdquo;
               </span>
             </div>
@@ -300,18 +311,18 @@ function CommentsTab({
           <textarea
             value={text} onChange={(e) => setText(e.target.value)}
             placeholder="Write a note..." rows={3} autoFocus
-            className="w-full resize-none border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400"
+            className="w-full resize-none border-2 border-black px-2 py-1.5 font-mono text-[11px] outline-none placeholder:text-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder:text-neutral-600"
           />
           <div className="flex gap-2">
             <button
               onClick={handleSubmit} disabled={!text.trim()}
-              className="flex-1 cursor-pointer border-2 border-black bg-black py-1.5 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex-1 cursor-pointer border-2 border-black bg-black py-1.5 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
               ADD NOTE
             </button>
             <button
               onClick={() => { setShowForm(false); setText(''); setSelection(null); }}
-              className="cursor-pointer border-2 border-black bg-white px-3 py-1.5 font-mono text-[10px] font-bold transition-colors hover:bg-gray-100"
+              className="cursor-pointer border-2 border-black bg-white px-3 py-1.5 font-mono text-[10px] font-bold transition-colors hover:bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
             >
               <X size={12} />
             </button>
@@ -320,7 +331,7 @@ function CommentsTab({
       ) : (
         <button
           onClick={handleOpenForm}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1 border-2 border-black bg-black px-2 py-2 font-mono text-[10px] font-bold tracking-wider text-white transition-colors hover:bg-white hover:text-black"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1 border-2 border-black bg-black px-2 py-2 font-mono text-[10px] font-bold tracking-wider text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
         >
           <Plus size={12} /> ADD NOTE
         </button>

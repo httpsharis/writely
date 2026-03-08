@@ -9,7 +9,7 @@ export default function Home() {
 
   if (status === 'loading') {
     return (
-      <div className="flex h-dvh items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+      <div className="flex h-dvh items-center justify-center bg-neutral-50 dark:bg-neutral-900">
         <Spinner />
       </div>
     );

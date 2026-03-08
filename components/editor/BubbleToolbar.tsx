@@ -31,7 +31,7 @@ export default function BubbleToolbar({ editor }: Props) {
     <BubbleMenu
       editor={editor}
       options={{ placement: 'top', offset: 8 }}
-      className="flex items-center gap-px border-[3px] border-black bg-white p-1 shadow-[4px_4px_0px_black]"
+      className="flex items-center gap-px border-[3px] border-black bg-white p-1 shadow-[4px_4px_0px_black] dark:border-neutral-600 dark:bg-neutral-900 dark:shadow-[4px_4px_0px_#333]"
     >
       {groups.map((group, gi) => (
         <ButtonGroup key={gi} buttons={group} isLast={gi === groups.length - 1} />
@@ -47,7 +47,7 @@ function ButtonGroup({ buttons, isLast }: { buttons: FormatBtn[]; isLast: boolea
     <div
       className={cn(
         'flex items-center gap-px',
-        !isLast && 'border-r border-gray-200 pr-1 mr-1',
+        !isLast && 'border-r border-gray-200 pr-1 mr-1 dark:border-neutral-700',
       )}
     >
       {buttons.map((btn, i) => (
@@ -62,9 +62,9 @@ function ButtonGroup({ buttons, isLast }: { buttons: FormatBtn[]; isLast: boolea
           className={cn(
             'inline-flex cursor-pointer items-center justify-center',
             'h-7 w-7 rounded border-2 border-transparent',
-            'text-gray-600 transition-all',
-            'hover:border-gray-300 hover:bg-gray-100 hover:text-black',
-            btn.isActive() && 'border-black! bg-black text-white!',
+            'text-gray-600 transition-all dark:text-neutral-400',
+            'hover:border-gray-300 hover:bg-gray-100 hover:text-black dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-white',
+            btn.isActive() && 'border-black! bg-black text-white! dark:border-white! dark:bg-white dark:text-black!',
           )}
         >
           {btn.icon}

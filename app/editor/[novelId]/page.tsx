@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useRef, useCallback } from 'react';
+import { use, useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useEditor } from '@/hooks/useEditor';
 import Link from 'next/link';
@@ -27,6 +27,13 @@ export default function EditorPage({ params }: Props) {
   const [publishOpen, setPublishOpen] = useState(false);
   const [toolsTab, setToolsTab] = useState<ToolsTab>('characters');
   const editorRef = useRef<TiptapEditorHandle>(null);
+
+  // Apply persisted dark-mode class on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('writely-dark');
+    const prefersDark = stored !== null ? stored === '1' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.toggle('dark', prefersDark);
+  }, []);
 
   // Open right sidebar and switch to comments tab
   const handleToggleRight = useCallback(() => {
@@ -168,6 +175,8 @@ export default function EditorPage({ params }: Props) {
           activeTab={toolsTab}
           onTabChange={setToolsTab}
           onClose={() => setRightOpen(false)}
+          novelId={novelId}
+          novelTitle={novel?.title ?? ''}
         />
       </div>
 

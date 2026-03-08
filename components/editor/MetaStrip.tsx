@@ -32,13 +32,13 @@ export default function MetaStrip({
   onToggleLeft, onToggleRight, onOpenPublish, onRenameNovel,
 }: Props) {
   return (
-    <div className="sticky top-0 z-50 flex h-11 shrink-0 items-center gap-2 border-b-[3px] border-black bg-white px-2 font-mono text-[10px] sm:gap-3 sm:px-3 md:gap-5 md:px-4">
+    <div className="sticky top-0 z-50 flex h-11 shrink-0 items-center gap-2 border-b-[3px] border-black bg-white px-2 font-mono text-[10px] sm:gap-3 sm:px-3 md:gap-5 md:px-4 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300">
       
       <MobileLeftToggle onClick={onToggleLeft} />
 
       <Link
         href="/" title="Back to novels"
-        className="inline-flex items-center justify-center rounded border-2 border-transparent p-1 text-black transition-all hover:border-black hover:bg-gray-100"
+        className="inline-flex items-center justify-center rounded border-2 border-transparent p-1 text-black transition-all hover:border-black hover:bg-gray-100 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-800"
       >
         <ArrowLeft size={15} />
       </Link>
@@ -48,7 +48,7 @@ export default function MetaStrip({
         onRename={onRenameNovel} 
       />
 
-      <span className="hidden border border-gray-300 bg-gray-100 px-1.5 py-px text-[9px] uppercase tracking-[0.5px] md:inline">
+      <span className="hidden border border-gray-300 bg-gray-100 px-1.5 py-px text-[9px] uppercase tracking-[0.5px] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 md:inline">
         {novel?.status?.toUpperCase() || 'DRAFT'}
       </span>
 
@@ -114,7 +114,7 @@ function EditableTitle({ currentTitle, onRename }: { currentTitle?: string; onRe
   return (
     <button
       onClick={startEdit} title="Click to rename novel"
-      className="group flex max-w-30 cursor-pointer items-center gap-1 truncate border-none bg-transparent font-bold uppercase sm:max-w-45 md:max-w-62.5"
+      className="group flex max-w-30 cursor-pointer items-center gap-1 truncate border-none bg-transparent font-bold uppercase dark:text-white sm:max-w-45 md:max-w-62.5"
     >
       <span className="truncate">{currentTitle || '...'}</span>
       <Pencil size={9} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60" />
@@ -128,8 +128,8 @@ function PublishButton({ isPublished, onClick }: { isPublished: boolean; onClick
       onClick={onClick}
       title={isPublished ? 'Published — click to manage' : 'Publish novel'}
       className={cn(
-        'hidden cursor-pointer items-center gap-1 border-2 border-black px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all sm:inline-flex',
-        'hover:-translate-x-px hover:-translate-y-px hover:shadow-[2px_2px_0px_black]',
+        'hidden cursor-pointer items-center gap-1 border-2 border-black px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider transition-all sm:inline-flex dark:border-neutral-600',
+        'hover:-translate-x-px hover:-translate-y-px hover:shadow-[2px_2px_0px_black] dark:hover:shadow-[2px_2px_0px_#333]',
         isPublished ? 'bg-success' : 'bg-gray-100',
       )}
     >
@@ -152,7 +152,7 @@ function MobileLeftToggle({ onClick }: { onClick?: () => void }) {
   return (
     <button
       onClick={onClick} title="Chapters" aria-label="Toggle chapters"
-      className="inline-flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 transition-all hover:border-black hover:bg-gray-100 lg:hidden"
+      className="inline-flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 transition-all hover:border-black hover:bg-gray-100 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 lg:hidden"
     >
       <BookOpen size={15} />
     </button>
@@ -163,7 +163,7 @@ function MobileRightToggle({ onClick, commentCount }: { onClick?: () => void; co
   return (
     <button
       onClick={onClick} title="Tools" aria-label="Toggle tools"
-      className="relative inline-flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 transition-all hover:border-black hover:bg-gray-100 lg:hidden"
+      className="relative inline-flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 transition-all hover:border-black hover:bg-gray-100 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 lg:hidden"
     >
       <MessageSquare size={15} />
       {commentCount > 0 && (

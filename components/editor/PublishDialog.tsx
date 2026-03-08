@@ -49,7 +49,7 @@ export default function PublishDialog({
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-md border-[3px] border-black bg-white shadow-[6px_6px_0px_black]">
+      <div className="relative z-10 w-full max-w-md border-[3px] border-black bg-white shadow-[6px_6px_0px_black] dark:border-neutral-600 dark:bg-neutral-900 dark:shadow-[6px_6px_0px_#333]">
         <DialogHeader onClose={onClose} />
 
         <div className="p-5">
@@ -77,7 +77,7 @@ export default function PublishDialog({
 
 function DialogHeader({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex items-center justify-between border-b-[3px] border-black bg-primary px-4 py-3">
+    <div className="flex items-center justify-between border-b-[3px] border-black bg-primary px-4 py-3 dark:border-neutral-600">
       <h2 className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[2px]">
         <Globe size={14} /> PUBLISH & SHARE
       </h2>
@@ -97,16 +97,16 @@ function StatusBadge({ isPublished }: { isPublished: boolean }) {
       <div
         className={cn(
           "flex h-10 w-10 items-center justify-center border-2 border-black",
-          isPublished ? "bg-success text-black" : "bg-gray-200 text-gray-500",
+          isPublished ? "bg-success text-black" : "bg-gray-200 text-gray-500 dark:bg-neutral-700 dark:text-neutral-400",
         )}
       >
         <Globe size={18} />
       </div>
       <div>
-        <div className="font-mono text-[11px] font-bold uppercase tracking-wider">
+        <div className="font-mono text-[11px] font-bold uppercase tracking-wider dark:text-neutral-200">
           {isPublished ? "PUBLISHED" : "UNPUBLISHED"}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-neutral-400">
           {isPublished
             ? "Readers can see your published chapters"
             : "Only you can access this novel"}
@@ -124,7 +124,7 @@ function ChapterWarning({
   isPublished: boolean;
 }) {
   return (
-    <div className="mb-4 border-2 border-gray-200 bg-gray-50 px-3 py-2.5 font-mono text-[10px]">
+    <div className="mb-4 border-2 border-gray-200 bg-gray-50 px-3 py-2.5 font-mono text-[10px] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
       <span className="font-bold">{count}</span> chapter{count !== 1 ? "s" : ""}{" "}
       marked as published
       {count === 0 && !isPublished && (
@@ -160,7 +160,7 @@ function ToggleButton({
         "mb-4 w-full cursor-pointer border-2 border-black py-2.5 font-mono text-xs font-bold uppercase tracking-wider transition-all",
         "hover:-translate-x-px hover:-translate-y-px hover:shadow-[3px_3px_0px_black]",
         "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0",
-        isPublished ? "bg-gray-200 text-black" : "bg-success text-black",
+        isPublished ? "bg-gray-200 text-black dark:bg-neutral-700" : "bg-success text-black",
       )}
     >
       {buttonText}
@@ -179,7 +179,7 @@ function ShareLink({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500">
+      <label className="mb-1.5 block font-mono text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-400">
         Share Link
       </label>
       <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ function ShareLink({
           type="text"
           readOnly
           value={url}
-          className="flex-1 border-2 border-black bg-gray-50 px-2.5 py-2 font-mono text-[11px] outline-none"
+          className="flex-1 border-2 border-black bg-gray-50 px-2.5 py-2 font-mono text-[11px] outline-none dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
           onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <button

@@ -95,8 +95,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
   // ── Active editor ─────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-1 justify-center overflow-y-auto bg-white p-0">
-      <div className="w-full max-w-195 bg-white p-6 md:px-12.5 md:py-15">
+    <div className="flex flex-1 justify-center overflow-y-auto bg-white p-0 dark:bg-[#1c1c1c]">
+      <div className="w-full max-w-195 bg-white p-6 dark:bg-[#1c1c1c] md:px-12.5 md:py-15">
         {/* Chapter title */}
         <ChapterTitle
           title={title}
@@ -138,7 +138,7 @@ function ChapterTitle({ title, onChange }: { title: string; onChange: (v: string
       onChange={(e) => onChange(e.target.value)}
       placeholder="CHAPTER TITLE"
       spellCheck={false}
-      className="mb-6 w-full border-b-[3px] border-black bg-transparent pb-3 font-sans text-xl font-extrabold uppercase outline-none placeholder:italic placeholder:text-gray-300 sm:text-2xl md:text-[28px]"
+      className="mb-6 w-full border-b-[3px] border-black bg-transparent pb-3 font-sans text-xl font-extrabold uppercase outline-none placeholder:italic placeholder:text-gray-300 dark:border-neutral-700 dark:text-white dark:placeholder:text-neutral-600 sm:text-2xl md:text-[28px]"
     />
   );
 }

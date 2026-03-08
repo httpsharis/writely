@@ -30,7 +30,7 @@ export default function ChapterSidebar({
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   return (
-    <aside className="flex h-full flex-col overflow-hidden border-r-[3px] border-black bg-white">
+    <aside className="flex h-full flex-col overflow-hidden border-r-[3px] border-black bg-white dark:border-neutral-700 dark:bg-neutral-900">
       
       <SidebarHeader onAdd={onAddChapter} onClose={onClose} />
 
@@ -71,15 +71,15 @@ export default function ChapterSidebar({
 
 function SidebarHeader({ onAdd, onClose }: { onAdd: () => void; onClose?: () => void }) {
   return (
-    <div className="flex h-14 shrink-0 items-center justify-between border-b-[3px] border-black bg-white px-4">
-      <h2 className="font-mono text-xs font-bold uppercase tracking-[1.5px]">
+    <div className="flex h-14 shrink-0 items-center justify-between border-b-[3px] border-black bg-white px-4 dark:border-neutral-700 dark:bg-neutral-900">
+      <h2 className="font-mono text-xs font-bold uppercase tracking-[1.5px] dark:text-white">
         Chapters
       </h2>
       <div className="flex items-center gap-2">
         <button
           onClick={onAdd}
           title="Add new chapter"
-          className="inline-flex cursor-pointer items-center gap-1 rounded border-2 border-black bg-black px-2 py-1 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black"
+          className="inline-flex cursor-pointer items-center gap-1 rounded border-2 border-black bg-black px-2 py-1 font-mono text-[10px] font-bold text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
         >
           <Plus size={12} />
           <span className="hidden sm:inline">NEW</span>
@@ -88,7 +88,7 @@ function SidebarHeader({ onAdd, onClose }: { onAdd: () => void; onClose?: () => 
           <button
             onClick={onClose}
             aria-label="Close chapters"
-            className="flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 text-gray-500 transition-all hover:border-black hover:text-black lg:hidden"
+            className="flex cursor-pointer items-center justify-center rounded border-2 border-transparent p-1 text-gray-500 transition-all hover:border-black hover:text-black dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:text-white lg:hidden"
           >
             <X size={16} />
           </button>
@@ -121,9 +121,9 @@ function ChapterCard({
     <div
       onClick={onSelect}
       className={cn(
-        'group relative mb-2 cursor-pointer select-none border-2 border-black bg-white p-3 transition-all',
-        'hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_black]',
-        isActive && '-translate-x-0.5 -translate-y-0.5 bg-primary shadow-[3px_3px_0px_black]',
+        'group relative mb-2 cursor-pointer select-none border-2 border-black bg-white p-3 transition-all dark:border-neutral-700 dark:bg-neutral-900 dark:text-white',
+        'hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_black] dark:hover:shadow-[3px_3px_0px_#333]',
+        isActive && '-translate-x-0.5 -translate-y-0.5 bg-primary shadow-[3px_3px_0px_black] dark:bg-primary dark:text-black dark:shadow-[3px_3px_0px_#333]',
       )}
     >
       {/* Top row: label + status tag */}
@@ -153,7 +153,7 @@ function ChapterCard({
       <button
         onClick={(e) => { e.stopPropagation(); onDeleteClick(); }}
         title="Delete chapter"
-        className="absolute bottom-2 right-2 cursor-pointer border-none bg-transparent p-0.5 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger max-lg:opacity-100"
+        className="absolute bottom-2 right-2 cursor-pointer border-none bg-transparent p-0.5 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger dark:text-neutral-600 dark:hover:text-danger max-lg:opacity-100"
       >
         <Trash2 size={13} />
       </button>
@@ -163,10 +163,10 @@ function ChapterCard({
 
 function MobileAddButton({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="shrink-0 border-t-2 border-black p-3 lg:hidden">
+    <div className="shrink-0 border-t-2 border-black p-3 dark:border-neutral-700 lg:hidden">
       <button
         onClick={onAdd}
-        className="flex w-full cursor-pointer items-center justify-center gap-1.5 border-2 border-black bg-black py-2.5 font-mono text-[11px] font-bold text-white transition-colors hover:bg-white hover:text-black"
+        className="flex w-full cursor-pointer items-center justify-center gap-1.5 border-2 border-black bg-black py-2.5 font-mono text-[11px] font-bold text-white transition-colors hover:bg-white hover:text-black dark:border-neutral-600 dark:bg-white dark:text-black dark:hover:bg-neutral-800 dark:hover:text-white"
       >
         <Plus size={14} />
         ADD CHAPTER

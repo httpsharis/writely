@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { Sun, Moon } from 'lucide-react';
 import {
   fetchNovels,
   fetchChapters,
@@ -20,6 +21,7 @@ import { RecentChapterHero } from '@/components/dashboard/RecentChapterHero';
 import { WordCountWidget } from '@/components/dashboard/WordCountWidget';
 import { QuickCaptureWidget } from '@/components/dashboard/QuickCaptureWidget';
 import { NovelGrid } from '@/components/dashboard/NovelGrid';
+import { NotesSection } from '@/components/dashboard/NotesSection';
 import { toast } from 'sonner';
 import type { RecentChapterData, DailyWordCountData, QuickNote } from '@/types/dashboard';
 
@@ -225,7 +227,7 @@ export function Dashboard({ session }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-950">
+    <div className="min-h-dvh bg-neutral-50 dark:bg-neutral-900">
       {/* Desktop sidebar */}
       <Sidebar
         userEmail={session?.user?.email ?? ''}
@@ -252,7 +254,7 @@ export function Dashboard({ session }: DashboardProps) {
             onClick={toggleDarkMode}
             className="cursor-pointer p-1.5 text-neutral-500 dark:text-neutral-400"
           >
-            {darkMode ? '☀️' : '🌙'}
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </header>
 
@@ -283,6 +285,9 @@ export function Dashboard({ session }: DashboardProps) {
             </h2>
             <NovelGrid novels={novels} loading={loading} onDelete={setDeleteTarget} />
           </section>
+
+          {/* Global Notes section */}
+          <NotesSection novels={novels} />
         </div>
       </main>
 
