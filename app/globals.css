@@ -2,9 +2,116 @@
 
 /* ─── Dark mode (class-based) ────────────────────────────────────── */
 
-@custom-variant dark (&:is(.dark, .dark *));
+@import "tailwindcss";
 
-/* ─── Design Tokens ──────────────────────────────────────────────── */
+/* If you installed shadcn, include the animate plugin */
+@plugin "tailwindcss-animate";
+
+/* Tell Tailwind v4 to use class-based dark mode (for next-themes) */
+@variant dark (&:where(.dark, .dark *));
+
+/* === TAILWIND v4 THEME CONFIG === */
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  /* Custom Colors mapped from our CSS variables */
+  --color-canvas: rgb(var(--canvas));
+  --color-accent: rgb(var(--accent));
+  --color-glass: rgba(var(--glass), var(--glass-opacity));
+  --color-borderLight: rgba(var(--border-light), var(--border-opacity));
+
+  /* Breathing Animations for the Alive Background */
+  --animate-blob: blob 15s infinite alternate;
+  --animate-blob-reverse: blob-reverse 20s infinite alternate;
+
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+
+    100% {
+      transform: translate(150px, -50px) scale(1.2);
+    }
+  }
+
+  @keyframes blob-reverse {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+
+    100% {
+      transform: translate(-150px, 50px) scale(1.1);
+    }
+  }
+}
+
+/* === DARK/LIGHT MODE VARIABLES === */
+@layer base {
+  :root {
+    /* LIGHT MODE (Clean, sleek off-white ceramic feel) */
+    --canvas: 248 250 252;
+    /* #f8fafc */
+    --text-main: 9 9 11;
+    --text-muted: 100 116 139;
+    --glass: 255 255 255;
+    --glass-opacity: 0.6;
+    --border-light: 0 0 0;
+    --border-opacity: 0.08;
+    --accent: 99 102 241;
+    /* Indigo */
+  }
+
+  .dark {
+    /* DARK MODE (Alive ambient slate) */
+    --canvas: 9 9 11;
+    /* #09090b */
+    --text-main: 248 250 252;
+    --text-muted: 148 163 184;
+    --glass: 255 255 255;
+    --glass-opacity: 0.03;
+    --border-light: 255 255 255;
+    --border-opacity: 0.1;
+    --accent: 99 102 241;
+  }
+}
+
+/* === GLOBAL STYLES === */
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: rgb(var(--text-main));
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--text-muted), 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--text-muted), 0.5);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 
 @theme inline {
   --color-primary: #ffeb3b;
@@ -189,23 +296,97 @@ html.dark .tiptap.ProseMirror p.is-editor-empty:first-child::before {
   color: #333;
 }
 
-.reader-prose p       { margin-bottom: 20px; }
-.reader-prose h1      { font-family: var(--font-sans); font-size: 1.6em; font-weight: 800; margin: 28px 0 14px; }
-.reader-prose h2      { font-family: var(--font-sans); font-size: 1.3em; font-weight: 700; margin: 24px 0 12px; }
-.reader-prose h3      { font-family: var(--font-sans); font-size: 1.1em; font-weight: 700; margin: 20px 0 10px; }
-.reader-prose blockquote { border-left: 4px solid black; padding-left: 20px; margin: 20px 0; font-style: italic; color: #555; }
-.reader-prose ul,
-.reader-prose ol      { padding-left: 24px; margin-bottom: 20px; }
-.reader-prose li      { margin-bottom: 4px; }
-.reader-prose hr      { border: none; border-top: 2px solid #eee; margin: 32px 0; }
-.reader-prose code    { font-family: var(--font-mono); background: #f5f5f5; padding: 2px 6px; border: 1px solid #ddd; font-size: 0.9em; }
-.reader-prose pre     { font-family: var(--font-mono); background: #1a1a1a; color: #e0e0e0; padding: 16px 20px; border: 2px solid black; margin: 20px 0; overflow-x: auto; font-size: 14px; line-height: 1.5; }
+.reader-prose p {
+  margin-bottom: 20px;
+}
 
-html.dark .reader-prose { color: #d0d0d0; }
-html.dark .reader-prose blockquote { border-left-color: #555; color: #aaa; }
-html.dark .reader-prose hr { border-top-color: #333; }
-html.dark .reader-prose code { background: #1e1e1e; border-color: #444; color: #e0e0e0; }
-html.dark .reader-prose pre { border-color: #444; }
+.reader-prose h1 {
+  font-family: var(--font-sans);
+  font-size: 1.6em;
+  font-weight: 800;
+  margin: 28px 0 14px;
+}
+
+.reader-prose h2 {
+  font-family: var(--font-sans);
+  font-size: 1.3em;
+  font-weight: 700;
+  margin: 24px 0 12px;
+}
+
+.reader-prose h3 {
+  font-family: var(--font-sans);
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 20px 0 10px;
+}
+
+.reader-prose blockquote {
+  border-left: 4px solid black;
+  padding-left: 20px;
+  margin: 20px 0;
+  font-style: italic;
+  color: #555;
+}
+
+.reader-prose ul,
+.reader-prose ol {
+  padding-left: 24px;
+  margin-bottom: 20px;
+}
+
+.reader-prose li {
+  margin-bottom: 4px;
+}
+
+.reader-prose hr {
+  border: none;
+  border-top: 2px solid #eee;
+  margin: 32px 0;
+}
+
+.reader-prose code {
+  font-family: var(--font-mono);
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  font-size: 0.9em;
+}
+
+.reader-prose pre {
+  font-family: var(--font-mono);
+  background: #1a1a1a;
+  color: #e0e0e0;
+  padding: 16px 20px;
+  border: 2px solid black;
+  margin: 20px 0;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+html.dark .reader-prose {
+  color: #d0d0d0;
+}
+
+html.dark .reader-prose blockquote {
+  border-left-color: #555;
+  color: #aaa;
+}
+
+html.dark .reader-prose hr {
+  border-top-color: #333;
+}
+
+html.dark .reader-prose code {
+  background: #1e1e1e;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+html.dark .reader-prose pre {
+  border-color: #444;
+}
 
 /* ─── Content Protection ─────────────────────────────────────────── */
 
@@ -223,6 +404,7 @@ html.dark .reader-prose pre { border-color: #444; }
   .content-shield {
     display: none !important;
   }
+
   body::after {
     content: "Printing is disabled for protected content.";
     display: block;

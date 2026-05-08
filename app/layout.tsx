@@ -1,31 +1,15 @@
-import type { Metadata } from 'next';
-import { JetBrains_Mono, Space_Grotesk, Merriweather } from 'next/font/google';
-import './globals.css';
-import { Providers } from './provider';
-import { Analytics } from '@vercel/analytics/react';
+import type { Metadata } from "next";
+import { Outfit, Playfair_Display } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
+import "./globals.css";
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: '--font-sans',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const merriweather = Merriweather({
-  variable: '--font-serif',
-  weight: ['300', '400', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-});
+// Load our cinematic fonts
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", style: ['normal', 'italic'] });
 
 export const metadata: Metadata = {
-  title: 'Writely',
-  description: 'Your personal writing studio for novels and stories',
+  title: "WRITELY_ | Studio",
+  description: "The writing workspace for modern authors.",
 };
 
 export default function RootLayout({
@@ -35,13 +19,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${jetbrainsMono.variable} ${spaceGrotesk.variable} ${merriweather.variable}`}
-      >
-        <Providers>
+      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
-        </Providers>
-        <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );
