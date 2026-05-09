@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display } from "next/font/google";
+import { Outfit, Playfair_Display, Geist } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+
 
 // Load our cinematic fonts
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
@@ -18,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}>
         <ThemeProvider
           attribute="class"
