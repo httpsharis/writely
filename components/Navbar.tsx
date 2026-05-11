@@ -3,20 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useSession, signIn, signOut } from "next-auth/react";
+import Image from "next/image";
 import {
-  Moon,
-  Sun,
-  PenTool,
-  Library,
-  Globe,
-  User,
-  Settings,
-  CreditCard,
-  LogOut,
-  BookOpen,
+  Moon, Sun, PenLine, BookMarked,
+  Globe, User2, Settings, LogOut, BookOpen,
 } from "lucide-react";
-
-// Import our new shadcn Dropdown Menu components
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,129 +17,176 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Image from "next/image";
 
 const NAV_LINKS = [
-  { name: "Studio", href: "/", icon: PenTool },
-  { name: "Library", href: "/library", icon: Library },
-  { name: "Universe", href: "/universe", icon: Globe },
+  { name: "Write",   href: "/",        icon: PenLine    },
+  { name: "Library", href: "/library", icon: BookMarked },
+  { name: "World",   href: "/world",   icon: Globe      },
 ];
 
-export function GlassNav() {
+export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { data: session, status } = useSession();
+
+  if (pathname === "/login") return null;
 
   return (
     <>
-      {/* =========================================
-          DESKTOP NAVIGATION (Top Floating Pill)
-          ========================================= */}
-      <div className="hidden md:flex fixed top-6 left-0 right-0 z-50 justify-center px-4 pointer-events-none">
-        <nav className="bg-white/60 dark:bg-[#09090b]/60 backdrop-blur-xl backdrop-saturate-150 border border-black/10 dark:border-white/10 shadow-xl px-3 py-3 rounded-full flex items-center pointer-events-auto transition-colors duration-300">
+      {/* ── DESKTOP: floating pill in center ── */}
+      <header className="hidden md:flex sticky top-4 z-50 w-full justify-center px-4 pointer-events-none">
+        <nav
+          className="flex items-center gap-1 pointer-events-auto
+            bg-white/55 dark:bg-black/40
+            backdrop-blur-xl
+            border border-white/75 dark:border-white/10
+            rounded-full px-1.5 py-1.5
+            shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]
+            dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)]"
+        >
           {/* Logo */}
-          <div className="px-5 flex items-center space-x-2 border-r border-black/10 dark:border-white/10">
-            <div className="w-2 h-2 bg-black dark:bg-white rounded-full shadow-[0_0_10px_rgba(0,0,0,0.2)] dark:shadow-[0_0_10px_#FFF]"></div>
-            <span className="font-bold text-sm tracking-widest uppercase text-black dark:text-white">
-              Writely
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 pl-2 pr-3 transition-opacity hover:opacity-60"
+          >
+            <div className="w-[26px] h-[26px] bg-[#0a0a0a] dark:bg-white rounded-full flex items-center justify-center">
+              <PenLine className="w-3 h-3 text-white dark:text-[#0a0a0a]" strokeWidth={1.8} />
+            </div>
+            <span className="text-[14px] font-bold tracking-[-0.02em] text-[#0a0a0a] dark:text-white">
+              Writely<span className="text-indigo-500">_</span>
             </span>
-          </div>
+          </Link>
 
-          {/* The 3 Pillars */}
-          <div className="flex items-center space-x-1 px-4">
-            {NAV_LINKS.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "bg-black text-white dark:bg-white dark:text-black shadow-md"
-                      : "text-slate-500 hover:text-black dark:text-slate-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+          {/* separator */}
+          <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+
+          {/* Nav links */}
+          {NAV_LINKS.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-[-0.01em] transition-all
+                  ${isActive
+                    ? "bg-black/[0.07] dark:bg-white/[0.1] text-[#0a0a0a] dark:text-white"
+                    : "text-black/45 dark:text-white/45 hover:text-black/75 dark:hover:text-white/75 hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
                   }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right Actions */}
-          <div className="ml-2 pl-4 pr-1 py-1 border-l border-black/10 dark:border-white/10 flex items-center space-x-3">
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-600 dark:text-slate-300 relative overflow-hidden"
-              aria-label="Toggle Theme"
-            >
-              <Sun className="w-4 h-4 transition-all duration-300 dark:-translate-y-10 dark:opacity-0" />
-              <Moon className="w-4 h-4 absolute transition-all duration-300 translate-y-10 opacity-0 dark:translate-y-0 dark:opacity-100" />
-            </button>
-
-            {/* Profile Dropdown Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <button className="w-9 h-9 rounded-full overflow-hidden border border-black/10 dark:border-white/20 hover:border-black dark:hover:border-white transition outline-none ring-0">
-                  <Image
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop"
-                    alt="Profile"
-                    fill
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              </DropdownMenuTrigger>
-
-              {/* Glassmorphism styling applied directly to the Dropdown Content */}
-              <DropdownMenuContent
-                align="end"
-                sideOffset={12}
-                className="w-56 bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-xl backdrop-saturate-150 border-black/10 dark:border-white/10 rounded-2xl shadow-2xl"
               >
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      Sarah Writer
+                {link.name}
+              </Link>
+            );
+          })}
+
+          {/* separator */}
+          <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+
+          {/* Theme toggle */}
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-8 h-8 rounded-full flex items-center justify-center
+              text-black/40 dark:text-white/40
+              hover:bg-black/[0.06] dark:hover:bg-white/[0.06]
+              hover:text-black/70 dark:hover:text-white/70 transition-all"
+            aria-label="Toggle theme"
+          >
+            <Sun className="w-[15px] h-[15px] dark:hidden" strokeWidth={1.6} />
+            <Moon className="w-[15px] h-[15px] hidden dark:block" strokeWidth={1.6} />
+          </button>
+
+          {/* Avatar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="w-[30px] h-[30px] rounded-full overflow-hidden ml-0.5
+              border border-black/10 dark:border-white/10
+              hover:shadow-[0_0_0_3px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_0_0_3px_rgba(255,255,255,0.1)]
+              transition-all outline-none">
+              {status === "authenticated" && session?.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name ?? "Profile"}
+                  width={30} height={30}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#0a0a0a] dark:bg-white flex items-center justify-center">
+                  <User2 className="w-3.5 h-3.5 text-white dark:text-[#0a0a0a]" strokeWidth={1.6} />
+                </div>
+              )}
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              sideOffset={10}
+              className="w-52 bg-white/80 dark:bg-black/80
+                backdrop-blur-xl
+                border border-white/75 dark:border-white/10
+                rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-1.5"
+            >
+              {status === "authenticated" ? (
+                <>
+                  <DropdownMenuLabel className="font-normal px-2.5 py-2.5">
+                    <p className="text-[13px] font-semibold text-[#0a0a0a] dark:text-white tracking-[-0.01em] leading-none">
+                      {session.user?.name}
                     </p>
-                    <p className="text-xs leading-none text-slate-500 dark:text-slate-400">
-                      sarah@example.com
+                    <p className="text-[11.5px] text-black/40 dark:text-white/40 mt-1">
+                      {session.user?.email}
                     </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-black/5 dark:bg-white/10" />
+                  </DropdownMenuLabel>
 
-                <DropdownMenuItem className="cursor-pointer focus:bg-black/5 dark:focus:bg-white/10 rounded-xl">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  <span>Public Author Page</span>
+                  <DropdownMenuSeparator className="bg-black/[0.07] dark:bg-white/[0.07] my-1" />
+
+                  <DropdownMenuItem className="px-2.5 py-2 rounded-[10px] cursor-pointer gap-2.5
+                    text-[13px] font-medium text-[#0a0a0a] dark:text-white
+                    focus:bg-black/[0.05] dark:focus:bg-white/[0.05]">
+                    <BookOpen className="w-[15px] h-[15px] text-black/40 dark:text-white/40" strokeWidth={1.6} />
+                    Author profile
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem className="px-2.5 py-2 rounded-[10px] cursor-pointer gap-2.5
+                    text-[13px] font-medium text-[#0a0a0a] dark:text-white
+                    focus:bg-black/[0.05] dark:focus:bg-white/[0.05]">
+                    <Settings className="w-[15px] h-[15px] text-black/40 dark:text-white/40" strokeWidth={1.6} />
+                    Settings
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator className="bg-black/[0.07] dark:bg-white/[0.07] my-1" />
+
+                  <DropdownMenuItem
+                    onClick={() => signOut()}
+                    className="px-2.5 py-2 rounded-[10px] cursor-pointer gap-2.5
+                      text-[13px] font-medium text-red-600 dark:text-red-400
+                      focus:bg-red-50 dark:focus:bg-red-950/30"
+                  >
+                    <LogOut className="w-[15px] h-[15px]" strokeWidth={1.6} />
+                    Sign out
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem
+                  onClick={() => signIn("google")}
+                  className="px-2.5 py-2 rounded-[10px] cursor-pointer gap-2.5
+                    text-[13px] font-medium text-[#0a0a0a] dark:text-white
+                    focus:bg-black/[0.05] dark:focus:bg-white/[0.05]"
+                >
+                  <User2 className="w-[15px] h-[15px] text-black/40 dark:text-white/40" strokeWidth={1.6} />
+                  Sign in with Google
                 </DropdownMenuItem>
-
-                <DropdownMenuItem className="cursor-pointer focus:bg-black/5 dark:focus:bg-white/10 rounded-xl">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Account Settings</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem className="cursor-pointer focus:bg-black/5 dark:focus:bg-white/10 rounded-xl">
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="bg-black/5 dark:bg-white/10" />
-
-                <DropdownMenuItem className="cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-500/10 dark:focus:bg-red-500/10 rounded-xl">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
-      </div>
+      </header>
 
-      {/* =========================================
-          MOBILE NAVIGATION (Bottom iOS-Style Tab Bar)
-          ========================================= */}
-      <div className="md:hidden fixed bottom-6 left-4 right-4 z-50 pointer-events-none">
-        <nav className="bg-white/70 dark:bg-[#09090b]/70 backdrop-blur-2xl backdrop-saturate-200 border border-black/10 dark:border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] px-2 py-2 rounded-3xl flex items-center justify-between pointer-events-auto transition-colors duration-300">
-          {/* Core Links */}
+      {/* ── MOBILE: floating glass bottom bar ── */}
+      <div className="md:hidden fixed bottom-3 left-3 right-3 z-50">
+        <nav className="flex items-center justify-around
+          bg-white/60 dark:bg-black/50
+          backdrop-blur-xl
+          border border-white/80 dark:border-white/10
+          rounded-[24px] px-2 pt-2.5 pb-3.5
+          shadow-[0_4px_20px_rgba(0,0,0,0.1)]
+          dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             const Icon = link.icon;
@@ -155,50 +194,51 @@ export function GlassNav() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex flex-col items-center justify-center w-full py-2 rounded-2xl transition-all duration-300 ${
-                  isActive
-                    ? "text-accent dark:text-indigo-400 bg-black/5 dark:bg-white/5"
-                    : "text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white"
-                }`}
+                className={`flex flex-col items-center gap-1 px-4 transition-colors
+                  ${isActive
+                    ? "text-[#0a0a0a] dark:text-white"
+                    : "text-black/32 dark:text-white/32"
+                  }`}
               >
-                <Icon
-                  className={`w-5 h-5 mb-1 ${isActive ? "fill-accent/20 dark:fill-indigo-400/20" : ""}`}
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.2 : 1.5} />
+                <span className="text-[10px] font-medium">{link.name}</span>
+                <span className={`w-1 h-1 rounded-full bg-indigo-500 transition-opacity
+                  ${isActive ? "opacity-100" : "opacity-0"}`}
                 />
-                <span className="text-[10px] font-medium tracking-wide">
-                  {link.name}
-                </span>
               </Link>
             );
           })}
 
-          {/* Mobile Theme Toggle */}
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex flex-col items-center justify-center w-full py-2 rounded-2xl text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-all duration-300 relative"
-          >
-            <div className="relative w-5 h-5 mb-1">
-              <Sun className="absolute inset-0 w-full h-full transition-all duration-300 dark:-translate-y-5 dark:opacity-0" />
-              <Moon className="absolute inset-0 w-full h-full transition-all duration-300 translate-y-5 opacity-0 dark:translate-y-0 dark:opacity-100" />
-            </div>
-            <span className="text-[10px] font-medium tracking-wide">Theme</span>
-          </button>
-
-          {/* Profile Mobile */}
+          {/* Me tab */}
           <Link
-            href="/settings"
-            className={`flex flex-col items-center justify-center w-full py-2 rounded-2xl transition-all duration-300 ${
-              pathname.includes("/settings")
-                ? "text-accent dark:text-indigo-400 bg-black/5 dark:bg-white/5"
-                : "text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white"
-            }`}
+            href="/me"
+            className={`flex flex-col items-center gap-1 px-4 transition-colors
+              ${pathname === "/me"
+                ? "text-[#0a0a0a] dark:text-white"
+                : "text-black/32 dark:text-white/32"
+              }`}
           >
-            <User className="w-5 h-5 mb-1" />
-            <span className="text-[10px] font-medium tracking-wide">
-              Profile
-            </span>
+            {status === "authenticated" && session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt="Me"
+                width={20} height={20}
+                className={`rounded-full object-cover border
+                  ${pathname === "/me" ? "border-[#0a0a0a] dark:border-white" : "border-black/20 dark:border-white/20"}`}
+              />
+            ) : (
+              <User2 className="w-5 h-5" strokeWidth={pathname === "/me" ? 2.2 : 1.5} />
+            )}
+            <span className="text-[10px] font-medium">Me</span>
+            <span className={`w-1 h-1 rounded-full bg-indigo-500 transition-opacity
+              ${pathname === "/me" ? "opacity-100" : "opacity-0"}`}
+            />
           </Link>
         </nav>
       </div>
+
+      {/* bottom padding so content isn't hidden behind mobile bar */}
+      <div className="md:hidden h-24" />
     </>
   );
 }

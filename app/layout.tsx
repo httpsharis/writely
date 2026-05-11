@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display, Geist } from "next/font/google";
-import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-import { cn } from "@/lib/utils";
+import { Inter } from "next/font/google";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import { Navbar } from "@/components/Navbar";
+import { Providers } from "@/app/provider";
 
-
-// Load our cinematic fonts
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", style: ['normal', 'italic'] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter", // Optional: sets up a CSS variable
+});
 
 export const metadata: Metadata = {
-  title: "WRITELY_ | Studio",
-  description: "The writing workspace for modern authors.",
+  title: "Writely",
+  description: "Writing app",
 };
 
 export default function RootLayout({
@@ -22,16 +21,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-      <body className={`${outfit.variable} ${playfair.variable} font-sans antialiased overflow-x-hidden`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+    <html
+      lang="en"
+      className={`${inter.className} dark antialiased`}
+      suppressHydrationWarning
+    >
+      <body>
+        <Providers>
+          <Navbar />
+
+          <main className="pt-32 pb-20">{children}</main>
+        </Providers>
       </body>
     </html>
   );
