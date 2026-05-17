@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ArrowRight, TrendingUp, BookOpen } from "lucide-react";
 
+import { motion } from "framer-motion";
+
 type ProjectProps = {
   id?: string;
   title?: string;
@@ -17,7 +19,12 @@ export function ActiveProjectHero({ project }: { project?: ProjectProps }) {
   const targetHref = project?.id ? `/editor/${project.id}` : "/editor/draft-1";
 
   return (
-    <div className="relative group animate-in fade-in slide-in-from-bottom-4 duration-700 delay-75 fill-mode-both">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="relative group"
+    >
       {/* GRADIENT BORDER TRICK: A div behind the card that shows through the 1px padding */}
       <div className="absolute -inset-[1px] bg-gradient-to-br from-indigo-500/50 via-transparent to-transparent rounded-[25px] opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -68,6 +75,6 @@ export function ActiveProjectHero({ project }: { project?: ProjectProps }) {
           </div>
         </div>
       </Link>
-    </div>
+    </motion.div>
   );
 }

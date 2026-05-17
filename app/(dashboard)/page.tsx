@@ -67,17 +67,19 @@ export default async function DashboardPage() {
     title: c.title || "Untitled Chapter",
     type: "Chapter",
     time: c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : "Recently",
+    href: `/editor/${c.projectId}`, // We assume chapter editing is inside the project editor
   })), ...notes.map(n => ({
     id: n._id.toString(),
     title: n.title || "Untitled Note",
     type: "Note",
     time: n.updatedAt ? new Date(n.updatedAt).toLocaleDateString() : "Recently",
+    href: `/notes`, // Adjust if there's a specific route for a single note
   }))].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 3);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0B] selection:bg-indigo-500/30 pb-24">
       {/* Increased padding and space-y to let the design breathe */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 flex flex-col space-y-10 sm:space-y-12 animate-in fade-in duration-1000">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 flex flex-col space-y-10 sm:space-y-12">
         
         <DashboardHeader />
         

@@ -14,14 +14,21 @@ type DraftProps = {
   title: string;
   type: string;
   time: string;
+  href?: string;
   icon?: any; // Lucide icon
 };
+import { motion } from "framer-motion";
 
 export function RecentDrafts({ drafts }: { drafts?: DraftProps[] }) {
   const displayDrafts = drafts?.length ? drafts : DRAFTS;
 
   return (
-    <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="mt-8"
+    >
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="text-sm font-bold tracking-tight text-black dark:text-white">Recent Notes</h3>
         <Link href="/universe" className="text-xs font-medium text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white transition-colors">
@@ -32,10 +39,12 @@ export function RecentDrafts({ drafts }: { drafts?: DraftProps[] }) {
       <div className="space-y-2">
         {displayDrafts.map((draft, i) => {
           const Icon = draft.icon || PenTool;
+          const href = draft.href || `/editor/${draft.id || i}`;
+          
           return (
             <Link 
-              key={i}
-              href={`/editor/${i}`}
+              key={draft.id || i}
+              href={href}
               className="flex items-center justify-between p-4 bg-white dark:bg-[#111] border border-black/[0.04] dark:border-white/[0.04] rounded-2xl hover:border-black/[0.12] dark:hover:border-white/[0.12] transition-all group"
             >
               <div className="flex items-center gap-4">
@@ -58,6 +67,6 @@ export function RecentDrafts({ drafts }: { drafts?: DraftProps[] }) {
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }

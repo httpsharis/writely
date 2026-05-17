@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Plus, Flame } from "lucide-react";
+import Link from "next/link";
 
 export function DashboardHeader() {
   const { data: session } = useSession();
@@ -25,10 +26,10 @@ export function DashboardHeader() {
         </p>
       </div>
       
-      <button className="hidden sm:flex items-center gap-2 bg-white dark:bg-[#111] border border-black/[0.08] dark:border-white/10 px-4 py-2 rounded-xl text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all shadow-sm text-black dark:text-white">
+      <Link href="/notes" className="hidden sm:flex items-center gap-2 bg-white dark:bg-[#111] border border-black/[0.08] dark:border-white/10 px-4 py-2 rounded-xl text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all shadow-sm text-black dark:text-white">
         <Plus className="w-4 h-4" />
         Quick Capture
-      </button>
+      </Link>
     </header>
   );
 }
