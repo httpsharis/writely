@@ -27,6 +27,7 @@ export interface IAuthorNote {
 // ─── Project Document ───────────────────────────────────────────────
 
 export interface IProject {
+    userId?: string;
     userEmail: string;
     title: string;
     description?: string;
@@ -35,6 +36,9 @@ export interface IProject {
     stats: IProjectStats;
     characters: ICharacter[];
     authorNotes: IAuthorNote[];
+    coverStyle?: string;
+    targetDate?: Date;
+    totalWords?: number;
     createdAt: Date;
     updatedAt: Date;
 }

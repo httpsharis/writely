@@ -1,5 +1,3 @@
-import { Types } from 'mongoose';
-
 // ─── Content Types ──────────────────────────────────────────────────
 
 export type ContentType = 'html' | 'tiptap' | 'markdown';
@@ -16,7 +14,7 @@ export interface CommentAnchor {
 // ─── Writer Comment (inline note on selected text) ──────────────────
 
 export interface IWriterComment {
-  _id?: Types.ObjectId;
+  _id?: string;
   userId: string;
   userName: string;
   text: string;
@@ -29,8 +27,8 @@ export interface IWriterComment {
 // ─── Chapter Document ───────────────────────────────────────────────
 
 export interface IChapter {
-  _id?: Types.ObjectId;
-  projectId: Types.ObjectId;
+  _id?: string;
+  projectId: string;
   title: string;
   content: Record<string, unknown> | string;
   contentType: ContentType;

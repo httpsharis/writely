@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import {
-  updateNovel,
+  updateProject,
   togglePublish as apiTogglePublish,
   addCharacter as apiAddCharacter,
   removeCharacter as apiRemoveCharacter,
@@ -28,7 +28,7 @@ export function useNovelActions(
       setState((s) => ({ ...s, novel: s.novel ? { ...s.novel, title } : s.novel }));
 
       try {
-        await updateNovel(novelIdRef.current, { title });
+        await updateProject(novelIdRef.current, { title });
       } catch (err) {
         console.error('[useNovelActions] renameNovel failed:', err);
         setState((s) => ({ ...s, novel: s.novel ? { ...s.novel, title: oldTitle ?? '' } : s.novel }));

@@ -1,4 +1,4 @@
-import { PenTool, Library, Globe, Settings, User } from "lucide-react";
+import { PenTool, Library, Globe, Settings, User, Search } from "lucide-react";
 
 // We export this so any component in the app can use it
 export const MAIN_NAV_LINKS = [
@@ -17,6 +17,11 @@ export const MAIN_NAV_LINKS = [
         href: "/universe",
         icon: Globe
     },
+    {
+        name: "Search",
+        href: "/search",
+        icon: Search
+    }
 ];
 
 // You can even plan ahead for a user dropdown menu later!

@@ -2,12 +2,15 @@
 
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from 'sonner';
+import { Provider } from 'react-redux';
+import { store } from '@/store/store';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      {children}
-      <Toaster
+    <Provider store={store}>
+      <SessionProvider>
+        {children}
+        <Toaster
         position="bottom-right"
         toastOptions={{
           unstyled: true,
@@ -28,6 +31,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         duration={3000}
         gap={8}
       />
-    </SessionProvider>
+      </SessionProvider>
+    </Provider>
   );
 }
