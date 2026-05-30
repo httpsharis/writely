@@ -3,7 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from 'sonner';
 import { Provider } from 'react-redux';
-import { store } from '@/store/store';
+import { store } from '@/redux/store';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

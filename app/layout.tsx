@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/provider";
 import { ThemeProvider } from "next-themes";
 import { CommandPalette } from "@/components/shared/CommandPalette";
 
-const inter = Inter({ subsets: ["latin"] });
+// 1. Configure the UI Font (Inter)
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+// 2. Configure the Writing Font (Lora)
+const lora = Lora({ 
+  subsets: ["latin"],
+  variable: '--font-lora',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: "Writely_",
@@ -18,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.className} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.className} ${lora.className} antialiased`} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" disableTransitionOnChange>
           <Providers>
