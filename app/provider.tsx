@@ -1,6 +1,5 @@
 'use client';
 
-import { SessionProvider } from "next-auth/react";
 import { Toaster } from 'sonner';
 import { Provider } from 'react-redux';
 import { store } from '@/redux/store';
@@ -8,9 +7,8 @@ import { store } from '@/redux/store';
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <SessionProvider>
-        {children}
-        <Toaster
+      {children}
+      <Toaster
         position="bottom-right"
         toastOptions={{
           unstyled: true,
@@ -31,7 +29,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         duration={3000}
         gap={8}
       />
-      </SessionProvider>
     </Provider>
   );
 }

@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.className} ${lora.className} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${lora.variable} antialiased`} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" disableTransitionOnChange>
           <Providers>

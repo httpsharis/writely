@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
+import { PenLine } from 'lucide-react';
 
 import BubbleToolbar from './BubbleToolbar';
 import { SlashCommands } from './slashExtension';
@@ -52,29 +53,26 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
   { chapter, onAutoSave, saveStatus },
   ref,
 ) {
-  // Ref that always points at the latest editor instance so the
-  // auto-save hook can grab a content snapshot without stale closures.
   const editorRef = useRef<ReturnType<typeof useEditor>>(null);
 
-  // 1. Auto-save (debounced)
   const getLatestContent = useCallback(() => editorRef.current?.getJSON(), []);
   const { scheduleSave } = useEditorAutoSave(onAutoSave, saveStatus, getLatestContent);
 
-  // 2. Tiptap editor instance
   const editor = useEditor({
     immediatelyRender: false,
     extensions: EXTENSIONS,
-    editorProps: { attributes: { class: 'tiptap' } },
+    editorProps: { 
+      attributes: { 
+        class: 'prose prose-invert prose-p:text-[#E2E8F0] prose-headings:text-white prose-a:text-[#535CE8] focus:outline-none max-w-none min-h-[500px]' 
+      } 
+    },
     onUpdate: ({ editor: ed }) => scheduleSave({ content: ed.getJSON() }),
   });
 
-  // Keep the ref in sync
   useEffect(() => { editorRef.current = editor; }, [editor]);
 
-  // 3. Sync incoming DB data → local state
   const { title, setTitle } = useChapterSync(chapter, editor);
 
-  // 4. Expose selection info to parent
   useImperativeHandle(ref, () => ({
     getSelection(): EditorSelection | null {
       if (!editor) return null;
@@ -87,17 +85,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
   // ── Empty state ───────────────────────────────────────────────────
 
   if (!chapter) {
-    return (
-      <EmptyState />
-    );
+    return <EmptyState />;
   }
 
   // ── Active editor ─────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-1 justify-center overflow-y-auto bg-white p-0 dark:bg-[#1c1c1c]">
-      <div className="w-full max-w-195 bg-white p-6 dark:bg-[#1c1c1c] md:px-12.5 md:py-15">
-        {/* Chapter title */}
+    <div className="flex flex-1 justify-center overflow-y-auto bg-transparent p-0">
+      <div className="w-full max-w-3xl bg-transparent p-6 md:px-12 md:py-16">
+        
         <ChapterTitle
           title={title}
           onChange={(value) => {
@@ -106,11 +102,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, Props>(function TiptapEditor
           }}
         />
 
-        {/* Rich-text body — BubbleMenu lives inside here */}
-        <div>
+        <div className="relative">
           {editor && <BubbleToolbar editor={editor} />}
           <EditorContent editor={editor} />
         </div>
+        
       </div>
     </div>
   );
@@ -122,10 +118,18 @@ export default TiptapEditor;
 
 function EmptyState() {
   return (
-    <div className="flex flex-1 items-center justify-center overflow-y-auto p-10 bg-grid">
-      <p className="text-center font-mono text-xs leading-relaxed opacity-50">
-        Select a chapter from the sidebar<br />or create a new one to begin writing.
-      </p>
+    <div className="flex flex-1 items-center justify-center p-10 h-full">
+      <div className="flex flex-col items-center gap-4 text-center animate-in fade-in zoom-in-95 duration-500">
+        <div className="flex h-16 w-16 items-center justify-center rounded-[20px] bg-[#171926] border border-white/5 text-[#828A9F]">
+          <PenLine className="h-8 w-8 stroke-[1.5]" />
+        </div>
+        <div>
+          <h3 className="text-[18px] font-semibold text-white mb-1">No Chapter Selected</h3>
+          <p className="text-[14px] text-[#828A9F] max-w-[250px] mx-auto">
+            Select a chapter from the sidebar or create a new one to begin writing.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -136,9 +140,9 @@ function ChapterTitle({ title, onChange }: { title: string; onChange: (v: string
       type="text"
       value={title}
       onChange={(e) => onChange(e.target.value)}
-      placeholder="CHAPTER TITLE"
+      placeholder="Untitled Chapter"
       spellCheck={false}
-      className="mb-6 w-full border-b-[3px] border-black bg-transparent pb-3 font-sans text-xl font-extrabold uppercase outline-none placeholder:italic placeholder:text-gray-300 dark:border-neutral-700 dark:text-white dark:placeholder:text-neutral-600 sm:text-2xl md:text-[28px]"
+      className="mb-8 w-full border-none bg-transparent pb-3 font-sans text-3xl md:text-4xl font-bold tracking-tight text-white outline-none placeholder:text-[#828A9F] transition-all focus:ring-0 p-0"
     />
   );
 }

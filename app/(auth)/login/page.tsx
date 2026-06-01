@@ -25,7 +25,7 @@ export default function LoginPage() {
                 accessToken: result.accessToken,
             }));
 
-            router.push('/dashboard');
+            router.push('/');
         } catch (err) {
             const backendMessage = err?.data?.error || err?.error || "Unknown server error";
             console.error('Failed to log in. Backend says:', backendMessage);
