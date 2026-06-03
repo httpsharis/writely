@@ -39,7 +39,7 @@ export interface UpdateCharacterPayload {
 
 // Api Slice 
 export const characterApi = createApi({
-    reducerPath: 'createApi',
+    reducerPath: 'characterApi',
     baseQuery: fetchBaseQuery({
         baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api',
         prepareHeaders(headers, { getState }) {
