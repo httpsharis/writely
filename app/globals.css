@@ -2,14 +2,14 @@
 @plugin "tailwindcss-animate";
 @variant dark (&:where(.dark, .dark *));
 
-/* === 1. TAILWIND CONFIG & FONTS === */
-/* === 1. TAILWIND CONFIG & FONTS === */
+/* =========================================
+   1. TAILWIND THEME CONFIGURATION
+   ========================================= */
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-lora), ui-serif, Georgia, serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* We MUST map our CSS variables here so Tailwind generates the utility classes! */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -26,218 +26,131 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --animate-blob: blob 15s infinite alternate;
-  --animate-blob-reverse: blob-reverse 20s infinite alternate;
-
-  @keyframes blob {
-    100% { transform: translate(150px, -50px) scale(1.2); }
-  }
-  @keyframes blob-reverse {
-    100% { transform: translate(-150px, 50px) scale(1.1); }
-  }
+  --radius: 0.5rem;
 }
 
-/* === 2. "OCEAN & ICE" COLOR SYSTEM === */
+/* =========================================
+   2. GLOBAL BASE VARIABLES (THE SOFT THEME)
+   ========================================= */
 @layer base {
   :root {
+    /* Light Mode: Clean, paper-like */
     --background: #FFFFFF;
-    --foreground: #0F172A;
+    --foreground: #18181B; /* Zinc 900 */
     --card: #FFFFFF;
-    --card-foreground: #0F172A;
+    --card-foreground: #18181B;
     --popover: #FFFFFF;
-    --popover-foreground: #0F172A;
-    --primary: #2563EB;
+    --popover-foreground: #18181B;
+    --primary: #18181B; /* Deep contrast instead of neon blue */
     --primary-foreground: #FFFFFF;
-    --secondary: #F8FAFC;
-    --secondary-foreground: #0F172A;
-    --muted: #F1F5F9;
-    --muted-foreground: #64748B;
-    --border: #E2E8F0;
-    --input: #E2E8F0;
-    --ring: #2563EB;
-    --radius: 0.5rem;
+    --secondary: #F4F4F5; /* Zinc 100 */
+    --secondary-foreground: #18181B;
+    --muted: #F4F4F5;
+    --muted-foreground: #71717A; /* Zinc 500 */
+    --border: #E4E4E7; /* Zinc 200 */
+    --input: #E4E4E7;
+    --ring: #18181B;
   }
 
   .dark {
-    --background: #0B1120;
-    --foreground: #F8FAFC;
-    --card: #0F172A;
-    --card-foreground: #F8FAFC;
-    --popover: #0F172A;
-    --popover-foreground: #F8FAFC;
-    --primary: #3B82F6;
-    --primary-foreground: #FFFFFF;
-    --secondary: #1E293B;
-    --secondary-foreground: #F8FAFC;
-    --muted: #0F172A;
-    --muted-foreground: #94A3B8;
-    --border: #1E293B;
-    --input: #1E293B;
-    --ring: #3B82F6;
-  }
-
-  * {
-    @apply border-border outline-ring/50;
+    /* Dark Mode: Deep, matte slate (Notion/Craft style) */
+    --background: #09090B; /* Zinc 950 */
+    --foreground: #FAFAFA; /* Zinc 50 */
+    --card: #121214; 
+    --card-foreground: #FAFAFA;
+    --popover: #121214;
+    --popover-foreground: #FAFAFA;
+    --primary: #FAFAFA;
+    --primary-foreground: #09090B;
+    --secondary: #27272A; /* Zinc 800 */
+    --secondary-foreground: #FAFAFA;
+    --muted: #27272A;
+    --muted-foreground: #A1A1AA; /* Zinc 400 */
+    --border: #27272A;
+    --input: #27272A;
+    --ring: #D4D4D8; /* Zinc 300 */
   }
 
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
+    @apply bg-background text-foreground transition-colors duration-300 antialiased;
     font-family: var(--font-sans);
   }
 }
 
-/* === 3. TIPTAP EDITOR & PROSE (Cleaned with Nesting & @apply) === */
-.tiptap.ProseMirror,
-.reader-prose,
-.note-editor-prose.ProseMirror {
-  @apply outline-none font-serif text-foreground leading-relaxed;
-
-  /* Sizing based on editor type */
-  &.tiptap {
-    @apply min-h-[400px] text-sm md:min-h-[300px];
+/* =========================================
+   3. COMPONENTS (EDITOR STYLES)
+   ========================================= */
+@layer components {
+  /* Master Prose Reset */
+  .tiptap.ProseMirror,
+  .reader-prose,
+  .note-editor-prose.ProseMirror {
+    @apply outline-none font-serif text-foreground leading-relaxed;
   }
 
-  &.reader-prose {
-    @apply text-base leading-loose;
-  }
+  /* Specific Editor Heights */
+  .tiptap { @apply min-h-[400px] text-base md:min-h-[300px]; }
+  .reader-prose { @apply text-lg leading-loose; }
+  .note-editor-prose { @apply min-h-[160px] text-sm; }
 
-  &.note-editor-prose {
-    @apply min-h-[160px] text-sm;
+  /* Typography Elements */
+  .tiptap p, .reader-prose p, .note-editor-prose p { @apply mb-4; }
+  .tiptap h1, .reader-prose h1 { @apply font-sans text-3xl font-bold mt-8 mb-4 tracking-tight; }
+  .tiptap h2, .reader-prose h2 { @apply font-sans text-2xl font-semibold mt-6 mb-3 tracking-tight; }
+  .tiptap h3, .reader-prose h3 { @apply font-sans text-xl font-medium mt-5 mb-2; }
+  
+  .tiptap blockquote, .reader-prose blockquote { 
+    @apply border-l-2 border-border pl-4 my-6 italic text-muted-foreground; 
   }
-
-  /* Nested Typography Rules */
-  p {
-    @apply mb-4;
-  }
-
-  h1 {
-    @apply font-sans text-[1.6em] font-extrabold mt-7 mb-3;
-  }
-
-  h2 {
-    @apply font-sans text-[1.3em] font-bold mt-6 mb-3;
-  }
-
-  h3 {
-    @apply font-sans text-[1.1em] font-bold mt-5 mb-2;
-  }
-
-  blockquote {
-    @apply border-l-4 border-primary pl-5 my-5 italic text-muted-foreground;
-  }
-
-  ul,
-  ol {
-    @apply pl-6 mb-5 list-inside;
-  }
-
-  li {
-    @apply mb-1;
-  }
-
-  hr {
-    @apply border-t-2 border-border my-8;
-  }
-
-  code {
-    @apply font-mono bg-muted text-foreground px-1.5 py-0.5 border border-border rounded text-[0.9em];
-  }
-
-  pre {
-    @apply font-mono bg-[#1a1a1a] text-[#e0e0e0] p-4 border border-border rounded-lg my-5 overflow-x-auto text-sm;
-  }
+  
+  .tiptap ul, .tiptap ol, .reader-prose ul, .reader-prose ol { @apply pl-6 mb-5 list-inside; }
+  .tiptap hr, .reader-prose hr { @apply border-t border-border my-10 opacity-50; }
 
   /* Tiptap Empty Placeholder */
-  p.is-editor-empty:first-child::before {
+  .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     @apply text-muted-foreground italic float-left pointer-events-none h-0;
   }
 }
 
-/* === 4. UTILITIES === */
-/* Engineering Grid */
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.dark .bg-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-}
-
-/* Scrollbars */
-::-webkit-scrollbar,
-.custom-scrollbar::-webkit-scrollbar {
-  @apply w-1.5 h-1.5 bg-transparent;
-}
-
-::-webkit-scrollbar-thumb,
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/50 rounded-full hover:bg-primary;
-}
-
-.hide-scrollbar {
-  @apply hidden;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Security & Toast Overrides */
-.content-shield {
-  @apply select-none;
-  -webkit-touch-callout: none;
-}
-
-@media print {
-  .content-shield {
-    display: none !important;
+/* =========================================
+   4. CUSTOM UTILITIES
+   ========================================= */
+@layer utilities {
+  /* Clean, consolidated scrollbar hider */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
   }
 
+  /* Engineering Grid */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .dark .bg-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+
+  /* Content Protection */
+  .content-shield {
+    @apply select-none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* Print Overrides */
+@media print {
+  .content-shield { display: none !important; }
   body::after {
     content: "Printing is disabled for protected content.";
     @apply block text-center p-10 font-mono text-sm;
   }
-}
-
-[data-sonner-toaster] {
-  @apply font-sans;
-  --normal-bg: var(--background);
-  --normal-border: var(--border);
-}
-
-[data-sonner-toaster] [data-close-button] {
-  @apply border border-border bg-background cursor-pointer;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.custom-scrollbar::-webkit-scrollbar,
-body::-webkit-scrollbar,
-main::-webkit-scrollbar {
-  display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.custom-scrollbar,
-body,
-main {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-/* The Nuclear Scrollbar Killer */
-html,
-body,
-main {
-  -ms-overflow-style: none !important; /* IE and Edge */
-  scrollbar-width: none !important; /* Firefox */
-}
-
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-main::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari and Opera */
 }
