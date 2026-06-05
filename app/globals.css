@@ -6,10 +6,15 @@
    1. TAILWIND THEME CONFIGURATION
    ========================================= */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-lora), ui-serif, Georgia, serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Editorial Typography */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", monospace;
 
+  /* Brand Accent */
+  --color-brand: #C8973F;
+
+  /* Dynamic System Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -30,45 +35,57 @@
 }
 
 /* =========================================
-   2. GLOBAL BASE VARIABLES (THE SOFT THEME)
+   2. GLOBAL BASE VARIABLES (WRITELY THEME)
    ========================================= */
 @layer base {
   :root {
-    /* Light Mode: Clean, paper-like */
-    --background: #FFFFFF;
-    --foreground: #18181B; /* Zinc 900 */
+    /* Light Mode: Gallery White / Warm Paper */
+    --background: #F5F0EB;
+    --foreground: #1A1008; 
     --card: #FFFFFF;
-    --card-foreground: #18181B;
+    --card-foreground: #1A1008;
     --popover: #FFFFFF;
-    --popover-foreground: #18181B;
-    --primary: #18181B; /* Deep contrast instead of neon blue */
-    --primary-foreground: #FFFFFF;
-    --secondary: #F4F4F5; /* Zinc 100 */
-    --secondary-foreground: #18181B;
-    --muted: #F4F4F5;
-    --muted-foreground: #71717A; /* Zinc 500 */
-    --border: #E4E4E7; /* Zinc 200 */
-    --input: #E4E4E7;
-    --ring: #18181B;
+    --popover-foreground: #1A1008;
+    
+    /* Primary buttons/actions (Deep text contrast) */
+    --primary: #1A1008;
+    --primary-foreground: #F5F0EB;
+    
+    /* Secondary/Muted areas */
+    --secondary: #E8E0D5; 
+    --secondary-foreground: #1A1008;
+    --muted: #E8E0D5;
+    --muted-foreground: #9C8870; /* Soft secondary gray/brown */
+    
+    /* Structure */
+    --border: #E8E0D5;
+    --input: #E8E0D5;
+    --ring: #C8973F; /* Amber-Gold focus rings */
   }
 
   .dark {
-    /* Dark Mode: Deep, matte slate (Notion/Craft style) */
-    --background: #09090B; /* Zinc 950 */
-    --foreground: #FAFAFA; /* Zinc 50 */
-    --card: #121214; 
-    --card-foreground: #FAFAFA;
-    --popover: #121214;
-    --popover-foreground: #FAFAFA;
-    --primary: #FAFAFA;
-    --primary-foreground: #09090B;
-    --secondary: #27272A; /* Zinc 800 */
-    --secondary-foreground: #FAFAFA;
-    --muted: #27272A;
-    --muted-foreground: #A1A1AA; /* Zinc 400 */
-    --border: #27272A;
-    --input: #27272A;
-    --ring: #D4D4D8; /* Zinc 300 */
+    /* Dark Mode: Deep OLED & High Contrast */
+    --background: #0D0D0D; 
+    --foreground: #F0EBE4; 
+    --card: #161616; /* Floating sidebar/card bg */
+    --card-foreground: #F0EBE4;
+    --popover: #161616;
+    --popover-foreground: #F0EBE4;
+    
+    /* Primary buttons/actions (Stark white contrast) */
+    --primary: #F0EBE4;
+    --primary-foreground: #0D0D0D;
+    
+    /* Secondary/Muted areas */
+    --secondary: #242424; 
+    --secondary-foreground: #F0EBE4;
+    --muted: #242424;
+    --muted-foreground: #5C5652; /* Cool, sharp secondary gray */
+    
+    /* Structure */
+    --border: #242424; /* Hairline borders */
+    --input: #242424;
+    --ring: #C8973F; /* Amber-Gold focus rings */
   }
 
   body {
@@ -99,8 +116,9 @@
   .tiptap h2, .reader-prose h2 { @apply font-sans text-2xl font-semibold mt-6 mb-3 tracking-tight; }
   .tiptap h3, .reader-prose h3 { @apply font-sans text-xl font-medium mt-5 mb-2; }
   
+  /* Literary Blockquotes */
   .tiptap blockquote, .reader-prose blockquote { 
-    @apply border-l-2 border-border pl-4 my-6 italic text-muted-foreground; 
+    @apply border-l-2 border-brand pl-4 my-6 italic text-muted-foreground; 
   }
   
   .tiptap ul, .tiptap ol, .reader-prose ul, .reader-prose ol { @apply pl-6 mb-5 list-inside; }
@@ -129,14 +147,14 @@
   /* Engineering Grid */
   .bg-grid {
     background-image:
-      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     background-size: 20px 20px;
   }
   .dark .bg-grid {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   }
 
   /* Content Protection */

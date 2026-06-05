@@ -1,201 +1,198 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { 
-  User, 
-  Type, 
-  Palette, 
-  Bell, 
-  Shield, 
-  LogOut,
-  ChevronRight
-} from "lucide-react";
+import { useState } from "react";
+import { User, Monitor, CreditCard, Upload } from "lucide-react";
 
 export default function SettingsPage() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState("account");
-  const user = useSelector((state: RootState) => state.auth.user);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isMounted) return null;
-
-  const tabs = [
-    { id: "account", label: "Account", icon: User },
-    { id: "editor", label: "Editor Preferences", icon: Type },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "security", label: "Security", icon: Shield },
-  ];
+  const [activeTab, setActiveTab] = useState("Account");
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col h-auto md:h-full w-full animate-in fade-in duration-700 pb-32 md:pb-8 px-4 md:px-8">
+    <div className="max-w-[720px] mx-auto px-8 py-12 md:py-16 flex flex-col">
       
-      {/* HEADER */}
-      <header className="shrink-0 mb-8 pt-8 md:pt-12">
-        <h1 className="text-3xl md:text-[40px] font-bold tracking-tight text-white mb-2 leading-tight">
+      {/* Page Header */}
+      <div className="flex flex-col gap-2 mb-12">
+        <h1 className="text-[32px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] leading-none">
           Settings
         </h1>
-        <p className="text-[#828A9F] text-[15px] md:text-[17px] font-medium">
-          Manage your account and app preferences.
+        <p className="text-[14px] text-[#9C8870] dark:text-[#5C5652]">
+          Manage your account, editor preferences, and subscription.
         </p>
-      </header>
+      </div>
 
-      {/* MAIN CONTENT WRAPPER - Split Layout on Desktop */}
-      <div className="flex flex-col md:flex-row gap-8 md:gap-12 flex-1 md:min-h-0">
-        
-        {/* LEFT COLUMN: Navigation Tabs */}
-        <nav className="shrink-0 w-full md:w-64 flex md:flex-col gap-2 overflow-x-auto md:overflow-visible custom-scrollbar pb-2 md:pb-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 md:py-3.5 rounded-[16px] transition-all duration-300 whitespace-nowrap text-left ${
-                activeTab === tab.id 
-                  ? "bg-[#535CE8]/10 text-[#535CE8] font-semibold" 
-                  : "text-[#828A9F] hover:bg-[#171926] hover:text-white font-medium"
-              }`}
-            >
-              <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? "stroke-[2]" : "stroke-[1.5]"}`} />
-              <span className="text-[14px]">{tab.label}</span>
-            </button>
-          ))}
-          
-          <div className="hidden md:block h-px w-full bg-white/5 my-2" />
-          
-          <button className="hidden md:flex items-center gap-3 px-4 py-3 rounded-[16px] text-[#EF4444] hover:bg-[#EF4444]/10 transition-all duration-300 font-medium text-left">
-            <LogOut className="w-5 h-5 stroke-[1.5]" />
-            <span className="text-[14px]">Sign Out</span>
+      {/* Editorial Tabs */}
+      <div className="flex items-center gap-8 border-b border-[#E8E0D5] dark:border-[#242424] mb-10">
+        {[
+          { name: "Account", icon: User },
+          { name: "Preferences", icon: Monitor },
+          { name: "Billing", icon: CreditCard }
+        ].map((tab) => (
+          <button
+            key={tab.name}
+            onClick={() => setActiveTab(tab.name)}
+            className={`pb-3 text-[12px] uppercase tracking-[0.1em] font-medium transition-colors relative flex items-center gap-2 ${
+              activeTab === tab.name 
+                ? "text-[#1A1008] dark:text-[#F0EBE4]" 
+                : "text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4]"
+            }`}
+          >
+            <tab.icon className="w-3.5 h-3.5 mb-0.5" />
+            {tab.name}
+            {activeTab === tab.name && (
+              <div className="absolute bottom-[-1px] left-0 w-full h-[1px] bg-[#1A1008] dark:bg-[#F0EBE4]" />
+            )}
           </button>
-        </nav>
+        ))}
+      </div>
 
-        {/* RIGHT COLUMN: Active Tab Content */}
-        <div className="flex-1 md:overflow-y-auto custom-scrollbar md:pr-4">
+      {/* TAB CONTENT: ACCOUNT */}
+      {activeTab === "Account" && (
+        <div className="flex flex-col gap-10 animate-in fade-in duration-300">
           
-          {/* ACCOUNT SETTINGS PANEL */}
-          {activeTab === "account" && (
-            <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-300">
-              
-              {/* Profile Card */}
-              <section className="p-6 md:p-8 rounded-[24px] bg-[#171926] border border-white/5 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-[#292D41] text-white text-3xl font-bold">
-                  {user?.name?.charAt(0) || "W"}
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-[20px] font-semibold text-white mb-1">Avatar & Profile</h3>
-                  <p className="text-[14px] text-[#828A9F] mb-4 max-w-sm">
-                    Upload a picture to make your profile stand out across your shared manuscripts.
-                  </p>
-                  <div className="flex justify-center sm:justify-start gap-3">
-                    <button className="px-4 py-2 rounded-xl bg-white text-black font-semibold text-[13px] hover:bg-gray-100 transition-colors">
-                      Upload Image
-                    </button>
-                    <button className="px-4 py-2 rounded-xl bg-[#292D41] text-white font-semibold text-[13px] hover:bg-[#32364E] transition-colors">
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-              {/* Personal Info Form */}
-              <section className="flex flex-col gap-4">
-                <h3 className="text-[16px] font-bold tracking-[0.1em] text-white uppercase ml-1">
-                  Personal Information
-                </h3>
-                <div className="p-6 md:p-8 rounded-[24px] bg-[#171926] border border-white/5 flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[13px] font-medium text-[#828A9F] pl-1">Full Name</label>
-                    <input 
-                      type="text" 
-                      defaultValue={user?.name || ""}
-                      className="w-full h-12 bg-[#0B0D14] border border-white/5 focus:border-[#535CE8]/50 rounded-[16px] px-4 text-[14px] text-white outline-none transition-all"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[13px] font-medium text-[#828A9F] pl-1">Email Address</label>
-                    <input 
-                      type="email" 
-                      defaultValue={user?.email || ""}
-                      className="w-full h-12 bg-[#0B0D14] border border-white/5 focus:border-[#535CE8]/50 rounded-[16px] px-4 text-[14px] text-white outline-none transition-all"
-                    />
-                  </div>
-                  <div className="pt-2">
-                    <button className="px-5 py-2.5 rounded-xl bg-[#535CE8] text-white font-semibold text-[14px] hover:bg-[#6069F0] transition-colors">
-                      Save Changes
-                    </button>
-                  </div>
-                </div>
-              </section>
+          {/* Avatar Section */}
+          <div className="flex flex-col gap-4">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
+              Profile Picture
+            </span>
+            <div className="flex items-center gap-6">
+              <img 
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80" 
+                alt="Elena Marsh" 
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              <button className="flex items-center gap-2 px-4 py-2 border border-[#E8E0D5] dark:border-[#242424] rounded-lg text-[12px] font-medium text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] transition-colors bg-transparent">
+                <Upload className="w-3.5 h-3.5" />
+                Upload New
+              </button>
+              <button className="text-[12px] font-medium text-[#9C8870] dark:text-[#5C5652] hover:text-red-500 transition-colors">
+                Remove
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* EDITOR PREFERENCES PANEL */}
-          {activeTab === "editor" && (
-            <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-300">
-              <section className="flex flex-col gap-4">
-                <h3 className="text-[16px] font-bold tracking-[0.1em] text-white uppercase ml-1">
-                  Writing Experience
-                </h3>
-                <div className="flex flex-col gap-2 rounded-[24px] bg-[#171926] border border-white/5 p-2">
-                  
-                  <button className="flex items-center justify-between p-4 rounded-[16px] hover:bg-[#1F2333] transition-colors text-left group">
-                    <div>
-                      <h4 className="text-[15px] font-semibold text-white mb-0.5">Default Font</h4>
-                      <p className="text-[13px] text-[#828A9F]">Choose between Serif (classic) or Sans-Serif (modern).</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[14px] text-[#535CE8] font-medium">Serif</span>
-                      <ChevronRight className="w-5 h-5 text-[#828A9F] group-hover:text-white transition-colors" />
-                    </div>
-                  </button>
+          <hr className="border-t border-[#E8E0D5] dark:border-[#242424]" />
 
-                  <div className="h-px w-full bg-white/5" />
-
-                  <button className="flex items-center justify-between p-4 rounded-[16px] hover:bg-[#1F2333] transition-colors text-left group">
-                    <div>
-                      <h4 className="text-[15px] font-semibold text-white mb-0.5">Typewriter Mode</h4>
-                      <p className="text-[13px] text-[#828A9F]">Keeps the active line in the center of the screen.</p>
-                    </div>
-                    <div className="h-6 w-11 rounded-full bg-[#535CE8] relative transition-colors">
-                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm" />
-                    </div>
-                  </button>
-
-                  <div className="h-px w-full bg-white/5" />
-
-                  <button className="flex items-center justify-between p-4 rounded-[16px] hover:bg-[#1F2333] transition-colors text-left group">
-                    <div>
-                      <h4 className="text-[15px] font-semibold text-white mb-0.5">Auto-Save</h4>
-                      <p className="text-[13px] text-[#828A9F]">Automatically save drafts to the cloud.</p>
-                    </div>
-                    <div className="h-6 w-11 rounded-full bg-[#535CE8] relative transition-colors">
-                      <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm" />
-                    </div>
-                  </button>
-
-                </div>
-              </section>
+          {/* Form Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
+                Full Name
+              </label>
+              <input 
+                type="text" 
+                defaultValue="Elena Marsh"
+                className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-lg px-4 py-2.5 text-[14px] text-[#1A1008] dark:text-[#F0EBE4] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
+              />
             </div>
-          )}
-
-          {/* Fallback for unbuilt tabs */}
-          {["appearance", "notifications", "security"].includes(activeTab) && (
-            <div className="flex flex-col items-center justify-center h-64 text-center animate-in fade-in zoom-in-95 duration-300">
-              <Palette className="w-12 h-12 text-[#828A9F] mb-4 opacity-50" />
-              <h3 className="text-[18px] font-semibold text-white mb-2">Coming Soon</h3>
-              <p className="text-[14px] text-[#828A9F] max-w-sm">
-                The {activeTab} settings panel is currently under construction.
-              </p>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
+                Email Address
+              </label>
+              <input 
+                type="email" 
+                defaultValue="elena.marsh@example.com"
+                className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-lg px-4 py-2.5 text-[14px] text-[#1A1008] dark:text-[#F0EBE4] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
+              />
             </div>
-          )}
+          </div>
+
+          {/* Action Button */}
+          <div className="pt-2">
+            <button className="px-6 py-2.5 bg-[#1A1008] dark:bg-[#F0EBE4] text-[#F5F0EB] dark:text-[#0D0D0D] rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity">
+              Save Changes
+            </button>
+          </div>
+
+          <hr className="border-t border-[#E8E0D5] dark:border-[#242424] mt-4" />
+
+          {/* Danger Zone */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[14px] font-medium text-red-500">Delete Account</span>
+            <p className="text-[13px] text-[#9C8870] dark:text-[#5C5652] max-w-lg mb-2">
+              Permanently delete your account, novels, characters, and settings. This action cannot be undone.
+            </p>
+            <button className="w-fit px-4 py-2 border border-red-500/30 text-red-500 rounded-lg text-[12px] font-medium hover:bg-red-500/10 transition-colors">
+              Delete Account
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: PREFERENCES */}
+      {activeTab === "Preferences" && (
+        <div className="flex flex-col gap-10 animate-in fade-in duration-300">
+          
+          {/* Theme Selection */}
+          <div className="flex flex-col gap-4">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
+              Interface Theme
+            </span>
+            <div className="flex gap-4">
+              {['Light', 'Dark', 'System'].map((theme) => (
+                <button 
+                  key={theme}
+                  className="px-5 py-2.5 border border-[#E8E0D5] dark:border-[#242424] rounded-lg text-[13px] text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors bg-transparent"
+                >
+                  {theme}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <hr className="border-t border-[#E8E0D5] dark:border-[#242424]" />
+
+          {/* Editor Typography */}
+          <div className="flex flex-col gap-4">
+            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
+              Editor Typography
+            </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button className="flex flex-col items-start gap-2 p-4 border border-[#C8973F] rounded-lg bg-[#C8973F]/[0.02]">
+                <span className="font-serif text-[18px] text-[#1A1008] dark:text-[#F0EBE4]">Lora (Serif)</span>
+                <span className="text-[12px] text-[#9C8870] dark:text-[#5C5652]">Best for traditional manuscript feels.</span>
+              </button>
+              <button className="flex flex-col items-start gap-2 p-4 border border-[#E8E0D5] dark:border-[#242424] rounded-lg hover:border-[#C8973F]/50 transition-colors">
+                <span className="font-sans text-[18px] text-[#1A1008] dark:text-[#F0EBE4]">Jakarta (Sans)</span>
+                <span className="text-[12px] text-[#9C8870] dark:text-[#5C5652]">Clean, modern, and minimal.</span>
+              </button>
+            </div>
+          </div>
 
         </div>
-      </div>
+      )}
+
+      {/* TAB CONTENT: BILLING */}
+      {activeTab === "Billing" && (
+        <div className="flex flex-col gap-8 animate-in fade-in duration-300">
+          
+          <div className="p-6 border border-[#E8E0D5] dark:border-[#242424] rounded-xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] uppercase tracking-[0.15em] text-[#C8973F] font-bold">
+                  Current Plan
+                </span>
+                <span className="text-[24px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4]">
+                  Writely Free
+                </span>
+              </div>
+              <span className="text-[24px] font-serif italic text-[#9C8870] dark:text-[#5C5652]">
+                $0 / mo
+              </span>
+            </div>
+            
+            <p className="text-[13px] text-[#9C8870] dark:text-[#5C5652] max-w-md">
+              You are currently on the free tier. Upgrade to Writely Pro for unlimited novels, advanced worldbuilding tools, and cloud backups.
+            </p>
+
+            <div className="pt-4">
+              <button className="px-6 py-2.5 bg-[#C8973F] text-white rounded-lg text-[13px] font-medium hover:bg-[#b08436] transition-colors">
+                Upgrade to Pro
+              </button>
+            </div>
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }

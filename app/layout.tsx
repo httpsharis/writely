@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Inter, Lora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/app/provider";
 import { ThemeProvider } from "next-themes";
@@ -19,6 +19,12 @@ const lora = Lora({
   display: 'swap',
 });
 
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-jakarta",
+});
+
 export const metadata: Metadata = {
   title: "Writely_",
   description: "Your stories, beautifully organized.",
@@ -30,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${lora.variable} antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${lora.variable} ${jakarta.variable} antialiased`} suppressHydrationWarning>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" disableTransitionOnChange>
           <Providers>

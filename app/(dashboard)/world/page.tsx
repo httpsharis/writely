@@ -1,148 +1,172 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { 
-  Search, 
-  Plus, 
-  Filter,
-  MoreVertical,
-  Globe,
-  Map,
-  Sparkles,
-  BookOpen,
-  Shield,
-  Flag
-} from "lucide-react";
+import { useState } from "react";
+import { Search, Plus, Map, Shield, Sparkles, BookOpen } from "lucide-react";
 
-export default function UniversePage() {
-  const [isMounted, setIsMounted] = useState(false);
+// ==========================================
+// MOCK DATA
+// ==========================================
+const WORLD_ENTRIES = [
+  { 
+    id: "1", 
+    name: "The Glass Citadel", 
+    category: "Locations", 
+    type: "Capital City", 
+    snippet: "A sprawling metropolis built from ancient translucent stone. Seat of the High Council and the wealthiest district in the realm.",
+    imageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&h=400&q=80"
+  },
+  { 
+    id: "2", 
+    name: "Shadow Weaving", 
+    category: "Magic", 
+    type: "Forbidden Art", 
+    snippet: "The ability to manipulate ambient darkness into physical constructs. Outlawed by the High Council fifty years ago.",
+    imageUrl: null
+  },
+  { 
+    id: "3", 
+    name: "The Syndicate", 
+    category: "Factions", 
+    type: "Underworld Guild", 
+    snippet: "A ruthless organization controlling the black market in the lower rings. They hold a monopoly on smuggled arcane artifacts.",
+    imageUrl: "https://images.unsplash.com/photo-1605806616949-1e87b487cb2a?auto=format&fit=crop&w=400&h=400&q=80"
+  },
+  { 
+    id: "4", 
+    name: "The Breaking", 
+    category: "Lore", 
+    type: "Historical Event", 
+    snippet: "The cataclysmic war that shattered the old continent, leading to the rise of the Citadel and the suppression of the Old Gods.",
+    imageUrl: null
+  },
+];
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timer);
-  }, []);
+export default function WorldPage() {
+  const [activeTab, setActiveTab] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  if (!isMounted) return null;
-
-  // Placeholder Data - Grouped by type
-  const locations = [
-    { id: 1, title: "The Silent City", category: "Geography", type: "Capital City", lastEdited: "2 hrs ago", icon: Globe, color: "text-[#535CE8]", bg: "bg-[#535CE8]/10" },
-    { id: 2, title: "The Whispering Woods", category: "Geography", type: "Forest", lastEdited: "5 days ago", icon: Map, color: "text-[#10B981]", bg: "bg-[#10B981]/10" },
-    { id: 3, title: "Iron Keep", category: "Geography", type: "Fortress", lastEdited: "1 week ago", icon: Flag, color: "text-[#F59E0B]", bg: "bg-[#F59E0B]/10" },
-  ];
-
-  const loreAndSystems = [
-    { id: 4, title: "Aetherial Magic", category: "Magic System", type: "Ruleset", lastEdited: "Yesterday", icon: Sparkles, color: "text-[#8B5CF6]", bg: "bg-[#8B5CF6]/10" },
-    { id: 5, title: "The Great Schism", category: "History", type: "Event", lastEdited: "3 days ago", icon: BookOpen, color: "text-[#EF4444]", bg: "bg-[#EF4444]/10" },
-    { id: 6, title: "The Crimson Order", category: "Faction", type: "Guild", lastEdited: "2 weeks ago", icon: Shield, color: "text-[#F59E0B]", bg: "bg-[#F59E0B]/10" },
-  ];
+  // Filter logic
+  const filteredEntries = WORLD_ENTRIES.filter(entry => {
+    const matchesTab = activeTab === "All" || entry.category === activeTab;
+    const matchesSearch = entry.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col h-auto md:h-full w-full animate-in fade-in duration-700 pb-32 md:pb-4 px-4 md:px-8">
+    <div className="max-w-[720px] mx-auto px-8 py-12 md:py-16 flex flex-col">
       
-      {/* HEADER & SEARCH */}
-      <header className="shrink-0 mb-8 pt-8 md:pt-12 flex flex-col gap-6">
-        <div className="flex justify-between items-end">
-          <div>
-            <h1 className="text-3xl md:text-[40px] font-bold tracking-tight text-white mb-2 leading-tight">
-              Universe
-            </h1>
-            <p className="text-[#828A9F] text-[15px] md:text-[17px] font-medium">
-              The lore, locations, and rules of your world.
-            </p>
-          </div>
-          <button className="hidden md:flex items-center gap-2 px-5 py-3 rounded-full bg-[#535CE8] text-white hover:bg-[#6069F0] transition-colors font-semibold text-[14px] shadow-lg shadow-[#535CE8]/20">
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            New Entry
-          </button>
+      {/* Header Area */}
+      <div className="flex items-start justify-between mb-12">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-[32px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] leading-none">
+            World Codex
+          </h1>
+          <p className="text-[14px] text-[#9C8870] dark:text-[#5C5652]">
+            Encyclopedia of locations, factions, lore, and magic systems.
+          </p>
         </div>
-
-        {/* SEARCH BAR */}
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#828A9F]" />
-            <input 
-              type="text" 
-              placeholder="Search lore, places, or history..." 
-              className="w-full h-12 md:h-14 bg-[#171926] border border-white/5 focus:border-[#535CE8]/50 rounded-[20px] pl-12 pr-4 text-[15px] text-white placeholder:text-[#828A9F] outline-none transition-all"
-            />
-          </div>
-          <button className="flex items-center justify-center h-12 w-12 md:h-14 md:w-14 shrink-0 bg-[#171926] border border-white/5 hover:bg-[#1F2333] rounded-[20px] text-[#828A9F] hover:text-white transition-all">
-            <Filter className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
-
-      {/* MAIN CONTENT WRAPPER */}
-      <div className="flex flex-col gap-10 flex-1 md:min-h-0 md:overflow-y-auto custom-scrollbar md:pr-2">
         
-        {/* LOCATIONS SECTION */}
-        <section>
-          <div className="flex items-center justify-between mb-4 ml-1">
-            <h2 className="text-[12px] font-bold tracking-[0.25em] text-[#828A9F] uppercase">
-              Realms & Locations
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {locations.map((item) => (
-              <button 
-                key={item.id}
-                className="group flex items-center justify-between p-4 rounded-[20px] bg-[#171926] border border-white/5 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 text-left overflow-hidden"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.bg} ${item.color} transition-colors`}>
-                    <item.icon className="h-6 w-6 stroke-[1.5]" />
-                  </div>
-                  <div>
-                    <h4 className="text-[16px] font-semibold text-white mb-0.5 truncate group-hover:text-[#535CE8] transition-colors">
-                      {item.title}
-                    </h4>
-                    <span className="text-[13px] text-[#828A9F] font-medium">
-                      {item.type}
-                    </span>
-                  </div>
-                </div>
-                <MoreVertical className="h-5 w-5 text-[#828A9F] opacity-0 group-hover:opacity-100 transition-opacity hover:text-white" />
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* LORE & SYSTEMS SECTION */}
-        <section>
-          <div className="flex items-center justify-between mb-4 ml-1">
-            <h2 className="text-[12px] font-bold tracking-[0.25em] text-[#828A9F] uppercase">
-              Lore, Rules & Factions
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loreAndSystems.map((item) => (
-              <button 
-                key={item.id}
-                className="group flex items-center justify-between p-4 rounded-[20px] bg-[#171926] border border-white/5 hover:border-white/20 hover:-translate-y-1 transition-all duration-300 text-left overflow-hidden"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.bg} ${item.color} transition-colors`}>
-                    <item.icon className="h-6 w-6 stroke-[1.5]" />
-                  </div>
-                  <div>
-                    <h4 className="text-[16px] font-semibold text-white mb-0.5 truncate group-hover:text-[#535CE8] transition-colors">
-                      {item.title}
-                    </h4>
-                    <span className="text-[13px] text-[#828A9F] font-medium">
-                      {item.category} • {item.type}
-                    </span>
-                  </div>
-                </div>
-                <MoreVertical className="h-5 w-5 text-[#828A9F] opacity-0 group-hover:opacity-100 transition-opacity hover:text-white" />
-              </button>
-            ))}
-          </div>
-        </section>
-
+        {/* Outline Button matching your spec */}
+        <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-[12px] font-medium border border-[#E8E0D5] dark:border-[#242424] text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] transition-colors bg-transparent shrink-0">
+          <Plus className="w-3.5 h-3.5" />
+          New Entry
+        </button>
       </div>
+
+      {/* Search Bar (Minimalist) */}
+      <div className="relative mb-8">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9C8870] dark:text-[#5C5652]" />
+        <input 
+          type="text"
+          placeholder="Search the codex..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-xl pl-11 pr-4 py-3 text-[13px] text-[#1A1008] dark:text-[#F0EBE4] placeholder:text-[#9C8870] dark:placeholder:text-[#5C5652] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
+        />
+      </div>
+
+      {/* Editorial Tabs */}
+      <div className="flex items-center gap-8 border-b border-[#E8E0D5] dark:border-[#242424] mb-4 overflow-x-auto no-scrollbar">
+        {[
+          { name: "All", icon: null },
+          { name: "Locations", icon: Map },
+          { name: "Factions", icon: Shield },
+          { name: "Magic", icon: Sparkles },
+          { name: "Lore", icon: BookOpen }
+        ].map((tab) => (
+          <button
+            key={tab.name}
+            onClick={() => setActiveTab(tab.name)}
+            className={`pb-3 text-[12px] uppercase tracking-[0.1em] font-medium transition-colors relative flex items-center gap-2 whitespace-nowrap ${
+              activeTab === tab.name 
+                ? "text-[#1A1008] dark:text-[#F0EBE4]" 
+                : "text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4]"
+            }`}
+          >
+            {tab.icon && <tab.icon className="w-3.5 h-3.5 mb-0.5" />}
+            {tab.name}
+            {activeTab === tab.name && (
+              <div className="absolute bottom-[-1px] left-0 w-full h-[1px] bg-[#1A1008] dark:bg-[#F0EBE4]" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Codex List */}
+      <div className="flex flex-col">
+        {filteredEntries.map((entry) => (
+          <div 
+            key={entry.id}
+            className="group flex flex-col sm:flex-row sm:items-center gap-6 py-6 border-b border-[#E8E0D5] dark:border-[#242424] hover:bg-[#1A1008]/[0.02] dark:hover:bg-[#F0EBE4]/[0.02] transition-colors cursor-pointer -mx-6 px-6 rounded-xl"
+          >
+            
+            {/* Thumbnail (Optional based on data) */}
+            {entry.imageUrl ? (
+              <img 
+                src={entry.imageUrl} 
+                alt={entry.name}
+                // Rectangular aspect ratio for world elements (locations, artifacts) looks more serious than circles
+                className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-lg object-cover border border-[#E8E0D5] dark:border-[#242424] shrink-0"
+              />
+            ) : (
+              // Empty state placeholder
+              <div className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-lg border border-dashed border-[#E8E0D5] dark:border-[#242424] bg-transparent flex items-center justify-center shrink-0">
+                <BookOpen className="w-6 h-6 text-[#9C8870]/30 dark:text-[#5C5652]/30" />
+              </div>
+            )}
+
+            {/* Content Area */}
+            <div className="flex flex-col flex-1 justify-center min-w-0">
+              
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-[#C8973F] font-bold">
+                  {entry.type}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-[#E8E0D5] dark:bg-[#242424]"></span>
+                <span className="text-[11px] font-serif italic text-[#9C8870] dark:text-[#5C5652]">
+                  {entry.category}
+                </span>
+              </div>
+              
+              <h3 className="text-[20px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] mb-2 truncate group-hover:text-[#C8973F] transition-colors">
+                {entry.name}
+              </h3>
+              
+              <p className="text-[13.5px] leading-relaxed text-[#9C8870] dark:text-[#5C5652] line-clamp-2">
+                {entry.snippet}
+              </p>
+            </div>
+
+          </div>
+        ))}
+
+        {filteredEntries.length === 0 && (
+          <div className="py-12 text-center flex flex-col items-center">
+            <span className="text-[13px] text-[#9C8870] dark:text-[#5C5652]">No entries found in this category.</span>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

@@ -1,10 +1,6 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { sharedBaseQuery } from '../../api/baseQuery';
 
-interface StateWithAuth {
-    auth: {
-        accessToken: string | null;
-    };
-}
 
 // --- Types based on your backend response ---
 
@@ -66,19 +62,7 @@ export interface ProfileDashboardResponse {
 
 export const analyticsApi = createApi({
     reducerPath: 'analyticsApi',
-    baseQuery: fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api',
-        // Add this line so cookies are sent with every request!
-        credentials: 'include', 
-        prepareHeaders(headers, { getState }) {
-            const state = getState() as StateWithAuth;
-            const token = state.auth.accessToken;
-            if (token) {
-                headers.set('authorization', `Bearer ${token}`);
-            }
-            return headers;
-        },
-    }),
+    baseQuery: sharedBaseQuery,
     tagTypes: ['Analytics', 'User'],
 
     endpoints: (builder) => ({
