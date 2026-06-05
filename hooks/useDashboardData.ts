@@ -11,6 +11,9 @@ export function useDashboardData() {
   const { data: documentsData, isLoading: loadingDocs } =
     documentApi.endpoints.getDocuments.useQuery();
 
+  console.log("RAW ANALYTICS DATA:", analytics);
+  console.log("RAW DOCUMENTS DATA:", documentsData);
+
   const isLoading = loadingAnalytics || loadingDocs;
 
   // Find the most recently edited document to use as the "Active Draft"
@@ -29,10 +32,10 @@ export function useDashboardData() {
 
   const stats = analytics
     ? {
-        dailyGoalProgress: analytics.wordsToday,
-        dailyGoalTarget: 2000, // Replace with dynamic goal if added to backend
-        currentStreak: analytics.currentStreak,
-        totalWords: 84500, // Replace with total from backend when available
+        dailyGoalProgress: analytics.wordsToday ?? 0,
+        dailyGoalTarget: 2000,
+        currentStreak: analytics.currentStreak ?? 0,
+        totalWords: analytics.totalWords ?? 0, // ✅ FIX IT HERE
       }
     : undefined;
 

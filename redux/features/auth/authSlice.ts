@@ -5,7 +5,11 @@ import { User } from "../../../types";
 const getLocalStorage = (key: string) => {
   if (typeof window !== "undefined") {
     const stored = window.localStorage.getItem(key);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      // Only parse the 'user' object. The tokens are raw strings.
+      if (key === "user") return JSON.parse(stored);
+      return stored; 
+    }
   }
   return null;
 };
@@ -33,28 +37,27 @@ const authSlice = createSlice({
         user: User;
         accessToken: string;
         refreshToken?: string;
-      }>,
+      }>
     ) => {
-      // 1. Save to short-term memory
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
       
-      // 2. Save backup to the hard drive
+      // Stringify the object
       window.localStorage.setItem("user", JSON.stringify(action.payload.user));
-      window.localStorage.setItem("accessToken", JSON.stringify(action.payload.accessToken));
+      
+      // Save the tokens as raw strings! Do not stringify them.
+      window.localStorage.setItem("accessToken", action.payload.accessToken);
 
       if (action.payload.refreshToken) {
         state.refreshToken = action.payload.refreshToken;
-        window.localStorage.setItem("refreshToken", JSON.stringify(action.payload.refreshToken));
+        window.localStorage.setItem("refreshToken", action.payload.refreshToken);
       }
     },
     logOut: (state) => {
-      // 1. Clear short-term memory
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
       
-      // 2. Erase the hard drive backup
       window.localStorage.removeItem("user");
       window.localStorage.removeItem("accessToken");
       window.localStorage.removeItem("refreshToken");

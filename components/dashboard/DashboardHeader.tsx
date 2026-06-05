@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Moon, Plus, Sunset, Sun } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardHeaderProps {
@@ -9,14 +9,28 @@ interface DashboardHeaderProps {
   };
 }
 
+type GreetingPeriod = {
+  label: string;
+  Icon: React.ElementType;
+};
+
+function getGreetingPeriod(): GreetingPeriod {
+  const hour = new Date().getHours();
+  if (hour < 12) return { label: "Good morning", Icon: Sun };
+  if (hour < 18) return { label: "Good afternoon", Icon: Sunset };
+  return { label: "Good evening", Icon: Moon };
+}
+
 export function DashboardHeader({ userName, stats }: DashboardHeaderProps) {
   const firstName = userName?.split(" ")[0] || "Writer";
   const progress = stats?.dailyGoalProgress || 0;
   const target = stats?.dailyGoalTarget || 2000;
-  
+
+  const { label, Icon } = getGreetingPeriod();
+
   const wordsRemaining = target - progress;
   let dynamicSubtitle = "Your universe is waiting for you.";
-  
+
   if (wordsRemaining > 0 && progress > 0) {
     dynamicSubtitle = `You're ${wordsRemaining.toLocaleString()} words from your daily goal — keep writing.`;
   } else if (wordsRemaining <= 0) {
@@ -25,11 +39,19 @@ export function DashboardHeader({ userName, stats }: DashboardHeaderProps) {
 
   return (
     // Switched to flex-col on mobile, added gap-5 for vertical rhythm
-    <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 md:gap-6 mb-10 md:mb-12 shrink-0">
+    <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6 md:mb-12 shrink-0">
       <div className="flex flex-col gap-1.5 md:gap-2">
         {/* Scaled down to text-3xl on mobile to prevent wrapping awkwardness */}
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-          Good afternoon, {firstName}.
+        <h1 className=" flex text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+          {label && (
+            <>
+              <Icon
+                className="w-7 h-7 md:w-9 md:h-9 text-amber-500 shrink-0 mt-3.5 mr-3"
+                strokeWidth={1.5}
+              />
+              {label}, {firstName}.
+            </>
+          )}
         </h1>
         <p className="text-muted-foreground text-base md:text-lg font-medium">
           {dynamicSubtitle}
