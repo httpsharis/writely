@@ -1,198 +1,232 @@
 "use client";
 
-import { useState } from "react";
-import { User, Monitor, CreditCard, Upload } from "lucide-react";
+import {
+  Moon,
+  Type,
+  Target,
+  Download,
+  Trash2,
+  Maximize,
+  LucideIcon,
+} from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+// 👇 FIX 3: Removed toggleDarkMode from this import
+import {
+  toggleFocusMode,
+  setDailyGoal,
+  setEditorFont,
+} from "@/redux/features/settings/settingsSlice";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
+// --- REUSABLE MICRO-COMPONENTS ---
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <h2 className="text-xs font-bold tracking-widest text-foreground uppercase flex items-center gap-4 pt-12 pb-6">
+      {title}
+      <span className="h-px flex-1 bg-border" />
+    </h2>
+  );
+}
+
+function SettingRow({
+  icon: Icon,
+  title,
+  description,
+  children,
+  isDanger = false,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  isDanger?: boolean;
+}) {
+  return (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-6 border-b border-border/50 group">
+      <div className="flex items-start gap-4 md:gap-6">
+        <div
+          className={`flex items-center justify-center h-10 w-10 rounded-xl bg-secondary/30 shrink-0 transition-colors duration-300 ${isDanger ? "text-rose-500/80 group-hover:text-rose-500 group-hover:bg-rose-500/10" : "text-muted-foreground group-hover:text-brand group-hover:bg-secondary/50"}`}
+        >
+          <Icon className="w-5 h-5 stroke-[1.5]" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <h3
+            className={`text-lg font-serif font-bold tracking-tight ${isDanger ? "text-rose-500" : "text-foreground"}`}
+          >
+            {title}
+          </h3>
+          <p className="text-xs md:text-sm text-muted-foreground font-medium max-w-md leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="shrink-0 pl-14 md:pl-0">{children}</div>
+    </div>
+  );
+}
+
+function Toggle({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none ${
+        enabled ? "bg-foreground" : "bg-border"
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform duration-300 ${
+          enabled ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+// --- MAIN PAGE COMPONENT ---
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("Account");
+  const dispatch = useDispatch();
+
+  const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  const { isFocusMode, dailyGoal, editorFont } = useSelector(
+    (state: RootState) => state.settings,
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="max-w-[720px] mx-auto px-8 py-12 md:py-16 flex flex-col">
-      
+    <div className="w-full max-w-4xl pb-24">
       {/* Page Header */}
-      <div className="flex flex-col gap-2 mb-12">
-        <h1 className="text-[32px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] leading-none">
+      <header className="mb-8 md:mb-12 shrink-0">
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
           Settings
         </h1>
-        <p className="text-[14px] text-[#9C8870] dark:text-[#5C5652]">
-          Manage your account, editor preferences, and subscription.
+        <p className="text-muted-foreground text-base md:text-lg font-medium mt-2">
+          Configure your workspace and writing environment.
         </p>
-      </div>
+      </header>
 
-      {/* Editorial Tabs */}
-      <div className="flex items-center gap-8 border-b border-[#E8E0D5] dark:border-[#242424] mb-10">
-        {[
-          { name: "Account", icon: User },
-          { name: "Preferences", icon: Monitor },
-          { name: "Billing", icon: CreditCard }
-        ].map((tab) => (
-          <button
-            key={tab.name}
-            onClick={() => setActiveTab(tab.name)}
-            className={`pb-3 text-[12px] uppercase tracking-[0.1em] font-medium transition-colors relative flex items-center gap-2 ${
-              activeTab === tab.name 
-                ? "text-[#1A1008] dark:text-[#F0EBE4]" 
-                : "text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4]"
-            }`}
-          >
-            <tab.icon className="w-3.5 h-3.5 mb-0.5" />
-            {tab.name}
-            {activeTab === tab.name && (
-              <div className="absolute bottom-[-1px] left-0 w-full h-[1px] bg-[#1A1008] dark:bg-[#F0EBE4]" />
-            )}
+      <div className="flex flex-col">
+        {/* --- SECTION 1: WRITING ENVIRONMENT --- */}
+        <SectionHeader title="Writing Environment" />
+
+        <SettingRow
+          icon={Target}
+          title="Daily Word Goal"
+          description="Set your default daily target. This updates your dashboard milestones and tracking."
+        >
+          <div className="flex items-center gap-2 border border-border/50 rounded-lg px-3 py-1.5 focus-within:border-foreground/50 transition-colors">
+            <input
+              type="number"
+              value={dailyGoal}
+              onChange={(e) =>
+                dispatch(setDailyGoal(Number(e.target.value) || 0))
+              }
+              className="w-16 bg-transparent text-sm font-bold text-foreground outline-none text-center"
+            />
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-bold">
+              Words
+            </span>
+          </div>
+        </SettingRow>
+
+        <SettingRow
+          icon={Maximize}
+          title="Default Focus Mode"
+          description="Automatically fade out the sidebar and formatting tools when you begin typing."
+        >
+          <Toggle
+            enabled={isFocusMode}
+            onChange={() => dispatch(toggleFocusMode())}
+          />
+        </SettingRow>
+
+        {/* --- SECTION 2: APPEARANCE --- */}
+        <SectionHeader title="Appearance" />
+
+        <SettingRow
+          icon={Moon}
+          title="Dark Mode"
+          description="Switch between light and dark themes to reduce eye strain during late-night writing sessions."
+        >
+          {mounted ? (
+            // 2. Use resolvedTheme for both the check AND the toggle logic
+            <Toggle
+              enabled={resolvedTheme === "dark"}
+              onChange={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
+            />
+          ) : (
+            <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-border opacity-50" />
+          )}
+        </SettingRow>
+
+        <SettingRow
+          icon={Type}
+          title="Editor Typography"
+          description="Choose the primary font family used in the writing canvas."
+        >
+          <div className="flex items-center gap-1 bg-secondary/20 p-1 rounded-lg border border-border/30">
+            <button
+              onClick={() => dispatch(setEditorFont("sans"))}
+              className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all ${
+                editorFont === "sans"
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sans
+            </button>
+            <button
+              onClick={() => dispatch(setEditorFont("serif"))}
+              className={`px-4 py-1.5 rounded-md text-xs font-serif font-bold transition-all ${
+                editorFont === "serif"
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Serif
+            </button>
+          </div>
+        </SettingRow>
+
+        {/* --- SECTION 3: DATA & SECURITY --- */}
+        <SectionHeader title="Data & Security" />
+
+        <SettingRow
+          icon={Download}
+          title="Export Library"
+          description="Download a complete backup of all your novels, chapters, and notes as markdown files."
+        >
+          <button className="px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-foreground border border-border/50 rounded-full hover:bg-foreground hover:text-background transition-all duration-300">
+            Export .Zip
           </button>
-        ))}
+        </SettingRow>
+
+        <SettingRow
+          icon={Trash2}
+          title="Danger Zone"
+          description="Permanently delete your account, novels, and all associated data. This action cannot be undone."
+          isDanger={true}
+        >
+          <button className="px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-rose-500 border border-rose-500/30 rounded-full hover:bg-rose-500 hover:text-white transition-all duration-300">
+            Delete Account
+          </button>
+        </SettingRow>
       </div>
-
-      {/* TAB CONTENT: ACCOUNT */}
-      {activeTab === "Account" && (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-300">
-          
-          {/* Avatar Section */}
-          <div className="flex flex-col gap-4">
-            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
-              Profile Picture
-            </span>
-            <div className="flex items-center gap-6">
-              <img 
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80" 
-                alt="Elena Marsh" 
-                className="w-16 h-16 rounded-full object-cover"
-              />
-              <button className="flex items-center gap-2 px-4 py-2 border border-[#E8E0D5] dark:border-[#242424] rounded-lg text-[12px] font-medium text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] transition-colors bg-transparent">
-                <Upload className="w-3.5 h-3.5" />
-                Upload New
-              </button>
-              <button className="text-[12px] font-medium text-[#9C8870] dark:text-[#5C5652] hover:text-red-500 transition-colors">
-                Remove
-              </button>
-            </div>
-          </div>
-
-          <hr className="border-t border-[#E8E0D5] dark:border-[#242424]" />
-
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
-                Full Name
-              </label>
-              <input 
-                type="text" 
-                defaultValue="Elena Marsh"
-                className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-lg px-4 py-2.5 text-[14px] text-[#1A1008] dark:text-[#F0EBE4] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
-                Email Address
-              </label>
-              <input 
-                type="email" 
-                defaultValue="elena.marsh@example.com"
-                className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-lg px-4 py-2.5 text-[14px] text-[#1A1008] dark:text-[#F0EBE4] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <div className="pt-2">
-            <button className="px-6 py-2.5 bg-[#1A1008] dark:bg-[#F0EBE4] text-[#F5F0EB] dark:text-[#0D0D0D] rounded-lg text-[13px] font-medium hover:opacity-90 transition-opacity">
-              Save Changes
-            </button>
-          </div>
-
-          <hr className="border-t border-[#E8E0D5] dark:border-[#242424] mt-4" />
-
-          {/* Danger Zone */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[14px] font-medium text-red-500">Delete Account</span>
-            <p className="text-[13px] text-[#9C8870] dark:text-[#5C5652] max-w-lg mb-2">
-              Permanently delete your account, novels, characters, and settings. This action cannot be undone.
-            </p>
-            <button className="w-fit px-4 py-2 border border-red-500/30 text-red-500 rounded-lg text-[12px] font-medium hover:bg-red-500/10 transition-colors">
-              Delete Account
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: PREFERENCES */}
-      {activeTab === "Preferences" && (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-300">
-          
-          {/* Theme Selection */}
-          <div className="flex flex-col gap-4">
-            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
-              Interface Theme
-            </span>
-            <div className="flex gap-4">
-              {['Light', 'Dark', 'System'].map((theme) => (
-                <button 
-                  key={theme}
-                  className="px-5 py-2.5 border border-[#E8E0D5] dark:border-[#242424] rounded-lg text-[13px] text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors bg-transparent"
-                >
-                  {theme}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <hr className="border-t border-[#E8E0D5] dark:border-[#242424]" />
-
-          {/* Editor Typography */}
-          <div className="flex flex-col gap-4">
-            <span className="text-[10px] uppercase tracking-[0.1em] text-[#9C8870] dark:text-[#5C5652] font-semibold">
-              Editor Typography
-            </span>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button className="flex flex-col items-start gap-2 p-4 border border-[#C8973F] rounded-lg bg-[#C8973F]/[0.02]">
-                <span className="font-serif text-[18px] text-[#1A1008] dark:text-[#F0EBE4]">Lora (Serif)</span>
-                <span className="text-[12px] text-[#9C8870] dark:text-[#5C5652]">Best for traditional manuscript feels.</span>
-              </button>
-              <button className="flex flex-col items-start gap-2 p-4 border border-[#E8E0D5] dark:border-[#242424] rounded-lg hover:border-[#C8973F]/50 transition-colors">
-                <span className="font-sans text-[18px] text-[#1A1008] dark:text-[#F0EBE4]">Jakarta (Sans)</span>
-                <span className="text-[12px] text-[#9C8870] dark:text-[#5C5652]">Clean, modern, and minimal.</span>
-              </button>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB CONTENT: BILLING */}
-      {activeTab === "Billing" && (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-300">
-          
-          <div className="p-6 border border-[#E8E0D5] dark:border-[#242424] rounded-xl flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] uppercase tracking-[0.15em] text-[#C8973F] font-bold">
-                  Current Plan
-                </span>
-                <span className="text-[24px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4]">
-                  Writely Free
-                </span>
-              </div>
-              <span className="text-[24px] font-serif italic text-[#9C8870] dark:text-[#5C5652]">
-                $0 / mo
-              </span>
-            </div>
-            
-            <p className="text-[13px] text-[#9C8870] dark:text-[#5C5652] max-w-md">
-              You are currently on the free tier. Upgrade to Writely Pro for unlimited novels, advanced worldbuilding tools, and cloud backups.
-            </p>
-
-            <div className="pt-4">
-              <button className="px-6 py-2.5 bg-[#C8973F] text-white rounded-lg text-[13px] font-medium hover:bg-[#b08436] transition-colors">
-                Upgrade to Pro
-              </button>
-            </div>
-          </div>
-
-        </div>
-      )}
-
     </div>
   );
 }

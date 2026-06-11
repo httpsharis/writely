@@ -10,6 +10,7 @@ export default function DashboardPage() {
   // Simulating a loading state so you can see your Phantom UI skeletons in action
   const { isLoading, stats, activeDraft, recentFiles } = useDashboardData();
 
+  
   return (
     <div className="w-full mx-auto px-6 flex flex-col min-h-screen animate-in fade-in duration-700">
       {/* 1. The Welcome Header */}

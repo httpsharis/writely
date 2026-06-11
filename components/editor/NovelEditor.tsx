@@ -1,23 +1,20 @@
 "use client";
 
-import { forwardRef, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 
 import BubbleToolbar from "./BubbleToolbar";
-import { SlashCommands } from "./slashExtension";
-import { useEditorAutoSave } from "@/hooks/useEditorAutoSave";
-import { useChapterSync } from "@/hooks/useChapterSync";
+import { type Document } from "@/redux/features/documents/documentApi";
+import EditorTitleInput from "./EditorTitleInput";
 
-import type { ChapterFull } from "@/lib/api-client";
-import type { UpdateChapterInput } from "@/types/chapter";
-import type { SaveStatus } from "@/hooks/useEditor";
+export type SaveStatus = "saved" | "saving" | "off";
 
 interface Props {
-  chapter: ChapterFull | null;
-  onAutoSave: (data: UpdateChapterInput) => Promise<void>;
+  chapter: Document | null;
+  onAutoSave: (data: Partial<Document>) => Promise<void>;
   saveStatus: SaveStatus;
 }
 
@@ -25,59 +22,62 @@ const EXTENSIONS = [
   StarterKit,
   Underline,
   Placeholder.configure({ placeholder: "Start writing..." }),
-  SlashCommands,
 ];
 
-const TiptapEditor = forwardRef(function TiptapEditor(
-  { chapter, onAutoSave, saveStatus }: Props,
-  ref,
-) {
-  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
-  
-  const getLatestContent = useCallback(() => editorRef.current?.getJSON(), []);
-  const { scheduleSave } = useEditorAutoSave(onAutoSave, saveStatus, getLatestContent);
+export default function NovelEditor({ chapter, onAutoSave, saveStatus }: Props) {
+  // Correctly type the timeout so it clears cleanly in browser environments
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: EXTENSIONS,
     editorProps: {
       attributes: {
-        class: "prose prose-invert prose-p:text-[#E2E8F0] prose-headings:text-white max-w-none focus:outline-none min-h-[500px]",
+        class: "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[500px] text-foreground prose-p:leading-relaxed prose-headings:font-serif",
       },
     },
-    onUpdate: ({ editor: ed }) => scheduleSave({ content: ed.getJSON() }),
+    onUpdate: ({ editor: ed }) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onAutoSave({ content: ed.getJSON() });
+      }, 2000);
+    },
   });
 
-  useEffect(() => { editorRef.current = editor; }, [editor]);
+  // Cleanup timeout when editor unmounts
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
-  const { title, setTitle } = useChapterSync(chapter, editor);
+  // Safely inject initial content without resetting the cursor
+  useEffect(() => {
+    if (editor && chapter) {
+      editor.commands.setContent(chapter.content || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapter?._id, editor]); 
 
-  if (!chapter) {
-    return (
-      <div className="flex h-full items-center justify-center text-[#828A9F]">
-        Select a chapter to begin writing.
-      </div>
-    );
-  }
+  // The empty state is now perfectly handled by WritePage
+  if (!chapter) return null;
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-6">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          scheduleSave({ title: e.target.value });
-        }}
-        placeholder="Chapter Title"
-        className="w-full bg-transparent text-3xl font-bold text-white outline-none mb-8"
+    <div className="w-full max-w-3xl mx-auto p-6 md:p-12 animate-in fade-in duration-700">
+      <div className="flex items-center justify-between mb-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+         <span>{saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : ""}</span>
+      </div>
+
+      <EditorTitleInput
+        key={chapter._id} 
+        initialTitle={chapter.title || ""}
+        onAutoSave={(title) => onAutoSave({ title })}
       />
-      <div className="relative">
+      
+      <div className="relative mt-8">
         {editor && <BubbleToolbar editor={editor} />}
         <EditorContent editor={editor} />
       </div>
     </div>
   );
-});
-
-export default TiptapEditor;
+}

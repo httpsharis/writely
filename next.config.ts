@@ -14,7 +14,10 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com", // Example: Replace with your actual image domain
         pathname: "/**",
       },
-      // You can add as many as you need...
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
 };

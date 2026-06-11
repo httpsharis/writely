@@ -12,6 +12,7 @@ export interface Document {
   parentId: string | null; // Null if it's a novel, holds an ID if it's a chapter
   order: number; // Used for arranging chapters
 
+  wordCount?: number;
   content?: Record<string, unknown>; // The rich-text JSON from Tiptap/Novel editor
   coverImage?: string;
   icon?: string;
@@ -29,6 +30,10 @@ export interface CreateDocumentPayload {
   title: string;
   type: "novel" | "chapter";
   parentId?: string | null;
+  // Add these new optional fields!
+  tags?: string[];
+  targetWords?: number;
+  synopsis?: string;
 }
 
 // 4. Define the exact data needed to update an existing document
@@ -52,8 +57,19 @@ export const documentApi = createApi({
   // 6. Define all of our specific API endpoints (GET, POST, PUT, DELETE)
   endpoints: (builder) => ({
     // Fetch all of the user's active novels for the dashboard
-    getDocuments: builder.query<{ documents: Document[] }, void>({
-      query: () => "/documents",
+    // Fetch all of the user's active novels for the dashboard
+    getDocuments: builder.query<
+      { documents: Document[] },
+      { type?: string } | void
+    >({
+      query: (params) => {
+        // If the component passes { type: "novel" }, append it to the URL
+        if (params && params.type) {
+          return `/documents?type=${params.type}`;
+        }
+        // Otherwise, fetch all documents normally
+        return "/documents";
+      },
       // Label this list so we can update it later when a new document is made
       providesTags: (result) =>
         result
@@ -76,7 +92,7 @@ export const documentApi = createApi({
 
     // Create a new novel or chapter
     createDocument: builder.mutation<
-      { document: Document },
+      { document: { _id: string; title: string } }, // response shape
       CreateDocumentPayload
     >({
       query: (body) => ({

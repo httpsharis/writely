@@ -1,5 +1,6 @@
 import { Moon, Plus, Sunset, Sun } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -59,10 +60,13 @@ export function DashboardHeader({ userName, stats }: DashboardHeaderProps) {
       </div>
 
       {/* Mobile Fix: Removed 'hidden'. Now it spans w-full on mobile, and shrinks on md: */}
-      <button className="flex items-center justify-center md:justify-start gap-2.5 w-full md:w-auto px-6 py-3.5 md:py-3 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 uppercase tracking-widest text-xs font-bold shrink-0">
+      <Link
+        href="/project/new"
+        className="flex items-center justify-center md:justify-start gap-2.5 w-full md:w-auto px-6 py-3.5 md:py-3 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 uppercase tracking-widest text-xs font-bold shrink-0"
+      >
         <Plus className="w-4 h-4 stroke-2" />
-        New Draft
-      </button>
+        Create Novel
+      </Link>
     </header>
   );
 }

@@ -22,6 +22,7 @@ export function useDashboardData() {
 
   const activeDraft = activeDoc
     ? {
+        id: activeDoc._id, // ✅ FIX: Added the missing id property
         novelTitle: activeDoc.type === "novel" ? activeDoc.title : "Workspace",
         title: activeDoc.title,
         status: activeDoc.status,
@@ -29,7 +30,7 @@ export function useDashboardData() {
         wordCount: 0, // Update if your document interface adds word counts
       }
     : undefined;
-
+    
   const stats = analytics
     ? {
         dailyGoalProgress: analytics.wordsToday ?? 0,

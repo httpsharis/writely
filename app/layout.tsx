@@ -4,19 +4,20 @@ import "./globals.css";
 import { Providers } from "@/app/provider";
 import { ThemeProvider } from "next-themes";
 import { CommandPalette } from "@/components/shared/CommandPalette";
+import { AuthWrapper } from "../components/shared/AuthWrapper";
 
 // 1. Configure the UI Font (Inter)
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
-  variable: '--font-inter',
-  display: 'swap',
+  variable: "--font-inter",
+  display: "swap",
 });
 
 // 2. Configure the Writing Font (Lora)
-const lora = Lora({ 
+const lora = Lora({
   subsets: ["latin"],
-  variable: '--font-lora',
-  display: 'swap',
+  variable: "--font-lora",
+  display: "swap",
 });
 
 const jakarta = Plus_Jakarta_Sans({
@@ -36,12 +37,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${lora.variable} ${jakarta.variable} antialiased`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${lora.variable} ${jakarta.variable} antialiased`}
+      suppressHydrationWarning
+    >
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
           <Providers>
-            <CommandPalette />
-            {children}
+            <AuthWrapper>
+              <CommandPalette />
+              {children}
+            </AuthWrapper>
           </Providers>
         </ThemeProvider>
       </body>
