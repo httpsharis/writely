@@ -2,31 +2,25 @@
 
 import { useState } from "react";
 import { Book, Users, StickyNote, Plus, Folder, Eye, EyeOff } from "lucide-react";
-import type { Document } from "@/redux/features/documents/documentApi";
+import { useEditorContext } from "@/app/(editor)/project/[id]/write/EditorContext";
 
-interface EditorSidebarProps {
-  isOpen: boolean;
-  chapters: Document[];
-  activeChapterId: string | null;
-  onSelectChapter: (id: string) => void;
-  onCreateChapter: () => void;
-  onTogglePublish: (id: string, currentStatus: string) => void;
-}
+export default function EditorSidebar() {
+  // 🟢 Look how clean this is! Pulling directly from the cloud.
+  const { 
+    isSidebarOpen, 
+    chapters, 
+    activeChapterId, 
+    handleSelectChapter, 
+    handleCreateChapter,
+    handleToggleChapterPublish 
+  } = useEditorContext();
 
-export default function EditorSidebar({ 
-  isOpen, 
-  chapters, 
-  activeChapterId, 
-  onSelectChapter, 
-  onCreateChapter,
-  onTogglePublish
-}: EditorSidebarProps) {
   const [activeTab, setActiveTab] = useState("chapters");
 
   return (
     <div 
       className={`border-l border-border bg-card/20 h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
-        isOpen ? "w-80 border-l" : "w-0 border-l-0"
+        isSidebarOpen ? "w-80 border-l" : "w-0 border-l-0"
       }`}
     >
       <div className="w-80 h-full flex flex-col">
@@ -46,7 +40,7 @@ export default function EditorSidebar({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Manuscript</h3>
                 <button 
-                  onClick={onCreateChapter}
+                  onClick={handleCreateChapter}
                   className="p-1 hover:bg-secondary rounded-md text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Plus className="w-4 h-4" />
@@ -59,7 +53,6 @@ export default function EditorSidebar({
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">All Chapters</span>
                 </div>
                 
-                {/* 🟢 DYNAMIC CHAPTER LIST */}
                 {chapters.map((chapter) => {
                   const isActive = chapter._id === activeChapterId;
                   const isPublished = chapter.status === "published";
@@ -67,7 +60,7 @@ export default function EditorSidebar({
                   return (
                     <div 
                       key={chapter._id}
-                      onClick={() => onSelectChapter(chapter._id)}
+                      onClick={() => handleSelectChapter(chapter._id)}
                       className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between group ${
                         isActive 
                           ? "bg-primary/10 border-primary/20 shadow-sm" 
@@ -85,11 +78,10 @@ export default function EditorSidebar({
                           {chapter.wordCount?.toLocaleString() || 0}
                         </span>
                         
-                        {/* 🟢 INDIVIDUAL CHAPTER PUBLISH TOGGLE */}
                         <button
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevent selecting the chapter when clicking publish
-                            onTogglePublish(chapter._id, chapter.status);
+                            e.stopPropagation(); 
+                            handleToggleChapterPublish(chapter._id, chapter.status);
                           }}
                           title={isPublished ? "Unpublish Chapter" : "Publish to Readers"}
                           className={`p-1.5 rounded-md transition-colors ${
@@ -107,15 +99,12 @@ export default function EditorSidebar({
               </div>
             </div>
           )}
-
-          {/* ... (Keep your Characters and Notes tab UIs here, just map over their respective arrays later) ... */}
         </div>
       </div>
     </div>
   );
 }
 
-// Keep SidebarTab component exactly the same
 function SidebarTab({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) {
   return (
     <button 

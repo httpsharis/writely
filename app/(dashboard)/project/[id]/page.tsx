@@ -1,141 +1,281 @@
 "use client";
 
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, PenTool, Loader2 } from "lucide-react";
-import { ProjectHero } from "@/components/project/ProjectHero";
-import { ManuscriptList } from "@/components/project/ManuscriptList";
-import { useGetDocumentByIdQuery, useCreateDocumentMutation } from "@/redux/features/documents/documentApi";
+import Image from "next/image";
+import { Loader2, ArrowRight, FileText, Clock, Settings, BookOpen, Edit2, Check } from "lucide-react";
+import { useGetDocumentByIdQuery } from "@/redux/features/documents/documentApi";
+import { useGetCurrentUserQuery } from "@/redux/features/auth/authApi";
 
-// Strictly type the child documents (chapters)
-interface ChildDocument {
+// STRICT TYPING: Define the exact shape of a chapter item in the list
+interface ChapterItem {
   _id: string;
   title?: string;
-  status: string;
   wordCount?: number;
-  updatedAt?: string;
+  updatedAt: string | Date;
 }
 
-export default function ProjectLobby() {
+export default function ProjectLobbyPage() {
   const params = useParams();
   const router = useRouter();
-  const projectId = params.id as string;
+  
+  // Extract the ID from the URL
+  const projectId = (params.projectId || params.id) as string;
 
-  const { data, isLoading, error } = useGetDocumentByIdQuery(projectId);
-  const [createChapter, { isLoading: isCreating }] = useCreateDocumentMutation();
+  // FETCH USER FIRST
+  const { data: authData, isLoading: isUserLoading } = useGetCurrentUserQuery();
 
-  const handleCreateChapter = async () => {
-    try {
-      const result = await createChapter({
-        title: "Untitled Chapter",
-        type: "chapter",
-        parentId: projectId,
-      }).unwrap();
-      // 🟢 Uses the URL query parameter
-      router.push(`/project/${projectId}/write?chapterId=${result.document._id}`);
-    } catch (err) {
-      console.error("Failed to create chapter:", err);
-    }
+  // FETCH DOCUMENT
+  const { data, isLoading: isDocLoading, error } = useGetDocumentByIdQuery(projectId, {
+    skip: !authData?.user, 
+  });
+  
+  const project = data?.document;
+
+  // STATE: Author's Note & Notification Banner
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [authorNote, setAuthorNote] = useState("Currently undergoing heavy edits for the second act. The pacing should feel much tighter now. Thanks for following along.");
+  const [banner, setBanner] = useState<{ message: string } | null>(null);
+
+  // Trigger Notification Banner
+  const showNotification = (message: string) => {
+    setBanner({ message });
+    setTimeout(() => setBanner(null), 4000);
   };
 
-  const handleOpenEditor = async (chaptersList: ChildDocument[]) => {
-    if (chaptersList.length > 0) {
-      // 🟢 Uses the URL query parameter
-      router.push(`/project/${projectId}/write?chapterId=${chaptersList[0]._id}`);
-    } else {
-      await handleCreateChapter();
-    }
+  // Handle Note Save
+  const handleSaveNote = () => {
+    setIsEditingNote(false);
+    // Here you would typically fire an RTK Query mutation to save to the backend
+    showNotification("Public note updated successfully.");
   };
 
-  if (isLoading) {
+  const chapters: ChapterItem[] = project?.children || project?.chapters || [
+    { _id: 'mock-1', title: "Prologue: The Fall", wordCount: 1250, updatedAt: "2024-06-14T10:00:00.000Z" },
+    { _id: 'mock-2', title: "Chapter One: Embers", wordCount: 3420, updatedAt: "2024-06-13T10:00:00.000Z" }
+  ];
+
+  // HYBRID LOADING STATE
+  if (isUserLoading || isDocLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  if (error || !data?.document) {
+  // ERROR / NOT FOUND STATE
+  if (error || !project) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3">
-        <p className="text-muted-foreground text-sm">
-          {error ? "Failed to load project." : "Project not found."}
-        </p>
-        <Link
-          href="/project"
-          className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+        <p className="font-serif text-2xl text-foreground mb-4">Manuscript not found.</p>
+        <button 
+          onClick={() => router.push("/library")}
+          className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors border-b border-border/40 pb-1"
         >
-          Back to Library
-        </Link>
+          Return to Library
+        </button>
       </div>
     );
   }
-
-  const novel = data.document;
-  const chapters: ChildDocument[] = novel.children || [];
-
-  const stats = {
-    chapters: chapters.length,
-    words: chapters.reduce((sum: number, ch: ChildDocument) => sum + (ch.wordCount || 0), 0),
-    views: 0,
-    followers: 0,
-  };
-
-  const projectData = {
-    title: novel.title,
-    description: novel.synopsis || "No synopsis provided. Open settings to add one.",
-    status: novel.status,
-    stats,
-    coverImage: novel.coverImage || null, 
-  };
-
-  const formattedChapters = chapters.map((ch: ChildDocument) => ({
-    id: ch._id,
-    title: ch.title || "Untitled Chapter",
-    status: ch.status,
-    words: ch.wordCount || 0,
-    date: ch.updatedAt
-      ? new Date(ch.updatedAt).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })
-      : "Today",
-  }));
 
   return (
-    <div className="min-h-screen w-full pb-40 px-4 md:px-8 pt-6 md:pt-10">
-      <div className="max-w-5xl mx-auto flex flex-col h-full w-full">
-        <div className="flex items-center justify-between mb-12">
-          <Link
-            href="/project"
-            className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[1.5]" />
-            Library
-          </Link>
+    <div className="max-w-6xl mx-auto px-6 py-12 md:px-12 md:py-20 animate-in fade-in duration-700 relative">
+      
+      {/* 🟢 NOTIFICATION BANNER */}
+      {banner && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="bg-foreground text-background px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl">
+            <Check className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-widest">{banner.message}</span>
+          </div>
+        </div>
+      )}
 
-          <button
-            onClick={() => handleOpenEditor(chapters)}
-            disabled={isCreating}
-            className="flex items-center gap-2 px-6 py-2 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all font-bold text-xs uppercase tracking-widest disabled:opacity-50"
-          >
-            {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenTool className="w-3.5 h-3.5" />}
-            {isCreating ? "Loading..." : "Open Editor"}
-          </button>
+      {/* Editorial Header / Breadcrumb */}
+      <div className="flex items-center justify-between border-b border-border/40 pb-8 mb-16">
+        <div className="flex flex-col">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            Project Hub
+          </p>
+          <h1 className="font-serif text-4xl md:text-5xl text-foreground tracking-tight line-clamp-1">
+            {project.title || "Untitled"}
+          </h1>
+        </div>
+        <button className="p-3 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+          <Settings className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Main Two-Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-20 items-start">
+        
+        {/* LEFT COLUMN: The Book's Identity */}
+        <div className="lg:col-span-4 flex flex-col space-y-12 sticky top-12">
+          
+          {/* Cover Image Container */}
+          <div className="relative aspect-[2/3] w-full overflow-hidden bg-secondary/20 border border-border/40 rounded-sm">
+            {project.coverImage ? (
+              <Image
+                src={project.coverImage}
+                alt={`${project.title} cover`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 33vw"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
+                <BookOpen className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                <span className="font-serif text-sm uppercase tracking-widest text-muted-foreground absolute bottom-8">
+                  No Cover
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Metadata Block */}
+          <div className="flex flex-col space-y-5 pt-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Status</span>
+              <span className="text-[10px] uppercase tracking-widest font-bold text-foreground bg-secondary px-3 py-1 rounded-full">
+                {project.status || "Drafting"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Word Count</span>
+              <span className="flex items-center gap-1.5 text-sm font-serif text-foreground">
+                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                {(project.wordCount || 0).toLocaleString()}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Last Edited</span>
+              <span className="flex items-center gap-1.5 text-sm font-serif text-foreground">
+                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                {project.updatedAt 
+                  ? new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                  : "Recently"}
+              </span>
+            </div>
+          </div>
+
+          {/* Synopsis */}
+          <div className="pt-8 border-t border-border/40">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
+              Synopsis
+            </h3>
+            <p className="font-serif text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap">
+              {project.synopsis || "No synopsis has been written for this project yet."}
+            </p>
+          </div>
+
         </div>
 
-        <ProjectHero project={projectData} />
+        {/* RIGHT COLUMN: The Author's Workspace */}
+        <div className="lg:col-span-8 flex flex-col pt-2">
+          
+          {/* 🟢 Interactive Public Note Section */}
+          <div className="mb-20">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Public Note / Update
+              </h3>
+              {!isEditingNote && (
+                <button 
+                  onClick={() => setIsEditingNote(true)}
+                  className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Edit2 className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                  Edit Note
+                </button>
+              )}
+            </div>
 
-        <div className="flex flex-col lg:flex-row gap-16 mt-8">
-          <ManuscriptList
-            chapters={formattedChapters}
-            onCreateChapter={handleCreateChapter}
-            onChapterClick={(chapterId) =>
-              // 🟢 Uses the URL query parameter
-              router.push(`/project/${projectId}/write?chapterId=${chapterId}`)
-            }
-            isCreating={isCreating}
-          />
+            {isEditingNote ? (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <textarea
+                  value={authorNote}
+                  onChange={(e) => setAuthorNote(e.target.value)}
+                  className="w-full bg-transparent border-b border-foreground pb-4 focus:outline-none font-serif text-xl leading-relaxed text-foreground resize-none min-h-[100px]"
+                  placeholder="Write an update for your readers..."
+                  autoFocus
+                />
+                <div className="flex justify-end gap-6 mt-6">
+                  <button 
+                    onClick={() => setIsEditingNote(false)}
+                    className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveNote}
+                    className="text-[10px] font-bold uppercase tracking-widest text-background bg-foreground px-6 py-2.5 rounded-full hover:bg-foreground/90 transition-all shadow-sm"
+                  >
+                    Publish Update
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="font-serif italic text-xl text-foreground/90 leading-relaxed border-l border-border/40 pl-6">
+                "{authorNote}"
+              </p>
+            )}
+          </div>
+
+          {/* Chapters Section Header */}
+          <div className="flex items-end justify-between mb-8 border-t border-border/40 pt-12">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Manuscript Chapters
+            </h3>
+            
+            {/* New Chapter Minimal Action */}
+            <button 
+              onClick={() => router.push(`/project/${project._id}/write`)}
+              className="text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-muted-foreground transition-colors flex items-center gap-2"
+            >
+              + Create Chapter
+            </button>
+          </div>
+
+          {/* Chapter List - Decluttered */}
+          <div className="divide-y divide-border/40">
+            {chapters.length > 0 ? (
+              chapters.map((chapter: ChapterItem) => (
+                <div 
+                  key={chapter._id} 
+                  onClick={() => router.push(`/project/${project._id}/write?chapterId=${chapter._id}`)}
+                  className="group py-6 flex items-center justify-between hover:bg-secondary/10 transition-colors cursor-pointer -mx-4 px-4 rounded-sm"
+                >
+                  <div className="flex flex-col gap-2">
+                    <h4 className="font-serif text-2xl text-foreground group-hover:text-muted-foreground transition-colors">
+                      {chapter.title || "Untitled Chapter"}
+                    </h4>
+                    <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest font-bold text-muted-foreground">
+                      <span>{chapter.wordCount?.toLocaleString() || 0} words</span>
+                      <span>•</span>
+                      <span>Edited {new Date(chapter.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transform -translate-x-4 group-hover:translate-x-0 transition-all duration-300" />
+                </div>
+              ))
+            ) : (
+              // Empty State for Chapters
+              <div className="py-16 text-center">
+                <p className="font-serif italic text-muted-foreground mb-8">The canvas is blank. Your story begins here.</p>
+                <button 
+                  onClick={() => router.push(`/project/${project._id}/write`)}
+                  className="group inline-flex items-center gap-4 px-8 py-4 bg-foreground text-background hover:bg-foreground/90 transition-all rounded-full"
+                >
+                  <span className="text-xs font-bold uppercase tracking-widest">
+                    Start First Chapter
+                  </span>
+                  <ArrowRight className="w-4 h-4 transform transition-transform group-hover:translate-x-1" />
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

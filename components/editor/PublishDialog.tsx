@@ -2,21 +2,12 @@
 
 import { useState } from "react";
 import { Globe, Link2, X, Check, AlertTriangle } from "lucide-react";
-import { type Document } from "@/redux/features/documents/documentApi";
+import { useEditorContext } from "@/app/(editor)/project/[id]/write/EditorContext";
 
-interface Props {
-  novel: Document;
-  publishedChapterCount: number;
-  onTogglePublish: () => Promise<void>;
-  onClose: () => void;
-}
+export default function PublishDialog() {
+  // 🟢 Pulling directly from the cloud!
+  const { novel, publishedCount, handleToggleNovelPublish, setIsPublishModalOpen } = useEditorContext();
 
-export default function PublishDialog({
-  novel,
-  publishedChapterCount,
-  onTogglePublish,
-  onClose,
-}: Props) {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -30,7 +21,7 @@ export default function PublishDialog({
   async function handleToggle() {
     setBusy(true);
     try {
-      await onTogglePublish();
+      await handleToggleNovelPublish();
     } finally {
       setBusy(false);
     }
@@ -43,9 +34,7 @@ export default function PublishDialog({
   }
 
   return (
-    // Solid flat overlay per Writely rules (no heavy glassmorphism)
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/95">
-      
       <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-sm overflow-hidden animate-in fade-in zoom-in-95 duration-300">
         
         {/* Header */}
@@ -55,7 +44,7 @@ export default function PublishDialog({
             Publish & Share
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => setIsPublishModalOpen(false)}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />
@@ -87,12 +76,12 @@ export default function PublishDialog({
 
           {/* Chapter Warning */}
           <div className="mb-8 p-4 rounded-xl border border-border/50 bg-secondary/20 text-sm text-muted-foreground">
-            <span className="font-bold text-foreground">{publishedChapterCount}</span> chapter{publishedChapterCount !== 1 ? "s" : ""} marked as public.
+            <span className="font-bold text-foreground">{publishedCount}</span> chapter{publishedCount !== 1 ? "s" : ""} marked as public.
             
-            {publishedChapterCount === 0 && isPublished && (
+            {publishedCount === 0 && isPublished && (
               <div className="mt-2 flex items-start gap-2 text-amber-500/90 text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> 
-                <p>Your novel is live, but you have no public chapters! Mark chapters as &quot;published&quot; in the sidebar (the eye icon).</p>
+                <p>Your novel is live, but you have no public chapters! Mark chapters as &quot;published&quot; in the sidebar.</p>
               </div>
             )}
           </div>

@@ -34,6 +34,7 @@ export interface CreateDocumentPayload {
   tags?: string[];
   targetWords?: number;
   synopsis?: string;
+  coverImage?: string;
 }
 
 // 4. Define the exact data needed to update an existing document
@@ -87,7 +88,7 @@ export const documentApi = createApi({
     getDocumentById: builder.query<{ document: Document }, string>({
       query: (id) => `/documents/${id}`,
       // Label this specific document so it updates when we edit it
-      providesTags: (result, error, id) => [{ type: "Document", id }],
+      providesTags: (result, error, id) => [{ type: 'Document', id }],
     }),
 
     // Create a new novel or chapter
