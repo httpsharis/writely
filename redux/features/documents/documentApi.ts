@@ -13,7 +13,7 @@ export interface Document {
   order: number; // Used for arranging chapters
 
   wordCount?: number;
-  content?: Record<string, unknown>; // The rich-text JSON from Tiptap/Novel editor
+  content?: Record<string, unknown> | string; // The rich-text JSON from Tiptap/Novel editor
   coverImage?: string;
   icon?: string;
   synopsis?: string;
@@ -22,7 +22,7 @@ export interface Document {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null; // Used for our "soft delete" trash bin
-  children: Document[]; // Holds the child chapters when we fetch a full novel
+  chapters: Document[]; // Holds the child chapters when we fetch a full novel
 }
 
 // 3. Define the exact data needed to create a new document
@@ -35,6 +35,7 @@ export interface CreateDocumentPayload {
   targetWords?: number;
   synopsis?: string;
   coverImage?: string;
+  content?: Record<string, unknown> | string;
 }
 
 // 4. Define the exact data needed to update an existing document
@@ -88,12 +89,12 @@ export const documentApi = createApi({
     getDocumentById: builder.query<{ document: Document }, string>({
       query: (id) => `/documents/${id}`,
       // Label this specific document so it updates when we edit it
-      providesTags: (result, error, id) => [{ type: 'Document', id }],
+      providesTags: (result, error, id) => [{ type: "Document", id }],
     }),
 
     // Create a new novel or chapter
     createDocument: builder.mutation<
-      { document: { _id: string; title: string } }, // response shape
+      { document: { _id: string; title: string; slug: string } }, // response shape
       CreateDocumentPayload
     >({
       query: (body) => ({
@@ -102,7 +103,10 @@ export const documentApi = createApi({
         body,
       }),
       // Tell Redux that the main list is out of date and needs a refresh
-      invalidatesTags: [{ type: "Document", id: "LIST" }],
+      invalidatesTags: (result, error, arg) =>
+        arg.parentId
+          ? [{ type: "Document", id: "arg.parentId" }]
+          : [{ type: "Document", id: "LIST" }],
     }),
 
     // Update an existing document (triggered by auto-save)

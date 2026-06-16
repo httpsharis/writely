@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
 
 interface EditorTitleInputProps {
@@ -7,8 +9,12 @@ interface EditorTitleInputProps {
 
 export default function EditorTitleInput({ initialTitle, onAutoSave }: EditorTitleInputProps) {
   const [title, setTitle] = useState(initialTitle);
-  // 👇 Add `null` inside the parentheses and handle null type explicitly
-  const debounceRef = useRef<NodeJS.Timeout | null>(null); 
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🟢 THE FIX: Sync local state when the backend finishes loading the real title
+  useEffect(() => {
+    setTitle(initialTitle);
+  }, [initialTitle]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
