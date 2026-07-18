@@ -4,9 +4,8 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { PenTool, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { CredentialResponse } from "@react-oauth/google";
-import { useGoogleLoginMutation, useLoginMutation } from "@/redux/features/auth/authApi";
+import { useGoogleLoginMutation, useRegisterMutation } from "@/redux/features/auth/authApi";
 import { siteConfig } from "@/config/site";
-import DevLoginButton from "@/components/shared/DevLoginButton";
 import Link from "next/link";
 
 const GoogleLoginButton = dynamic(
@@ -14,12 +13,13 @@ const GoogleLoginButton = dynamic(
   { ssr: false, loading: () => <div className="h-[44px] w-[300px] bg-muted animate-pulse rounded-md" /> }
 );
 
-export default function LoginPage() {
+export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [googleLogin, { isLoading: isGoogleLoading, isSuccess: isGoogleSuccess, isError: isGoogleError }] = useGoogleLoginMutation();
-  const [emailLogin, { isLoading: isEmailLoading, isSuccess: isEmailSuccess, error: emailError }] = useLoginMutation();
+  const [emailRegister, { isLoading: isEmailLoading, isSuccess: isEmailSuccess, error: emailError }] = useRegisterMutation();
 
   const isLoading = isGoogleLoading || isEmailLoading;
   const isSuccess = isGoogleSuccess || isEmailSuccess;
@@ -29,17 +29,17 @@ export default function LoginPage() {
     try {
       await googleLogin({ idToken }).unwrap();
     } catch (err) {
-      console.error("Google Login failed:", err);
+      console.error("Google Signup failed:", err);
     }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || !name) return;
     try {
-      await emailLogin({ email, password }).unwrap();
+      await emailRegister({ name, email, password }).unwrap();
     } catch (err) {
-      console.error("Email Login failed:", err);
+      console.error("Email Signup failed:", err);
     }
   };
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-background text-foreground gap-4">
         <CheckCircle2 className="w-10 h-10 text-green-500 animate-bounce" />
-        <p className="text-sm font-medium text-muted-foreground">Welcome! Redirecting you...</p>
+        <p className="text-sm font-medium text-muted-foreground">Welcome to Writely! Redirecting you...</p>
       </div>
     );
   }
@@ -63,20 +63,20 @@ export default function LoginPage() {
           </div>
           <blockquote className="space-y-6">
             <h1 className="font-serif font-medium italic text-4xl leading-tight text-foreground drop-shadow-sm">
-              {siteConfig.auth.quote}
+              "The scariest moment is always just before you start."
             </h1>
             <footer className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase">
-              {siteConfig.auth.author}
+              Stephen King
             </footer>
           </blockquote>
         </div>
       </div>
 
-      {/* RIGHT SIDE: Login Action */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-16 relative">
+      {/* RIGHT SIDE: Signup Action */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-16 relative overflow-y-auto">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent pointer-events-none" />
 
-        <div className="w-full max-w-[380px] flex flex-col relative z-10">
+        <div className="w-full max-w-[380px] flex flex-col relative z-10 mx-auto">
           {/* Logo Block */}
           <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center mb-6 shadow-md mx-auto">
             <span className="font-serif italic font-bold text-xl pr-1 pt-1">
@@ -86,15 +86,26 @@ export default function LoginPage() {
 
           <div className="text-center mb-8 space-y-2">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Welcome back
+              Create an account
             </h2>
             <p className="text-sm font-medium text-muted-foreground">
-              Login to continue your writing journey
+              Join Writely and start crafting your world
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Full Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Jane Austen"
+                required
+                className="w-full h-11 px-4 bg-secondary/50 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+              />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-foreground uppercase tracking-wider">Email</label>
               <input
@@ -114,13 +125,14 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                minLength={6}
                 className="w-full h-11 px-4 bg-secondary/50 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
               />
             </div>
             
             {emailError && (
               <p className="text-xs font-medium text-red-500 text-center">
-                {(emailError as any)?.data?.error || "Login failed. Please check your credentials."}
+                {(emailError as any)?.data?.error || "Registration failed. Please try again."}
               </p>
             )}
 
@@ -133,7 +145,7 @@ export default function LoginPage() {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  Sign In
+                  Sign Up
                   <ArrowRight className="w-4 h-4 ml-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                 </>
               )}
@@ -152,19 +164,18 @@ export default function LoginPage() {
           {/* Buttons */}
           <div className="w-full flex flex-col items-center gap-4">
             <GoogleLoginButton onSuccess={handleGoogleSuccess} isLoading={isLoading} />
-            <DevLoginButton />
           </div>
 
           {isGoogleError && (
             <p className="text-sm text-red-500 mt-4 text-center">
-              Google login failed. Please try again.
+              Google signup failed. Please try again.
             </p>
           )}
 
           <p className="mt-8 text-center text-sm font-medium text-muted-foreground">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-foreground hover:text-brand font-bold transition-colors">
-              Sign up
+            Already have an account?{" "}
+            <Link href="/login" className="text-foreground hover:text-brand font-bold transition-colors">
+              Sign in
             </Link>
           </p>
 

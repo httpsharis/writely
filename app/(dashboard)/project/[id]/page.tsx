@@ -1,78 +1,242 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, ArrowRight, FileText, Clock, Settings, BookOpen, Edit2, Check } from "lucide-react";
-import { useGetDocumentByIdQuery } from "@/redux/features/documents/documentApi";
+import { 
+  useGetDocumentByIdQuery, 
+  useUpdateDocumentMutation, 
+  useCreateDocumentMutation,
+  Document 
+} from "@/redux/features/documents/documentApi";
 import { useGetCurrentUserQuery } from "@/redux/features/auth/authApi";
+import { useUploadImageMutation } from "@/redux/features/uploads/uploadApi";
 
-// STRICT TYPING: Define the exact shape of a chapter item in the list
-interface ChapterItem {
-  _id: string;
-  title?: string;
-  wordCount?: number;
-  updatedAt: string | Date;
-}
+// ---------------------------------------------------------
+// SVG Icons (Matching Prototype)
+// ---------------------------------------------------------
+const HubIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M4 4h11a3 3 0 013 3v13H7a3 3 0 01-3-3V4z"/><path d="M4 4a3 3 0 013 3v13"/>
+  </svg>
+);
 
-export default function ProjectLobbyPage() {
-  const params = useParams();
-  const router = useRouter();
-  
-  // Extract the ID from the URL
-  const projectId = (params.projectId || params.id) as string;
+const PictureIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+    <path d="M4 5.5A2.5 2.5 0 016.5 3H19v16H6.5A2.5 2.5 0 004 16.5v-11z"/>
+    <path d="M4 16.5A2.5 2.5 0 016.5 19H19"/>
+  </svg>
+);
 
-  // FETCH USER FIRST
-  const { data: authData, isLoading: isUserLoading } = useGetCurrentUserQuery();
+const EditNoteIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>
+  </svg>
+);
 
-  // FETCH DOCUMENT
-  const { data, isLoading: isDocLoading, error } = useGetDocumentByIdQuery(projectId, {
-    skip: !authData?.user, 
-  });
-  
-  const project = data?.document;
+const PlusIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
 
-  // STATE: Author's Note & Notification Banner
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [authorNote, setAuthorNote] = useState("Currently undergoing heavy edits for the second act. The pacing should feel much tighter now. Thanks for following along.");
-  const [banner, setBanner] = useState<{ message: string } | null>(null);
+const ChevronRightIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+);
 
-  // Trigger Notification Banner
-  const showNotification = (message: string) => {
-    setBanner({ message });
-    setTimeout(() => setBanner(null), 4000);
+const LoaderIcon = () => (
+  <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+  </svg>
+);
+
+// ---------------------------------------------------------
+// InlineEdit Component
+// ---------------------------------------------------------
+function InlineEdit({ 
+  value, 
+  onSave, 
+  className, 
+  multiline = false,
+  placeholder = "Edit...",
+  type = "text",
+  editTrigger,
+  isEditingState
+}: { 
+  value: string; 
+  onSave: (val: string) => void; 
+  className?: string;
+  multiline?: boolean;
+  placeholder?: string;
+  type?: string;
+  editTrigger?: React.ReactNode;
+  isEditingState?: [boolean, (val: boolean) => void];
+}) {
+  const [localIsEditing, setLocalIsEditing] = useState(false);
+  const isEditing = isEditingState ? isEditingState[0] : localIsEditing;
+  const setIsEditing = isEditingState ? isEditingState[1] : setLocalIsEditing;
+
+  const [tempValue, setTempValue] = useState(value);
+  const inputRef = useRef<any>(null);
+
+  useEffect(() => { setTempValue(value); }, [value, isEditing]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      // Move cursor to end
+      if (typeof inputRef.current.setSelectionRange === 'function') {
+        const len = tempValue?.length || 0;
+        inputRef.current.setSelectionRange(len, len);
+      }
+    }
+  }, [isEditing]);
+
+  const finishEdit = () => {
+    setIsEditing(false);
+    if (tempValue !== value) {
+      onSave(tempValue);
+    }
   };
 
-  // Handle Note Save
-  const handleSaveNote = () => {
-    setIsEditingNote(false);
-    // Here you would typically fire an RTK Query mutation to save to the backend
-    showNotification("Public note updated successfully.");
-  };
-
-  const chapters: ChapterItem[] = project?.children || project?.chapters || [
-    { _id: 'mock-1', title: "Prologue: The Fall", wordCount: 1250, updatedAt: "2024-06-14T10:00:00.000Z" },
-    { _id: 'mock-2', title: "Chapter One: Embers", wordCount: 3420, updatedAt: "2024-06-13T10:00:00.000Z" }
-  ];
-
-  // HYBRID LOADING STATE
-  if (isUserLoading || isDocLoading) {
+  if (isEditing) {
+    if (multiline) {
+      return (
+        <textarea
+          ref={inputRef}
+          value={tempValue}
+          onChange={(e) => setTempValue(e.target.value)}
+          onBlur={finishEdit}
+          placeholder={placeholder}
+          className={`bg-transparent outline-none resize-y w-full transition-colors ${className}`}
+        />
+      );
+    }
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      <input
+        ref={inputRef}
+        type={type}
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        onBlur={finishEdit}
+        onKeyDown={(e) => e.key === "Enter" && finishEdit()}
+        placeholder={placeholder}
+        className={`bg-transparent outline-none border-b border-[rgba(255,255,255,0.14)] focus:border-[#c9975a] min-w-[50px] w-full transition-colors ${className}`}
+      />
+    );
+  }
+
+  if (editTrigger) {
+    return (
+      <div className="w-full relative group">
+        <div className={className}>{value || placeholder}</div>
+        <div onClick={() => setIsEditing(true)} className="absolute inset-0 cursor-pointer" />
       </div>
     );
   }
 
-  // ERROR / NOT FOUND STATE
+  return (
+    <div onClick={() => setIsEditing(true)} className={`cursor-text hover:opacity-80 transition-opacity whitespace-pre-wrap ${className}`}>
+      {value || placeholder}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------
+// Main Page Component
+// ---------------------------------------------------------
+export default function ProjectLobbyPage() {
+  const params = useParams();
+  const router = useRouter();
+  const projectId = (params.projectId || params.id) as string;
+
+  const { data: authData, isLoading: isUserLoading } = useGetCurrentUserQuery();
+  const { data, isLoading: isDocLoading, error } = useGetDocumentByIdQuery(projectId, {
+    skip: !authData?.user,
+  });
+  
+  const [updateDocument] = useUpdateDocumentMutation();
+  const [createDocument, { isLoading: isCreating }] = useCreateDocumentMutation();
+  const [uploadImage, { isLoading: isUploading }] = useUploadImageMutation();
+  const project = data?.document;
+
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [coverInput, setCoverInput] = useState("");
+  const [showCoverInput, setShowCoverInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const chapters = project?.chapters || (project as any)?.children || [];
+  const isPublished = project?.status === "published";
+  const displayWordCount = chapters.length > 0 
+    ? chapters.reduce((total: number, chap: Document) => total + (chap.wordCount || 0), 0)
+    : (project?.wordCount || 0);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const res = await uploadImage(file).unwrap();
+      if (res.url) {
+        handleUpdate("coverImage", res.url);
+        setShowCoverInput(false);
+      }
+    } catch (err) {
+      console.error("Failed to upload image", err);
+    }
+  };
+
+  const handleUpdate = async (field: keyof Document, value: any) => {
+    if (!project) return;
+    try {
+      await updateDocument({
+        id: project._id,
+        data: { [field]: value }
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to update", err);
+    }
+  };
+
+  const handleChapterUpdate = async (chapterId: string, title: string) => {
+    try {
+      await updateDocument({
+        id: chapterId,
+        data: { title }
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to update chapter", err);
+    }
+  };
+
+  const handleCreateChapter = async () => {
+    if (!project) return;
+    try {
+      const newChap = await createDocument({
+        title: "Untitled Chapter",
+        type: "chapter",
+        parentId: project._id,
+      }).unwrap();
+      router.push(`/project/${project._id}/write?chapterId=${newChap.document._id}`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (isUserLoading || isDocLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#131217]">
+        <div className="w-6 h-6 animate-spin rounded-full border-t-2 border-[#c9975a]" />
+      </div>
+    );
+  }
+
   if (error || !project) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-        <p className="font-serif text-2xl text-foreground mb-4">Manuscript not found.</p>
-        <button 
-          onClick={() => router.push("/library")}
-          className="text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors border-b border-border/40 pb-1"
-        >
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#131217] text-[#ede9e2]">
+        <p className="font-serif text-2xl mb-4">Manuscript not found.</p>
+        <button onClick={() => router.push("/library")} className="text-xs font-bold uppercase tracking-widest text-[#948fa0] hover:text-[#ede9e2]">
           Return to Library
         </button>
       </div>
@@ -80,204 +244,241 @@ export default function ProjectLobbyPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12 md:px-12 md:py-20 animate-in fade-in duration-700 relative">
-      
-      {/* 🟢 NOTIFICATION BANNER */}
-      {banner && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-foreground text-background px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl">
-            <Check className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-widest">{banner.message}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Editorial Header / Breadcrumb */}
-      <div className="flex items-center justify-between border-b border-border/40 pb-8 mb-16">
-        <div className="flex flex-col">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-            Project Hub
-          </p>
-          <h1 className="font-serif text-4xl md:text-5xl text-foreground tracking-tight line-clamp-1">
-            {project.title || "Untitled"}
-          </h1>
-        </div>
-        <button className="p-3 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
-          <Settings className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-20 items-start">
+    <div className="min-h-screen bg-transparent text-[#ede9e2] font-sans antialiased">
+      {/* We assume the Sidebar is handled in layout.tsx, so we only render <main> content here */}
+      <main className="flex-1 px-14 py-12 pb-20 max-w-[1180px] mx-auto">
         
-        {/* LEFT COLUMN: The Book's Identity */}
-        <div className="lg:col-span-4 flex flex-col space-y-12 sticky top-12">
+        {/* Page Header */}
+        <div className="flex items-start justify-between gap-6 mb-7">
+          <div className="w-full">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.09em] uppercase text-[#5c5868] mb-2.5">
+              <span className="w-3 h-3"><HubIcon /></span>
+              Project hub
+            </div>
+            <InlineEdit 
+              value={project.title || "Untitled"} 
+              onSave={(val) => handleUpdate("title", val)}
+              className="font-serif font-medium text-[40px] tracking-[-0.01em] m-0 text-[#ede9e2]"
+            />
+          </div>
           
-          {/* Cover Image Container */}
-          <div className="relative aspect-[2/3] w-full overflow-hidden bg-secondary/20 border border-border/40 rounded-sm">
-            {project.coverImage ? (
-              <Image
-                src={project.coverImage}
-                alt={`${project.title} cover`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 33vw"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center p-6 text-center">
-                <BookOpen className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                <span className="font-serif text-sm uppercase tracking-widest text-muted-foreground absolute bottom-8">
-                  No Cover
-                </span>
-              </div>
-            )}
+          <div className="flex items-center gap-2.5 pt-1">
+            <button 
+              onClick={() => handleUpdate("status", isPublished ? "draft" : "published")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[20px] border border-[rgba(255,255,255,0.14)] text-xs bg-[#1b1a21] transition-colors hover:bg-[#29272f] ${isPublished ? 'text-[#ede9e2]' : 'text-[#948fa0]'}`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-[#7cbf8e]' : 'bg-[#5c5868]'}`} />
+              {isPublished ? "Published" : "Draft"}
+            </button>
+            {/* Gear icon removed as requested */}
           </div>
-
-          {/* Metadata Block */}
-          <div className="flex flex-col space-y-5 pt-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Status</span>
-              <span className="text-[10px] uppercase tracking-widest font-bold text-foreground bg-secondary px-3 py-1 rounded-full">
-                {project.status || "Drafting"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Word Count</span>
-              <span className="flex items-center gap-1.5 text-sm font-serif text-foreground">
-                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                {(project.wordCount || 0).toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Last Edited</span>
-              <span className="flex items-center gap-1.5 text-sm font-serif text-foreground">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                {project.updatedAt 
-                  ? new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-                  : "Recently"}
-              </span>
-            </div>
-          </div>
-
-          {/* Synopsis */}
-          <div className="pt-8 border-t border-border/40">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">
-              Synopsis
-            </h3>
-            <p className="font-serif text-sm leading-relaxed text-foreground/80 whitespace-pre-wrap">
-              {project.synopsis || "No synopsis has been written for this project yet."}
-            </p>
-          </div>
-
         </div>
 
-        {/* RIGHT COLUMN: The Author's Workspace */}
-        <div className="lg:col-span-8 flex flex-col pt-2">
+        <hr className="border-t border-[rgba(255,255,255,0.07)] my-10" />
+
+        <div className="grid grid-cols-1 lg:grid-cols-[264px_1px_1fr] gap-10 items-start">
           
-          {/* 🟢 Interactive Public Note Section */}
-          <div className="mb-20">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Public Note / Update
-              </h3>
-              {!isEditingNote && (
-                <button 
-                  onClick={() => setIsEditingNote(true)}
-                  className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+          {/* LEFT COLUMN */}
+          <div className="flex flex-col">
+            <div className="relative aspect-[2/3] rounded-xl border border-[rgba(255,255,255,0.14)] bg-[#1b1a21] flex flex-col items-center justify-center gap-2.5 text-[#5c5868] overflow-hidden mb-5 group">
+              {project.coverImage ? (
+                <Image src={project.coverImage} alt="Cover" fill className="object-cover" />
+              ) : (
+                <>
+                  <span className="w-[30px] h-[30px] opacity-50"><PictureIcon /></span>
+                  <span className="font-serif italic text-[13px]">No cover</span>
+                </>
+              )}
+              
+              {!showCoverInput && (
+                <div 
+                  onClick={() => setShowCoverInput(true)}
+                  className="absolute inset-0 bg-[rgba(19,18,23,0.82)] flex items-center justify-center text-xs font-medium text-[#c9975a] opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer"
                 >
-                  <Edit2 className="w-3 h-3 group-hover:scale-110 transition-transform" />
-                  Edit Note
-                </button>
+                  Upload or Link Cover
+                </div>
+              )}
+
+              {showCoverInput && (
+                <div className="absolute inset-0 bg-[rgba(19,18,23,0.95)] flex flex-col items-center justify-center p-4 gap-3 z-10">
+                  <span className="text-[10px] uppercase tracking-widest text-[#948fa0] font-semibold">Cover URL</span>
+                  <input 
+                    autoFocus
+                    value={coverInput}
+                    onChange={(e) => setCoverInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && coverInput) {
+                        handleUpdate("coverImage", coverInput);
+                        setShowCoverInput(false);
+                      }
+                    }}
+                    placeholder="https://..."
+                    className="w-full bg-[#1b1a21] border border-[rgba(255,255,255,0.14)] rounded text-[11px] px-2 py-1.5 text-[#ede9e2] outline-none focus:border-[#c9975a]"
+                  />
+                  
+                  <span className="text-[10px] uppercase tracking-widest text-[#5c5868] font-semibold">— OR —</span>
+                  
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full bg-[#29272f] text-[#ede9e2] text-[10px] font-semibold rounded py-1.5 border border-[rgba(255,255,255,0.07)] hover:bg-[#c9975a] hover:text-[#131217] transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? "Uploading..." : "Upload from Computer"}
+                  </button>
+
+                  <div className="flex gap-2 w-full mt-1">
+                    <button 
+                      onClick={() => setShowCoverInput(false)}
+                      className="flex-1 text-[10px] py-1 text-[#948fa0] hover:text-[#ede9e2]"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if(coverInput) handleUpdate("coverImage", coverInput);
+                        setShowCoverInput(false);
+                      }}
+                      className="flex-1 bg-[#c9975a] text-[#131217] text-[10px] font-semibold rounded py-1"
+                    >
+                      Save Link
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
-            {isEditingNote ? (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <textarea
-                  value={authorNote}
-                  onChange={(e) => setAuthorNote(e.target.value)}
-                  className="w-full bg-transparent border-b border-foreground pb-4 focus:outline-none font-serif text-xl leading-relaxed text-foreground resize-none min-h-[100px]"
-                  placeholder="Write an update for your readers..."
-                  autoFocus
-                />
-                <div className="flex justify-end gap-6 mt-6">
-                  <button 
-                    onClick={() => setIsEditingNote(false)}
-                    className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleSaveNote}
-                    className="text-[10px] font-bold uppercase tracking-widest text-background bg-foreground px-6 py-2.5 rounded-full hover:bg-foreground/90 transition-all shadow-sm"
-                  >
-                    Publish Update
-                  </button>
-                </div>
+            <div className="border border-[rgba(255,255,255,0.07)] rounded-[10px] overflow-hidden mb-6">
+              <div className="flex items-center justify-between px-3.5 py-3 border-b border-[rgba(255,255,255,0.07)]">
+                <span className="text-[10.5px] font-semibold tracking-[0.07em] uppercase text-[#5c5868]">Status</span>
+                <span className="flex items-center gap-1.5 text-[13px] text-[#ede9e2]">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isPublished ? 'bg-[#7cbf8e]' : 'bg-[#5c5868]'}`} />
+                  {isPublished ? "Published" : "Draft"}
+                </span>
               </div>
-            ) : (
-              <p className="font-serif italic text-xl text-foreground/90 leading-relaxed border-l border-border/40 pl-6">
-                "{authorNote}"
-              </p>
-            )}
+              <div className="flex items-center justify-between px-3.5 py-3 border-b border-[rgba(255,255,255,0.07)]">
+                <span className="text-[10.5px] font-semibold tracking-[0.07em] uppercase text-[#5c5868]">Word count</span>
+                <span className="font-mono tabular-nums text-[13px] text-[#ede9e2] text-right">
+                  {displayWordCount.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-3.5 py-3">
+                <span className="text-[10.5px] font-semibold tracking-[0.07em] uppercase text-[#5c5868]">Last edited</span>
+                <span className="font-mono tabular-nums text-[13px] text-[#ede9e2]">
+                  {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-[10.5px] font-semibold tracking-[0.07em] uppercase text-[#5c5868] mb-2">Synopsis</span>
+              <InlineEdit
+                multiline
+                placeholder="Write a synopsis..."
+                value={project.synopsis || ""}
+                onSave={(val) => handleUpdate("synopsis", val)}
+                className="font-serif italic text-[14.5px] leading-[1.6] text-[#948fa0] m-0 p-2 -ml-2"
+              />
+            </div>
           </div>
 
-          {/* Chapters Section Header */}
-          <div className="flex items-end justify-between mb-8 border-t border-border/40 pt-12">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Manuscript Chapters
-            </h3>
+          {/* RULE */}
+          <div className="hidden lg:block bg-[rgba(255,255,255,0.07)] h-full" />
+
+          {/* RIGHT COLUMN */}
+          <div className="flex flex-col">
             
-            {/* New Chapter Minimal Action */}
-            <button 
-              onClick={() => router.push(`/project/${project._id}/write`)}
-              className="text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-muted-foreground transition-colors flex items-center gap-2"
-            >
-              + Create Chapter
-            </button>
-          </div>
-
-          {/* Chapter List - Decluttered */}
-          <div className="divide-y divide-border/40">
-            {chapters.length > 0 ? (
-              chapters.map((chapter: ChapterItem) => (
-                <div 
-                  key={chapter._id} 
-                  onClick={() => router.push(`/project/${project._id}/write?chapterId=${chapter._id}`)}
-                  className="group py-6 flex items-center justify-between hover:bg-secondary/10 transition-colors cursor-pointer -mx-4 px-4 rounded-sm"
-                >
-                  <div className="flex flex-col gap-2">
-                    <h4 className="font-serif text-2xl text-foreground group-hover:text-muted-foreground transition-colors">
-                      {chapter.title || "Untitled Chapter"}
-                    </h4>
-                    <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest font-bold text-muted-foreground">
-                      <span>{chapter.wordCount?.toLocaleString() || 0} words</span>
-                      <span>•</span>
-                      <span>Edited {new Date(chapter.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transform -translate-x-4 group-hover:translate-x-0 transition-all duration-300" />
-                </div>
-              ))
-            ) : (
-              // Empty State for Chapters
-              <div className="py-16 text-center">
-                <p className="font-serif italic text-muted-foreground mb-8">The canvas is blank. Your story begins here.</p>
+            {/* Public Note */}
+            <div className="mb-9">
+              <div className="flex items-center justify-between mb-3.5">
+                <span className="text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#5c5868]">Public note</span>
                 <button 
-                  onClick={() => router.push(`/project/${project._id}/write`)}
-                  className="group inline-flex items-center gap-4 px-8 py-4 bg-foreground text-background hover:bg-foreground/90 transition-all rounded-full"
+                  onClick={() => setIsEditingNote(true)}
+                  className="flex items-center gap-1.5 border-none bg-transparent text-[#948fa0] text-xs font-medium px-1.5 py-1 rounded-md transition-colors hover:bg-[#29272f] hover:text-[#c9975a]"
                 >
-                  <span className="text-xs font-bold uppercase tracking-widest">
-                    Start First Chapter
-                  </span>
-                  <ArrowRight className="w-4 h-4 transform transition-transform group-hover:translate-x-1" />
+                  <span className="w-3 h-3"><EditNoteIcon /></span>
+                  Edit note
                 </button>
               </div>
-            )}
-          </div>
+              <div className="border border-[rgba(255,255,255,0.07)] rounded-[10px] p-5 bg-[#1b1a21]">
+                <InlineEdit
+                  multiline
+                  isEditingState={[isEditingNote, setIsEditingNote]}
+                  placeholder="Write an update for your readers..."
+                  value={project.authorNote || "No public note has been written for this project yet."}
+                  onSave={(val) => handleUpdate("authorNote", val)}
+                  className="font-serif italic text-[17px] leading-[1.65] text-[#ede9e2] m-0 mb-2.5 p-2 -ml-2 min-h-[80px]"
+                />
+                {!isEditingNote && (
+                  <span className="text-[11px] text-[#5c5868] font-mono">
+                    Updated {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "Recently"}
+                  </span>
+                )}
+              </div>
+            </div>
 
+            {/* Chapters */}
+            <div className="mb-9">
+              <div className="flex items-center justify-between mb-3.5">
+                <span className="text-[10.5px] font-semibold tracking-[0.08em] uppercase text-[#5c5868]">Manuscript chapters</span>
+                <button 
+                  onClick={handleCreateChapter}
+                  disabled={isCreating}
+                  className="flex items-center gap-1.5 bg-[#c9975a] text-[#131217] text-xs font-semibold px-3 py-1.5 rounded transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {isCreating ? <span className="w-3 h-3"><LoaderIcon /></span> : <span className="w-3 h-3"><PlusIcon /></span>}
+                  Create chapter
+                </button>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {chapters.length > 0 ? (
+                  chapters.map((chapter: Document, i: number) => (
+                    <div 
+                      key={chapter._id}
+                      className="group flex items-center gap-4 px-4 py-4 border border-[rgba(255,255,255,0.07)] rounded-[10px] bg-[#1b1a21] transition-colors hover:bg-[#29272f] hover:border-[rgba(255,255,255,0.14)]"
+                    >
+                      <span className="font-mono text-[11px] text-[#c9975a] w-5 shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="flex-1 min-w-0 flex flex-col">
+                        {/* Chapter Title Edit */}
+                        <InlineEdit
+                          value={chapter.title || "Untitled Chapter"}
+                          onSave={(val) => handleChapterUpdate(chapter._id, val)}
+                          className="font-serif text-[18px] text-[#ede9e2] mb-1"
+                        />
+                        <span className="flex items-center gap-2 text-[11.5px] text-[#5c5868] font-mono">
+                          {chapter.wordCount || 0} words 
+                          <span className="w-[3px] h-[3px] rounded-full bg-[#5c5868]" /> 
+                          Edited {new Date(chapter.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={() => router.push(`/project/${project._id}/write?chapterId=${chapter._id}`)}
+                        className="text-[#5c5868] shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-[#c9975a]"
+                      >
+                        <span className="w-4 h-4 block"><ChevronRightIcon /></span>
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-3.5 border border-dashed border-[rgba(255,255,255,0.14)] rounded-[10px] text-[12.5px] text-[#5c5868] text-center">
+                    One chapter so far — create another to keep the manuscript moving
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }

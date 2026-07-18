@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -32,9 +32,11 @@ export interface EditorContextType {
   setIsPublishModalOpen: (val: boolean) => void;
   handleCreateChapter: () => Promise<void>;
   handleSelectChapter: (id: string) => void;
-  handleToggleChapterPublish: (id: string, status: string) => Promise<void>;
+  handleChangeChapterStatus: (id: string, status: string) => Promise<void>;
   handleToggleNovelPublish: () => Promise<void>;
   handleAutoSave: (data: Partial<Document>) => Promise<void>;
+  liveWordCount: number;
+  setLiveWordCount: (val: number) => void;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -53,6 +55,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     "saved",
   );
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+
+  // Optimistic lock to prevent race conditions during rapid auto-saves on new chapters
+  const newlyCreatedIdRef = useRef<string | null>(null);
 
   const { data: authData, isLoading: isUserLoading } = useGetCurrentUserQuery();
   const {
@@ -106,6 +111,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
       }).unwrap();
 
       const newSlug = res.document.slug;
+      newlyCreatedIdRef.current = null; // Clear lock on manual create
       router.replace(`/project/${novelId}/write?chapter=${newSlug}`);
     } catch (err) {
       console.error("Create failed.");
@@ -115,18 +121,18 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   const handleSelectChapter = (chapterId: string) => {
     const target = chapters.find((c) => c._id === chapterId);
     if (target?.slug) {
+      newlyCreatedIdRef.current = null; // Clear lock when navigating
       router.replace(`/project/${novelId}/write?chapter=${target.slug}`);
     }
   };
 
-  const handleToggleChapterPublish = async (
+  const handleChangeChapterStatus = async (
     chapterId: string,
-    currentStatus: string,
+    newStatus: string,
   ) => {
-    const newStatus = currentStatus === "published" ? "draft" : "published";
     await updateDocument({
       id: chapterId,
-      data: { status: newStatus },
+      data: { status: newStatus as any },
     }).unwrap();
   };
 
@@ -142,7 +148,9 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
   const handleAutoSave = async (updatedData: Partial<Document>) => {
     setSaveStatus("saving");
     try {
-      if (activeChapterId === "draft") {
+      const targetId = newlyCreatedIdRef.current || activeChapterId;
+
+      if (targetId === "draft") {
         const res = await createChapter({
           title: updatedData.title || "Untitled Chapter",
           ...(updatedData.content !== undefined && {
@@ -151,13 +159,16 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
           type: "chapter",
           parentId: novelId,
         }).unwrap();
+        
+        newlyCreatedIdRef.current = res.document._id; // Instantly lock the new ID
+        
         router.replace(
           `/project/${novelId}/write?chapter=${res.document.slug}`,
         );
         setSaveStatus("saved");
       } else {
         await updateDocument({
-          id: activeChapterId,
+          id: targetId,
           data: updatedData,
         }).unwrap();
         setSaveStatus("saved");
@@ -166,6 +177,15 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
       setSaveStatus("off");
     }
   };
+
+  const [liveWordCount, setLiveWordCount] = useState<number>(activeChapter?.wordCount || 0);
+
+  // Sync liveWordCount when we switch chapters or when backend load finishes initially
+  React.useEffect(() => {
+    if (activeChapter) {
+      setLiveWordCount(activeChapter.wordCount || 0);
+    }
+  }, [activeChapterId, activeChapter?.wordCount]);
 
   // 🟢 Fixed the loading check
   if (isUserLoading || isFetchingNovel) {
@@ -209,9 +229,11 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         setIsPublishModalOpen,
         handleCreateChapter,
         handleSelectChapter,
-        handleToggleChapterPublish,
+        handleChangeChapterStatus,
         handleToggleNovelPublish,
         handleAutoSave,
+        liveWordCount,
+        setLiveWordCount,
       }}
     >
       {children}

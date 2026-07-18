@@ -37,8 +37,8 @@ export default function EditorTitleInput({ initialTitle, onAutoSave }: EditorTit
       type="text"
       value={title}
       onChange={handleChange}
-      placeholder="Chapter Title"
-      className="w-full bg-transparent text-3xl md:text-5xl font-bold font-serif text-foreground outline-none mb-10 placeholder:text-muted-foreground/30"
+      placeholder="Untitled Chapter"
+      className="w-full bg-transparent border-none outline-none font-['Fraunces'] font-semibold text-[46px] leading-[1.1] tracking-[-0.01em] mb-8 text-editor-text-primary placeholder:text-editor-text-tertiary"
     />
   );
 }

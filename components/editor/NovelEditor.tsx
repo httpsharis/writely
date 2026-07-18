@@ -24,6 +24,7 @@ export default function NovelEditor() {
     activeChapter: chapter,
     handleAutoSave,
     saveStatus,
+    setLiveWordCount,
   } = useEditorContext();
 
   // Refs for debounce timers and tracking the currently loaded document
@@ -37,17 +38,20 @@ export default function NovelEditor() {
     autoSaveRef.current = handleAutoSave;
   }, [handleAutoSave]);
 
-  // Initialize the Tiptap editor
   const editor = useEditor({
     immediatelyRender: false,
     extensions: EXTENSIONS,
     editorProps: {
       attributes: {
-        class:
-          "prose prose-neutral dark:prose-invert max-w-none focus:outline-none min-h-[500px] text-foreground prose-p:leading-relaxed prose-headings:font-serif",
+        class: "font-['Fraunces'] text-[19px] leading-[1.75] text-editor-text-primary outline-none min-h-[300px] whitespace-pre-wrap [&_p]:mb-[1.2em]",
       },
     },
     onUpdate: ({ editor: ed }) => {
+      const words = ed.storage.characterCount.words();
+      
+      // Instantly update the UI
+      setLiveWordCount(words);
+
       // Clear the previous timer if the user keeps typing
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -55,7 +59,7 @@ export default function NovelEditor() {
       debounceRef.current = setTimeout(() => {
         autoSaveRef.current({
           content: ed.getJSON(),
-          wordCount: ed.storage.characterCount.words(),
+          wordCount: words,
         });
       }, 2000);
     },
@@ -79,10 +83,7 @@ export default function NovelEditor() {
     }
     // Condition B: The backend just finished fetching text for the current blank screen
     else if (editor.isEmpty && chapter.content) {
-      const hasText =
-        typeof chapter.content === "string"
-          ? chapter.content.length > 0
-          : Object.keys(chapter.content).length > 0;
+      const hasText = Object.keys(chapter.content).length > 0;
 
       if (hasText) {
         editor.commands.setContent(chapter.content);
@@ -94,26 +95,28 @@ export default function NovelEditor() {
   if (!chapter) return null;
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-6 md:p-12 animate-in fade-in duration-700">
-      <div className="flex items-center justify-between mb-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        <span>
-          {saveStatus === "saving"
-            ? "Saving..."
-            : saveStatus === "saved"
-              ? "Saved"
-              : ""}
-        </span>
-      </div>
+    <div className="overflow-y-auto flex justify-center py-16 px-8 h-full w-full">
+      <div className="w-full max-w-[680px]">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-[2px] p-1 rounded-lg border border-editor-border bg-editor-surface">
+            <button onClick={() => editor?.chain().focus().toggleBold().run()} className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-bold">B</button>
+            <button onClick={() => editor?.chain().focus().toggleItalic().run()} className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary italic font-['Fraunces']">i</button>
+            <div className="w-px h-4 bg-editor-border-strong mx-1"></div>
+            <button onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-bold">H</button>
+            <button onClick={() => editor?.chain().focus().toggleBlockquote().run()} className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-serif">&rdquo;</button>
+          </div>
+          <span className="text-[12px] text-editor-text-tertiary font-['JetBrains_Mono']">Chapter {chapter.order || 1} · no target set</span>
+        </div>
 
-      <EditorTitleInput
-        key={chapter._id}
-        initialTitle={chapter.title || ""}
-        onAutoSave={(title) => handleAutoSave({ title })}
-      />
+        <EditorTitleInput
+          key={chapter._id}
+          initialTitle={chapter.title || ""}
+          onAutoSave={(title) => handleAutoSave({ title })}
+        />
 
-      <div className="relative mt-8">
-        {editor && <BubbleToolbar editor={editor} />}
-        <EditorContent editor={editor} />
+        <div className="relative">
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   );

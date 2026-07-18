@@ -20,7 +20,6 @@ export const MAIN_NAV_LINKS: NavItem[] = [
   { name: "Projects", href: "/project", icon: Book, hasDot: true },
   { name: "Inbox", href: "/inbox", icon: Inbox },
   { name: "Characters", href: "/characters", icon: Users },
-  { name: "World", href: "/world", icon: Globe },
   { name: "Search", href: "/search", icon: Search }
 ];
 

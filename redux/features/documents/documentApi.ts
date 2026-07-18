@@ -13,10 +13,11 @@ export interface Document {
   order: number; // Used for arranging chapters
 
   wordCount?: number;
-  content?: Record<string, unknown> | string; // The rich-text JSON from Tiptap/Novel editor
+  content?: Record<string, unknown>; // The rich-text JSON from Tiptap/Novel editor
   coverImage?: string;
   icon?: string;
   synopsis?: string;
+  authorNote?: string;
   genre?: string[];
 
   createdAt: string;
@@ -34,8 +35,9 @@ export interface CreateDocumentPayload {
   tags?: string[];
   targetWords?: number;
   synopsis?: string;
+  authorNote?: string;
   coverImage?: string;
-  content?: Record<string, unknown> | string;
+  content?: Record<string, unknown>;
 }
 
 // 4. Define the exact data needed to update an existing document
@@ -74,22 +76,32 @@ export const documentApi = createApi({
       },
       // Label this list so we can update it later when a new document is made
       providesTags: (result) =>
-        result
+        result?.documents
           ? [
               ...result.documents.map(({ _id }) => ({
                 type: "Document" as const,
                 id: _id,
               })),
-              { type: "Document", id: "LIST" },
+              { type: "Document" as const, id: "LIST" },
             ]
-          : [{ type: "Document", id: "LIST" }],
+          : [{ type: "Document" as const, id: "LIST" }],
     }),
 
     // Fetch one specific document by its ID (used in the editor)
     getDocumentById: builder.query<{ document: Document }, string>({
       query: (id) => `/documents/${id}`,
       // Label this specific document so it updates when we edit it
-      providesTags: (result, error, id) => [{ type: "Document", id }],
+      providesTags: (result, error, id) => {
+        if (result?.document) {
+          const tags = [{ type: "Document" as const, id }];
+          const children = (result.document as any).children || result.document.chapters || [];
+          children.forEach((child: Document) => {
+            tags.push({ type: "Document" as const, id: child._id });
+          });
+          return tags;
+        }
+        return [{ type: "Document", id }];
+      },
     }),
 
     // Create a new novel or chapter
@@ -105,7 +117,7 @@ export const documentApi = createApi({
       // Tell Redux that the main list is out of date and needs a refresh
       invalidatesTags: (result, error, arg) =>
         arg.parentId
-          ? [{ type: "Document", id: "arg.parentId" }]
+          ? [{ type: "Document", id: arg.parentId }]
           : [{ type: "Document", id: "LIST" }],
     }),
 

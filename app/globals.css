@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 @variant dark (&:where(.dark, .dark *));
@@ -32,6 +33,35 @@
   --color-ring: var(--ring);
 
   --radius: 0.5rem;
+
+  /* Editor Specific Theme */
+  --color-editor-bg: #131217;
+  --color-editor-surface: #1b1a21;
+  --color-editor-surface-raised: #232128;
+  --color-editor-surface-hover: #29272f;
+  --color-editor-border: rgba(255, 255, 255, 0.07);
+  --color-editor-border-strong: rgba(255, 255, 255, 0.14);
+  --color-editor-text-primary: #ede9e2;
+  --color-editor-text-secondary: #948fa0;
+  --color-editor-text-tertiary: #5c5868;
+  --color-editor-gold: #c9975a;
+  --color-editor-gold-soft: rgba(201, 151, 90, 0.14);
+  --color-editor-gold-dim: rgba(201, 151, 90, 0.55);
+  --color-editor-green: #7cbf8e;
+
+  --animate-editor-pulse: editor-pulse 0.9s ease-in-out infinite;
+  --animate-editor-fill: editor-fill 0.85s ease forwards;
+
+  @keyframes editor-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.75); }
+  }
+
+  @keyframes editor-fill {
+    0% { transform: scaleX(0); opacity: 1; }
+    70% { transform: scaleX(1); opacity: 1; }
+    100% { transform: scaleX(1); opacity: 0; }
+  }
 }
 
 /* =========================================

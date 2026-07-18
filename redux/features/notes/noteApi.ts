@@ -1,14 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-interface StateWithAuth {
-    auth: {
-        accessToken: string | null;
-    }
-}
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { sharedBaseQuery } from "@/redux/api/baseQuery";
 
 export interface Note {
     _id: string;
-    novelId: string;
+    novelId?: string;
     title: string;
     content?: any;
     type: 'lore' | 'plot' | 'worldbuilding' | 'research' | 'timeline' | 'misc';
@@ -35,20 +30,22 @@ export interface UpdateNotePayload {
 
 export const noteApi = createApi({
     reducerPath: 'noteApi',
-    baseQuery: fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api',
-        prepareHeaders(headers, { getState }) {
-            const state = getState() as StateWithAuth;
-            const token = state.auth.accessToken;
-            if (token) {
-                headers.set('auttherization', `Bearer ${token}`);
-            }
-            return headers;
-        }
-    }),
+    baseQuery: sharedBaseQuery,
     tagTypes: ['Note'],
 
     endpoints: (builder) => ({
+        // GET /api/notes
+        // Fetches all notes globally (for Inbox)
+        getInboxNotes: builder.query<{ notes: Note[], total: number }, void>({
+            query: () => '/notes',
+            providesTags: (result) =>
+                result
+                    ? [
+                        ...result.notes.map(({ _id }) => ({ type: 'Note' as const, id: _id })),
+                        { type: 'Note', id: 'LIST' }
+                    ]
+                    : [{ type: 'Note', id: 'LIST' }]
+        }),
 
         // GET /api/notes/novel/:novelId?type=...&page=...
         getNovelNotes: builder.query<{ notes: Note[], total: number }, GetNotesParams>({
@@ -66,13 +63,25 @@ export const noteApi = createApi({
                     : [{ type: 'Note', id: 'LIST' }]
         }),
 
+        // POST /api/notes
+        // Create an unassigned note for the Inbox
+        createInboxNote: builder.mutation<{ note: Note }, { data: Partial<Note> }>({
+            query: ({ data }) => ({
+                url: `/notes`,
+                method: 'POST',
+                body: data,
+            }),
+            invalidatesTags: [{ type: 'Note', id: 'LIST' }]
+        }),
+
         // POST /api/notes/novel/:novelId
         createNote: builder.mutation<{ note: Note }, CreateNotePayLoad>({
             query: ({ novelId, data }) => ({
                 url: `/notes/${novelId}`,
                 method: 'POST',
                 body: data,
-            })
+            }),
+            invalidatesTags: [{ type: 'Note', id: 'LIST' }]
         }),
 
         // PUT /api/notes/:noteId
@@ -102,7 +111,9 @@ export const noteApi = createApi({
 });
 
 export const {
+    useGetInboxNotesQuery,
     useGetNovelNotesQuery,
+    useCreateInboxNoteMutation,
     useCreateNoteMutation,
     useUpdateNoteMutation,
     useDeleteNoteMutation,

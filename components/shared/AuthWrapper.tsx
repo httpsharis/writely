@@ -2,33 +2,71 @@
 
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { useGetCurrentUserQuery } from "@/redux/features/auth/authApi";
+import {
+  useGetCurrentUserQuery,
+  useRefreshAccessTokenMutation,
+} from "@/redux/features/auth/authApi";
 import { useRouter, usePathname } from "next/navigation";
+import { useSelector, useDispatch } from "react-redux";
+import { setAccessToken } from "@/redux/features/auth/authSlice";
 
-const authPages = ["/login"];
+const authPages = ["/login", "/signup"]; // Add other public routes here
 
 export function AuthWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch();
 
-  const { data: user, isLoading, error } = useGetCurrentUserQuery();
+  const accessToken = useSelector(
+    (state: { auth: { accessToken: string | null } }) => state.auth.accessToken,
+  );
+
+  // 1. Bootstrap: Try to get a token from the HTTP-only cookie on mount
+  const [refreshTokenApi, { isLoading: isRefreshing }] =
+    useRefreshAccessTokenMutation();
 
   useEffect(() => {
-    // Token invalid/expired → go to login
-    if (error && !authPages.includes(pathname)) {
+    // If we don't have a token in memory, try to get one from the cookie
+    if (!accessToken) {
+      refreshTokenApi()
+        .unwrap()
+        .then((res) => {
+          dispatch(setAccessToken(res.accessToken));
+        })
+        .catch(() => {
+          // No valid cookie exists. User is genuinely logged out. Do nothing.
+        });
+    }
+  }, []); // Empty array ensures this only runs once on app load
+
+  // 2. Fetch User: Automatically runs when accessToken appears in Redux
+  const { data, isLoading, error } = useGetCurrentUserQuery(undefined, {
+    skip: !accessToken,
+  });
+
+  // 3. Kick to login ONLY on 401 Unauthorized (Not network errors!)
+  useEffect(() => {
+    if (
+      error &&
+      "status" in error &&
+      error.status === 401 &&
+      !authPages.includes(pathname)
+    ) {
       router.push("/login");
     }
   }, [error, router, pathname]);
 
+  // 4. Redirect away from login page when user is confirmed
   useEffect(() => {
-    // Already authenticated → redirect away from auth pages
-    if (user && authPages.includes(pathname)) {
+    if (data?.user && authPages.includes(pathname)) {
       router.push("/");
     }
-  }, [user, router, pathname]);
+  }, [data, router, pathname]);
 
-  // Loading state
-  if (isLoading) {
+  // 5. Show loader while refreshing token OR fetching user data
+  const showLoader = isRefreshing || (isLoading && !data);
+
+  if (showLoader && !authPages.includes(pathname)) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

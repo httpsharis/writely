@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronLeft, MoreHorizontal } from "lucide-react";
 import { MAIN_NAV_LINKS, USER_MENU_LINKS, type NavItem } from "@/config/nav";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarUser {
   name?: string | null;
@@ -16,9 +17,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Mock user for template purposes
-  const user: SidebarUser = { name: "Muhammad", picture: null };
-
+  const { user } = useAuth();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   return (
