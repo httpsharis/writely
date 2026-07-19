@@ -48,10 +48,8 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "pnpm": {
-    "overrides": {
-      "novel>@tiptap/pm": "2.25.0"
-    }
+  "resolutions": {
+    "some-package": "^1.2.3"
   },
   "onlyBuiltDependencies": [
     "sharp",
