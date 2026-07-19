@@ -19,6 +19,7 @@ export interface Document {
   synopsis?: string;
   authorNote?: string;
   genre?: string[];
+  likesCount?: number; // Holds the public likes
 
   createdAt: string;
   updatedAt: string;
