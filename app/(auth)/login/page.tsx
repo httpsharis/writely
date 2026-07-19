@@ -6,8 +6,9 @@ import { PenTool, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 import { CredentialResponse } from "@react-oauth/google";
 import { useGoogleLoginMutation, useLoginMutation } from "@/redux/features/auth/authApi";
 import { siteConfig } from "@/config/site";
-import DevLoginButton from "@/components/shared/DevLoginButton";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const GoogleLoginButton = dynamic(
   () => import("@/components/shared/GoogleLoginButton").then((mod) => mod.GoogleLoginButton),
@@ -23,6 +24,13 @@ export default function LoginPage() {
 
   const isLoading = isGoogleLoading || isEmailLoading;
   const isSuccess = isGoogleSuccess || isEmailSuccess;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isSuccess) {
+      router.push("/inbox");
+    }
+  }, [isSuccess, router]);
 
   const handleGoogleSuccess = async ({ credential: idToken }: CredentialResponse) => {
     if (!idToken) return;
@@ -152,7 +160,6 @@ export default function LoginPage() {
           {/* Buttons */}
           <div className="w-full flex flex-col items-center gap-4">
             <GoogleLoginButton onSuccess={handleGoogleSuccess} isLoading={isLoading} />
-            <DevLoginButton />
           </div>
 
           {isGoogleError && (

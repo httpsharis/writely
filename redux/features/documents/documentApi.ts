@@ -172,7 +172,17 @@ export const documentApi = createApi({
     // Public route for readers viewing a published document via its slug URL
     getPublicDocument: builder.query<{ document: Document }, string>({
       query: (slug) => `/documents/public/${slug}`,
-      // We don't need tags here because public readers can't edit or delete things
+      // We don't need tags here because public readers can't edit or delete things, but we might want to update likes
+      providesTags: (result, error, slug) => [{ type: "Document", id: slug }],
+    }),
+
+    // Public route to like a document
+    likePublicDocument: builder.mutation<{ message: string }, string>({
+      query: (slug) => ({
+        url: `/documents/public/${slug}/like`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, slug) => [{ type: "Document", id: slug }],
     }),
   }),
 });
@@ -187,4 +197,5 @@ export const {
   useGetTrashQuery,
   useRestoreFromTrashMutation,
   useGetPublicDocumentQuery,
+  useLikePublicDocumentMutation,
 } = documentApi;

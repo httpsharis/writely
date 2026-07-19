@@ -2,30 +2,23 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Plus, Search, Book, Trash2, Users, PlusCircle, Loader2 } from "lucide-react";
+import { Plus, Search, Trash2, Users, Loader2 } from "lucide-react";
 import { 
   useGetNovelCharactersQuery, 
   useDeleteCharacterMutation 
-} from "@/redux/features/characters/characterApi"; // Adjust path if needed
+} from "@/redux/features/characters/characterApi";
 
 export default function ProjectCharactersPage() {
   const params = useParams();
-  // Depending on your folder structure, it might be params.id or params.projectId
   const projectId = (params.projectId || params.id) as string;
 
-  // 1. Fetch real data from Redux
-  const { data, isLoading, isError } = useGetNovelCharactersQuery(projectId, {
-    skip: !projectId, // Don't fetch until we have the ID from the URL
-  });
-
-  // 2. Setup Delete Mutation
+  const { data, isLoading, isError } = useGetNovelCharactersQuery(projectId || 'global');
   const [deleteCharacter, { isLoading: isDeleting }] = useDeleteCharacterMutation();
 
   const characters = data?.characters || [];
 
-  // Handle Delete Action
   const handleDelete = async (characterId: string, characterName: string) => {
-    if (confirm(`Are you sure you want to completely delete ${characterName}? This cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete ${characterName}?`)) {
       try {
         await deleteCharacter(characterId).unwrap();
       } catch (err) {
@@ -34,148 +27,144 @@ export default function ProjectCharactersPage() {
     }
   };
 
+  const newLink = projectId ? `/project/${projectId}/characters/new` : `/characters/new`;
+
   return (
-    <div className="w-full flex justify-center px-4 py-12 md:py-24 animate-in fade-in duration-500 overflow-y-auto no-scrollbar h-screen bg-background">
-      <div className="w-full max-w-[720px] flex flex-col gap-12 pb-32">
+    <div className="min-h-screen bg-[#131217] text-[#ede9e2] font-sans antialiased overflow-y-auto px-10 py-12 pb-20">
+      <div className="max-w-[1180px] mx-auto">
         
-        {/* Section 1: Header & Actions */}
-        <div className="flex flex-col gap-6 border-b border-border/20 pb-8">
-          <div className="flex items-end justify-between">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-4xl font-black text-foreground tracking-tight drop-shadow-sm">
-                Characters
-              </h1>
-              <p className="text-sm text-muted-foreground font-medium">
-                Manage the entities assigned to this novel.
-              </p>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-6 mb-12">
+          <div className="w-full">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.09em] uppercase text-[#5c5868] mb-2.5">
+              <span className="w-3 h-3"><Users className="w-full h-full" /></span>
+              {projectId ? "Novel Roster" : "Global Cast"}
             </div>
-            
-            {/* 🔴 FIXED: Primary Action is now a dynamic Link */}
+            <h1 className="font-serif font-medium text-[40px] tracking-[-0.01em] m-0 text-[#ede9e2]">
+              Characters
+            </h1>
+          </div>
+          
+          <div className="flex items-center gap-2.5 pt-1">
             <Link 
-              href={`/characters/new`}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all font-bold shadow-sm active:scale-95"
+              href={newLink}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-transparent bg-[#c9975a] text-[#131217] text-sm font-semibold transition-all hover:bg-[#d8a86c] hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(201,151,90,0.3)]"
             >
               <Plus className="w-4 h-4" />
-              <span>New</span>
+              Add Character
             </Link>
           </div>
+        </div>
 
-          {/* Search Bar */}
-          <div className="flex items-center gap-4 bg-secondary/20 p-3 rounded-2xl border border-border/20 focus-within:border-primary/30 transition-colors">
-            <Search className="w-4 h-4 text-muted-foreground ml-2" />
+        {/* Search Bar */}
+        <div className="mb-10 max-w-[400px]">
+          <div className="flex items-center gap-3 bg-[#1b1a21] p-3 rounded-xl border border-[rgba(255,255,255,0.07)] focus-within:border-[#c9975a] transition-colors">
+            <Search className="w-4 h-4 text-[#5c5868]" />
             <input 
               type="text" 
-              placeholder="Search by name, role, or traits..." 
-              className="bg-transparent border-none outline-none text-sm font-medium w-full text-foreground placeholder:text-muted-foreground/50"
+              placeholder="Search roster..." 
+              className="bg-transparent border-none outline-none text-[13px] font-medium w-full text-[#ede9e2] placeholder:text-[#5c5868]"
             />
           </div>
         </div>
 
-        {/* LOADING STATE */}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4">
+          <div className="flex flex-col items-center justify-center py-20 text-[#c9975a] gap-4">
             <Loader2 className="w-8 h-8 animate-spin" />
-            <p className="text-sm font-bold animate-pulse">Loading roster...</p>
           </div>
         )}
 
-        {/* ERROR STATE */}
         {isError && (
-          <div className="flex flex-col items-center justify-center py-20 text-red-500/80 gap-4">
-            <p className="text-sm font-bold">Failed to load characters. Please try again.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-red-400 gap-4">
+            <p className="text-sm font-bold">Failed to load characters.</p>
           </div>
         )}
 
-        {/* Section 2: The Grid (Real Data) */}
         {!isLoading && !isError && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-            {characters.map((char) => (
-              <div 
-                key={char._id} 
-                className="flex flex-col rounded-[2rem] border border-border/20 overflow-hidden bg-secondary/5 hover:bg-secondary/10 transition-colors group relative"
-              >
-                {/* Card Header: Large Portrait */}
-                <Link href={`/project/${projectId}/characters/${char._id}`} className="block relative w-full aspect-[4/5] bg-secondary/20 overflow-hidden border-b border-border/20">
-                  <img 
-                    src={char.avatarUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&h=800&q=80"} // Fallback image
-                    alt={char.name} 
-                    className="w-full h-full object-cover object-top grayscale-[20%] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
-                  />
-                  <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg">
-                    {char.status}
-                  </div>
-                </Link>
-
-                {/* Card Body: Details & Controls */}
-                <div className="flex flex-col gap-6 p-6 flex-1">
-                  
-                  {/* Info Header with Global Delete Button */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                      <Link href={`/project/${projectId}/characters/${char._id}`}>
-                        <h3 className="text-2xl font-black text-foreground group-hover:text-primary transition-colors line-clamp-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {characters.map((char) => {
+              const editLink = projectId ? `/project/${projectId}/characters/${char._id}` : `/characters/${char._id}`;
+              
+              return (
+                <div 
+                  key={char._id} 
+                  className="group relative flex flex-col rounded-2xl border border-[rgba(255,255,255,0.07)] bg-[#1b1a21] overflow-hidden transition-all hover:border-[rgba(255,255,255,0.15)] hover:shadow-xl hover:-translate-y-1"
+                >
+                  <Link href={editLink} className="relative aspect-[4/3] w-full overflow-hidden bg-[#29272f] flex items-center justify-center">
+                    {char.avatarUrl ? (
+                      <img 
+                        src={char.avatarUrl} 
+                        alt={char.name} 
+                        className="w-full h-full object-cover grayscale-[40%] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                      />
+                    ) : (
+                      <Users className="w-16 h-16 text-[#5c5868] opacity-30 transition-transform duration-700 group-hover:scale-110" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1b1a21] via-[rgba(27,26,33,0.4)] to-transparent opacity-90 group-hover:opacity-80 transition-opacity" />
+                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+                      <div>
+                        <h3 className="font-serif text-[22px] font-medium text-[#ede9e2] leading-tight mb-1">
                           {char.name}
                         </h3>
-                      </Link>
-                      <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                        {char.role}
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#c9975a]">
+                          {char.role || "Unassigned"}
+                        </span>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-md bg-[rgba(19,18,23,0.8)] backdrop-blur-md border border-[rgba(255,255,255,0.1)] text-[10px] font-bold text-[#ede9e2] uppercase tracking-wider">
+                        {char.status}
                       </span>
                     </div>
-                    
-                    {/* Global Character Delete Button connected to Redux */}
-                    <button 
-                      onClick={() => handleDelete(char._id, char.name)}
-                      disabled={isDeleting}
-                      className="shrink-0 p-2 text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all active:scale-90 disabled:opacity-50"
-                      title={`Delete ${char.name}`}
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
+                  </Link>
 
-                  {/* Traits / Aliases Preview */}
-                  <div className="flex flex-col gap-3 mt-auto">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
-                      <span>Quick Details</span>
-                    </span>
-                    
-                    <div className="flex flex-wrap gap-2 min-h-[40px]">
+                  <div className="p-5 flex flex-col flex-1">
+                    <div className="flex flex-wrap gap-2 mb-4">
                       {char.traits && char.traits.length > 0 ? (
                         char.traits.slice(0, 3).map((trait, idx) => (
-                          <span key={idx} className="px-2 py-1 rounded-md bg-background border border-border/30 text-[10px] font-bold text-foreground/80 uppercase tracking-widest">
+                          <span key={idx} className="px-2 py-1 rounded bg-[#29272f] border border-[rgba(255,255,255,0.05)] text-[10px] font-medium text-[#948fa0]">
                             {trait}
                           </span>
                         ))
                       ) : (
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-background border border-border/30 border-dashed text-xs font-bold text-muted-foreground/60 w-full">
-                          <Users className="w-3.5 h-3.5" />
-                          No traits defined
-                        </div>
+                        <span className="text-[11px] italic text-[#5c5868]">No traits defined</span>
                       )}
                     </div>
+                    
+                    <div className="mt-auto flex items-center justify-between border-t border-[rgba(255,255,255,0.07)] pt-4">
+                      <Link 
+                        href={editLink}
+                        className="text-[11px] font-semibold text-[#948fa0] uppercase tracking-wider hover:text-[#ede9e2] transition-colors"
+                      >
+                        Edit Profile
+                      </Link>
+                      <button 
+                        onClick={(e) => { e.preventDefault(); handleDelete(char._id, char.name); }}
+                        disabled={isDeleting}
+                        className="text-[#5c5868] hover:text-red-400 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
-            {/* 🔴 FIXED: Empty State Fallback now has a link too! */}
             {characters.length === 0 && (
-              <div className="col-span-1 sm:col-span-2 py-20 flex flex-col items-center justify-center text-center gap-4 text-muted-foreground bg-secondary/10 rounded-[2rem] border border-border/20">
-                <Users className="w-10 h-10 opacity-20" />
-                <p className="text-sm font-medium">No characters found for this project. Create one to begin.</p>
+              <div className="col-span-full py-24 flex flex-col items-center justify-center text-center border border-dashed border-[rgba(255,255,255,0.14)] rounded-2xl bg-[#1b1a21]/50">
+                <Users className="w-12 h-12 text-[#5c5868] mb-4" />
+                <p className="font-serif text-[20px] text-[#948fa0] mb-2">No characters found.</p>
+                <p className="text-[13px] text-[#5c5868] max-w-sm mb-6">Create your first character to start populating this world.</p>
                 <Link 
-                  href={`/project/${projectId}/characters/new`}
-                  className="mt-2 flex items-center gap-2 px-4 py-2 rounded-xl bg-background border border-border/30 hover:border-primary/50 text-xs font-bold text-foreground transition-all"
+                  href={newLink}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-[rgba(255,255,255,0.1)] text-[13px] font-semibold text-[#ede9e2] hover:bg-[#29272f] transition-colors"
                 >
-                  <PlusCircle className="w-4 h-4 text-muted-foreground" />
-                  Create First Character
+                  <Plus className="w-4 h-4" />
+                  Add Character
                 </Link>
               </div>
             )}
           </div>
         )}
-        
       </div>
     </div>
   );

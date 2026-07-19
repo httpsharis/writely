@@ -7,6 +7,8 @@ import { CredentialResponse } from "@react-oauth/google";
 import { useGoogleLoginMutation, useRegisterMutation } from "@/redux/features/auth/authApi";
 import { siteConfig } from "@/config/site";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const GoogleLoginButton = dynamic(
   () => import("@/components/shared/GoogleLoginButton").then((mod) => mod.GoogleLoginButton),
@@ -15,6 +17,7 @@ const GoogleLoginButton = dynamic(
 
 export default function SignupPage() {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -23,23 +26,39 @@ export default function SignupPage() {
 
   const isLoading = isGoogleLoading || isEmailLoading;
   const isSuccess = isGoogleSuccess || isEmailSuccess;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isSuccess) {
+      router.push("/inbox");
+    }
+  }, [isSuccess, router]);
 
   const handleGoogleSuccess = async ({ credential: idToken }: CredentialResponse) => {
     if (!idToken) return;
     try {
       await googleLogin({ idToken }).unwrap();
-    } catch (err) {
-      console.error("Google Signup failed:", err);
+    } catch (err: unknown) {
+      // 1. Unmask the hidden Google error
+      console.error("RAW GOOGLE ERROR:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
     }
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !name) return;
+    if (!email || !password || !name || !username) return;
+
     try {
-      await emailRegister({ name, email, password }).unwrap();
-    } catch (err) {
-      console.error("Email Signup failed:", err);
+      await emailRegister({ name, username, email, password }).unwrap();
+    } catch (err: unknown) {
+      // 1. Unmask the raw error object
+      console.error("RAW SIGNUP ERROR:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+
+      // 2. Safely decode the RTK Query backend payload
+      const rtkError = err as { status?: number; data?: { message?: string, error?: string } };
+      if (rtkError.data) {
+        console.error("BACKEND REJECTION REASON:", rtkError.data.message || rtkError.data.error);
+      }
     }
   };
 
@@ -96,12 +115,23 @@ export default function SignupPage() {
           {/* Form */}
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Full Name</label>
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Austen"
+                required
+                className="w-full h-11 px-4 bg-secondary/50 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground uppercase tracking-wider">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="janeausten"
                 required
                 className="w-full h-11 px-4 bg-secondary/50 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
               />
@@ -129,7 +159,7 @@ export default function SignupPage() {
                 className="w-full h-11 px-4 bg-secondary/50 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all"
               />
             </div>
-            
+
             {emailError && (
               <p className="text-xs font-medium text-red-500 text-center">
                 {(emailError as any)?.data?.error || "Registration failed. Please try again."}

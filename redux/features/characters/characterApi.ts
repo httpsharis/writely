@@ -57,8 +57,8 @@ export const characterApi = createApi({
 
   endpoints: (builder) => ({
     // GET /api/characters/novel/:novelId
-    getNovelCharacters: builder.query<{ characters: Character[] }, string>({
-      query: (novelId) => `/character/novel/${novelId}`,
+    getNovelCharacters: builder.query<{ characters: Character[] }, string | undefined>({
+      query: (novelId) => `/characters/novel/${novelId || 'global'}`,
       providesTags: (result) =>
         result
           ? [
@@ -90,7 +90,7 @@ export const characterApi = createApi({
       UpdateCharacterPayload
     >({
       query: ({ characterId, data }) => ({
-        url: `/character/${characterId}`,
+        url: `/characters/${characterId}`,
         method: "PUT",
         body: data,
       }),
@@ -112,7 +112,7 @@ export const characterApi = createApi({
     }),
 
     getCharacterById: builder.query<{ character: Character }, string>({
-      query: (characterId) => `/character/${characterId}`,
+      query: (characterId) => `/characters/${characterId}`,
       providesTags: (result, error, id) => [{ type: "Character", id }],
     }),
   }),

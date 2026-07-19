@@ -1,176 +1,343 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
-import { useGetCharacterByIdQuery } from "@/redux/features/characters/characterApi"; // Adjust path
-import CharacterHero from "@/components/characters/characterDetails/CharacterHero";
-import CharacterMeta from "@/components/characters/characterDetails/CharacterMeta";
-import CharacterTraits from "@/components/characters/characterDetails/CharacterTraits";
+import { useParams, useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  User,
+  Image as ImageIcon,
+  Sparkles,
+  Save,
+  Eye,
+  Brain,
+  BookOpen,
+  Loader2,
+  Book,
+} from "lucide-react";
+import { useUpdateCharacterMutation, useGetCharacterByIdQuery } from "@/redux/features/characters/characterApi";
+import { useGetDocumentsQuery } from "@/redux/features/documents/documentApi";
 
-export default function CharacterProfilePage() {
+export default function EditCharacterPage() {
+  const router = useRouter();
   const params = useParams();
-  const projectId = (params.projectId || params.id) as string;
-  const characterId = params.characterId as string;
+  const projectId = params.projectId as string | undefined;
+  const characterId = params.id as string;
 
-  const [activeTab, setActiveTab] = useState("Overview");
+  const { data, isLoading: isFetching } = useGetCharacterByIdQuery(characterId);
+  const [updateCharacter, { isLoading }] = useUpdateCharacterMutation();
 
-  // Fetch real character data
-  const { data, isLoading, isError } = useGetCharacterByIdQuery(characterId, {
-    skip: !characterId,
-  });
+  const { data: novelsData } = useGetDocumentsQuery({ type: "novel" });
+  const novels = novelsData?.documents || [];
 
-  const character = data?.character;
+  const [selectedNovelId, setSelectedNovelId] = useState(projectId || "global");
 
-  // Smart Parser: Because we combined Appearance, Personality, and History into a single 'bio'
-  // string during creation, we parse it back out here for the tabs.
-  const parsedLore = useMemo(() => {
-    if (!character?.bio)
-      return { appearance: "", personality: "", history: character?.bio || "" };
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("supporting");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
-    const bioStr = character.bio;
+  const [appearance, setAppearance] = useState("");
+  const [personality, setPersonality] = useState("");
+  const [history, setHistory] = useState("");
+  
+  const [traitsInput, setTraitsInput] = useState("");
+  const [traits, setTraits] = useState<string[]>([]);
 
-    // Extract sections using regex based on our Markdown compilation format
-    const appearanceMatch = bioStr.match(
-      /\*\*Physical Appearance & Body\*\*\n([\s\S]*?)(?=\*\*|$)/,
-    );
-    const personalityMatch = bioStr.match(
-      /\*\*Personality & Flaws\*\*\n([\s\S]*?)(?=\*\*|$)/,
-    );
-    const historyMatch = bioStr.match(
-      /\*\*Backstory & History\*\*\n([\s\S]*?)(?=\*\*|$)/,
-    );
+  useEffect(() => {
+    if (data?.character) {
+      const char = data.character;
+      setName(char.name || "");
+      setRole(char.role || "supporting");
+      setAvatarUrl(char.avatarUrl || "");
+      setTraits(char.traits || []);
+      setSelectedNovelId(char.novelId || "global");
+      
+      if (char.bio) {
+        // Attempt to parse out the bio sections if they exist
+        const appearanceMatch = char.bio.match(/\*\*Physical Appearance & Body\*\*\n([\s\S]*?)(?=\*\*Personality & Flaws\*\*|$)/);
+        const personalityMatch = char.bio.match(/\*\*Personality & Flaws\*\*\n([\s\S]*?)(?=\*\*Backstory & History\*\*|$)/);
+        const historyMatch = char.bio.match(/\*\*Backstory & History\*\*\n([\s\S]*?)$/);
 
-    return {
-      appearance: appearanceMatch ? appearanceMatch[1].trim() : "",
-      personality: personalityMatch ? personalityMatch[1].trim() : "",
-      history: historyMatch ? historyMatch[1].trim() : bioStr, // Fallback to full bio if parsing fails
-    };
-  }, [character?.bio]);
+        if (appearanceMatch || personalityMatch || historyMatch) {
+          setAppearance(appearanceMatch ? appearanceMatch[1].trim() : "");
+          setPersonality(personalityMatch ? personalityMatch[1].trim() : "");
+          setHistory(historyMatch ? historyMatch[1].trim() : "");
+        } else {
+          // Fallback if bio isn't structured
+          setHistory(char.bio);
+        }
+      }
+    }
+  }, [data]);
 
-  // Handle Loading State
-  if (isLoading) {
-    return (
-      <div className="max-w-[720px] mx-auto px-8 py-32 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-        <Loader2 className="w-8 h-8 animate-spin" />
-        <p className="text-[12px] font-bold uppercase tracking-widest">
-          Loading Entity...
-        </p>
-      </div>
-    );
-  }
-
-  // Handle Error/Not Found State
-  if (isError || !character) {
-    return (
-      <div className="max-w-[720px] mx-auto px-8 py-32 flex flex-col items-center justify-center gap-4">
-        <p className="text-[14px] text-red-500 font-bold">
-          Failed to load character.
-        </p>
-        <Link
-          href={`/project/${projectId}/characters`}
-          className="text-[12px] underline"
-        >
-          Return to Roster
-        </Link>
-      </div>
-    );
-  }
-
-  // Map backend character to the shape expected by your UI components
-  // Adjust depending on how your CharacterHero/Meta components handle the props
-  const mappedCharacterForUI = {
-    ...character,
-    imageUrl: character.avatarUrl,
-    // aliases is already an array now, so we just pass it directly (or fallback to empty array)
-    aliases: character.aliases || [],
+  const handleAddTrait = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && traitsInput.trim()) {
+      e.preventDefault();
+      if (!traits.includes(traitsInput.trim())) {
+        setTraits([...traits, traitsInput.trim()]);
+      }
+      setTraitsInput("");
+    }
   };
 
+  const removeTrait = (traitToRemove: string) => {
+    setTraits(traits.filter(t => t !== traitToRemove));
+  };
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      alert("Please enter a character designation (name).");
+      return;
+    }
+
+    const compiledBio = `**Physical Appearance & Body**
+${appearance || "No appearance defined."}
+
+**Personality & Flaws**
+${personality || "No personality defined."}
+
+**Backstory & History**
+${history || "No history defined."}`.trim();
+
+    try {
+      await updateCharacter({
+        characterId,
+        data: {
+          name,
+          role,
+          avatarUrl,
+          bio: compiledBio,
+          traits,
+          novelId: selectedNovelId === "global" ? null : selectedNovelId,
+        },
+      }).unwrap();
+
+      router.push(projectId ? `/project/${projectId}/characters` : `/characters`);
+    } catch (err: unknown) {
+      console.error("Failed to update character", err);
+      alert("Failed to save character. Please try again.");
+    }
+  };
+
+  const backLink = projectId ? `/project/${projectId}/characters` : `/characters`;
+
+  if (isFetching) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#131217]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#c9975a]" />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-[720px] mx-auto px-8 py-12 flex flex-col animate-in fade-in duration-500">
-      {/* Top Navigation */}
-      <div className="flex items-center justify-between mb-16">
-        <Link
-          href={`/project/${projectId}/characters`}
-          className="flex items-center gap-2 text-[13px] text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4] transition-colors group"
-        >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Roster
-        </Link>
-        <Link
-          href={`/project/${projectId}/characters/${characterId}/edit`}
-          className="px-4 py-1.5 rounded-md text-[12px] border border-[#E8E0D5] dark:border-[#242424] text-[#1A1008] dark:text-[#F0EBE4] hover:bg-secondary/20 transition-colors"
-        >
-          Edit Character
-        </Link>
-      </div>
-
-      {/* Profile Header */}
-      <CharacterHero character={mappedCharacterForUI} />
-
-      {/* Tabs */}
-      <div className="flex items-center gap-8 border-b border-[#E8E0D5] dark:border-[#242424] mb-10 overflow-x-auto no-scrollbar">
-        {["Overview", "Appearance", "Personality", "Backstory"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-3 text-[12px] uppercase tracking-widest relative whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? "text-[#1A1008] dark:text-[#F0EBE4] font-bold"
-                : "text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4]"
-            }`}
+    <div className="min-h-screen w-full overflow-y-auto bg-[#131217] text-[#ede9e2] px-8 py-12 pb-32 no-scrollbar font-sans">
+      <div className="max-w-[800px] mx-auto flex flex-col w-full h-full gap-8">
+        
+        <div className="flex items-center justify-between shrink-0 mb-4">
+          <Link
+            href={backLink}
+            className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#5c5868] hover:text-[#ede9e2] transition-colors w-fit group"
           >
-            {tab}
-            {activeTab === tab && (
-              <div className="absolute bottom-[-1px] left-0 w-full h-[1px] bg-[#1A1008] dark:bg-[#F0EBE4]" />
-            )}
-          </button>
-        ))}
-      </div>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Roster
+          </Link>
+        </div>
 
-      {/* Tab Content */}
-      <div className="relative min-h-[300px]">
-        {activeTab === "Overview" && (
-          <div className="flex flex-col animate-in fade-in duration-300">
-            <CharacterMeta character={mappedCharacterForUI} />
-            <hr className="border-t border-[#E8E0D5] dark:border-[#242424] my-10" />
-            <CharacterTraits traits={mappedCharacterForUI.traits || []} />
-          </div>
-        )}
-
-        {activeTab === "Appearance" && (
-          <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-            <h3 className="text-[10px] uppercase text-[#C8973F] font-bold mb-2">
-              Physical Appearance
-            </h3>
-            <p className="text-[14px] leading-[1.8] text-[#1A1008] dark:text-[#F0EBE4] whitespace-pre-wrap">
-              {parsedLore.appearance || "No appearance details recorded."}
+        <div className="bg-[#1b1a21] border border-[rgba(255,255,255,0.07)] rounded-[32px] p-8 md:p-12 flex flex-col gap-12 shadow-2xl">
+          
+          <div className="flex flex-col gap-3">
+            <h1 className="font-serif text-[44px] font-medium text-[#ede9e2] tracking-tight flex items-center gap-3 leading-none">
+              Edit Character
+              <Sparkles className="w-8 h-8 text-[#c9975a]" />
+            </h1>
+            <p className="text-[14px] text-[#948fa0] font-medium">
+              Update the core identity, roles, and narrative traits.
             </p>
           </div>
-        )}
 
-        {activeTab === "Personality" && (
-          <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-            <h3 className="text-[10px] uppercase text-emerald-600 dark:text-emerald-500 font-bold mb-2">
-              Personality & Flaws
-            </h3>
-            <p className="text-[14px] leading-[1.8] text-[#1A1008] dark:text-[#F0EBE4] whitespace-pre-wrap">
-              {parsedLore.personality || "No personality details recorded."}
-            </p>
-          </div>
-        )}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+            
+            <div className="md:col-span-4 flex flex-col gap-4">
+              <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
+                <ImageIcon className="w-3 h-3" /> Portrait Profile
+              </label>
 
-        {activeTab === "Backstory" && (
-          <div className="flex flex-col gap-4 animate-in fade-in duration-300">
-            <h3 className="text-[10px] uppercase text-[#C8973F] font-bold mb-2">
-              Background & History
-            </h3>
-            <p className="text-[14px] leading-[1.8] text-[#1A1008] dark:text-[#F0EBE4] whitespace-pre-wrap">
-              {parsedLore.history || "No backstory details recorded."}
-            </p>
+              <div className="w-full aspect-[3/4] rounded-2xl bg-[#29272f] border border-[rgba(255,255,255,0.07)] flex items-center justify-center overflow-hidden relative">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-3 text-[#5c5868] p-4 text-center">
+                    <User className="w-12 h-12" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      No Image
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <input
+                type="text"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                placeholder="Paste Image URL..."
+                className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 text-[13px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors"
+              />
+            </div>
+
+            <div className="md:col-span-8 flex flex-col gap-8 w-full mt-2">
+              <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+                  Designation <span className="text-[#c9975a]">*</span>
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5c5868]" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Character Name"
+                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl pl-12 pr-4 py-4 text-[18px] text-[#ede9e2] font-serif focus:outline-none focus:border-[#c9975a] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+                  Assigned Novel
+                </label>
+                <div className="relative">
+                  <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5c5868]" />
+                  <select
+                    value={selectedNovelId}
+                    onChange={(e) => setSelectedNovelId(e.target.value)}
+                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl pl-12 pr-4 py-3.5 text-[14px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="global">Global Cast (Not attached to a novel)</option>
+                    {novels.map(novel => (
+                      <option key={novel._id} value={novel._id}>{novel.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+                  Narrative Role
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: "protagonist", label: "Protagonist" },
+                    { id: "antagonist", label: "Antagonist" },
+                    { id: "supporting", label: "Supporting" },
+                    { id: "minor", label: "Minor" },
+                  ].map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setRole(r.id)}
+                      className={`px-4 py-2.5 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border flex-1 min-w-[120px] ${
+                        role === r.id
+                          ? "bg-[rgba(201,151,90,0.1)] border-[#c9975a] text-[#c9975a]"
+                          : "bg-[#131217] border-[rgba(255,255,255,0.07)] text-[#5c5868] hover:border-[rgba(255,255,255,0.15)] hover:text-[#ede9e2]"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+                  Traits (Press Enter)
+                </label>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="text"
+                    value={traitsInput}
+                    onChange={(e) => setTraitsInput(e.target.value)}
+                    onKeyDown={handleAddTrait}
+                    placeholder="e.g. Stubborn, Brilliant..."
+                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 text-[13px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {traits.map(trait => (
+                      <span key={trait} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#29272f] border border-[rgba(255,255,255,0.05)] text-[11px] font-medium text-[#ede9e2]">
+                        {trait}
+                        <button onClick={() => removeTrait(trait)} className="text-[#5c5868] hover:text-red-400">&times;</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
-        )}
+
+          <div className="w-full h-px bg-[rgba(255,255,255,0.07)] my-2"></div>
+
+          <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-4">
+              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
+                <Eye className="w-4 h-4 text-[#c9975a]" /> Physical Appearance
+              </label>
+              <textarea
+                value={appearance}
+                onChange={(e) => setAppearance(e.target.value)}
+                placeholder="Detail their exact body type, facial features, scars, clothing style, and physical quirks..."
+                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#c9975a] transition-colors resize-y"
+              />
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
+                <Brain className="w-4 h-4 text-[#7cbf8e]" /> Personality & Flaws
+              </label>
+              <textarea
+                value={personality}
+                onChange={(e) => setPersonality(e.target.value)}
+                placeholder="Describe their fears, desires, how they speak, and their moral alignment..."
+                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#7cbf8e] transition-colors resize-y"
+              />
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#e07a5f]" /> Backstory & History
+              </label>
+              <textarea
+                value={history}
+                onChange={(e) => setHistory(e.target.value)}
+                placeholder="Where did they come from? What past events shaped who they are today?"
+                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#e07a5f] transition-colors resize-y"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-[rgba(255,255,255,0.07)] mt-4">
+            <Link
+              href={backLink}
+              className="px-6 py-3.5 rounded-full text-[13px] font-bold text-[#5c5868] hover:text-[#ede9e2] transition-colors uppercase tracking-wider"
+            >
+              Cancel
+            </Link>
+            <button
+              onClick={handleSave}
+              disabled={!name || isLoading}
+              className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#c9975a] text-[#131217] hover:bg-[#d8a86c] transition-all font-bold shadow-[0_0_15px_rgba(201,151,90,0.3)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-[12px]"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{isLoading ? "Saving..." : "Save Profile"}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

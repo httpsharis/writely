@@ -44,17 +44,15 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     skip: !accessToken,
   });
 
-  // 3. Kick to login ONLY on 401 Unauthorized (Not network errors!)
+  // 3. Kick to login if unauthorized
   useEffect(() => {
-    if (
-      error &&
-      "status" in error &&
-      error.status === 401 &&
-      !authPages.includes(pathname)
-    ) {
+    const isUnauthorizedError = error && "status" in error && error.status === 401;
+    const isMissingToken = !accessToken && !isRefreshing;
+
+    if ((isUnauthorizedError || isMissingToken) && !authPages.includes(pathname)) {
       router.push("/login");
     }
-  }, [error, router, pathname]);
+  }, [error, accessToken, isRefreshing, router, pathname]);
 
   // 4. Redirect away from login page when user is confirmed
   useEffect(() => {

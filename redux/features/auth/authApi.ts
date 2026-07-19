@@ -1,7 +1,7 @@
 // api/authApi.ts
 import { apiSlice } from "../../api/apiSlice";
 import { User } from "../../../types";
-import { setCredentials, setAccessToken, logOut } from "../auth/authSlice";
+import { setCredentials, setAccessToken, setUser, logOut } from "../auth/authSlice";
 
 interface LoginResponse {
   message: string;
@@ -94,6 +94,21 @@ export const authApi = apiSlice.injectEndpoints({
       },
       invalidatesTags: ["User"], // ✅ CRITICAL: Clear cache
     }),
+
+    updateProfile: builder.mutation<{ user: User }, { name?: string; username?: string; bio?: string }>({
+      query: (data) => ({
+        url: "/auth/profile",
+        method: "PUT",
+        body: data,
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data.user)); 
+        } catch {}
+      },
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -105,4 +120,5 @@ export const {
   useRefreshAccessTokenMutation,
   useGetCurrentUserQuery,
   useLogoutMutation,
+  useUpdateProfileMutation,
 } = authApi;
