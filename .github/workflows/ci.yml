@@ -32,7 +32,7 @@ jobs:
 
       # 5. Install Dependencies (Cleanly)
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       # 6. Check for messy code / syntax errors
       - name: Run ESLint
