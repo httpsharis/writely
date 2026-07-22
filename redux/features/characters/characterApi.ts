@@ -1,12 +1,15 @@
+/**
+ * @file characterApi.ts
+ * @description RTK Query API slice for character and world-building management.
+ */
+
+import { RootState } from "@/redux/store";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-interface StateWithAuth {
-  auth: {
-    accessToken: string | null;
-  };
-}
-
-export interface CharacterReplationship {
+/**
+ * Defines the relationship between two characters in a novel
+ */
+export interface CharacterRelationship {
   targetCharacterId:
     | string
     | { _id: string; name: string; role: string; avatarUrl?: string };
@@ -14,19 +17,23 @@ export interface CharacterReplationship {
   _id?: string;
 }
 
+/**
+ * Character INTERFACE
+ * Represents a character with in a novel
+ */
 export interface Character {
   _id: string;
-  novelId: string;
+  novelId: string | null;
   name: string;
   role: string;
   bio?: string;
   traits: string[];
-  relationships: CharacterReplationship[];
+  relationships: CharacterRelationship[];
   aliases: string[];
   avatarUrl?: string;
   status: "alive" | "dead" | "unknown";
   createdAt: string;
-  updateAt: string;
+  updatedAt: string;
 }
 
 export interface CreateCharacterPayload {
@@ -39,14 +46,17 @@ export interface UpdateCharacterPayload {
   data: Partial<Character>;
 }
 
-// Api Slice
+/**
+ * RTK Query API slice for managing characters.
+ * Handles CRUD operations and cache invalidation for character entities.
+ */
 export const characterApi = createApi({
   reducerPath: "characterApi",
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000/api",
     prepareHeaders(headers, { getState }) {
-      const state = getState() as StateWithAuth;
-      const token = state.auth.accessToken;
+      const token = (getState() as RootState).auth.accessToken;
+
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
@@ -56,9 +66,15 @@ export const characterApi = createApi({
   tagTypes: ["Character"],
 
   endpoints: (builder) => ({
-    // GET /api/characters/novel/:novelId
-    getNovelCharacters: builder.query<{ characters: Character[] }, string | undefined>({
-      query: (novelId) => `/characters/novel/${novelId || 'global'}`,
+    /**
+     * Fetches all the characters Associated with a specific Novel.
+     * Falls back to 'global' if no novelId is provided.
+     */
+    getNovelCharacters: builder.query<
+      { characters: Character[] },
+      string | undefined
+    >({
+      query: (novelId = "global") => `/characters/novel/${novelId}`,
       providesTags: (result) =>
         result
           ? [
@@ -66,12 +82,14 @@ export const characterApi = createApi({
                 type: "Character" as const,
                 id: _id,
               })),
-              { type: "Character", id: "LIST" },
+              { type: "Character" as const, id: "LIST" },
             ]
-          : [{ type: "Character", id: "LIST" }],
+          : [{ type: "Character" as const, id: "LIST" }],
     }),
 
-    // POST `/characters/novel/${novelId}`
+    /**
+     * Creates a new character and invalidates the novel's character list cache.
+     */
     createCharacter: builder.mutation<
       { character: Character },
       CreateCharacterPayload
@@ -84,7 +102,9 @@ export const characterApi = createApi({
       invalidatesTags: [{ type: "Character", id: "LIST" }],
     }),
 
-    // PUT /api/characters/:characterId
+    /**
+     * Updates an existing character's profile, bio, or traits.
+     */
     updateCharacter: builder.mutation<
       { character: Character },
       UpdateCharacterPayload
@@ -99,7 +119,9 @@ export const characterApi = createApi({
       ],
     }),
 
-    // DELETE /api/characters/:characterId
+    /**
+     * Deletes Character by ID
+     */
     deleteCharacter: builder.mutation<void, string>({
       query: (characterId) => ({
         url: `/characters/${characterId}`,
@@ -111,6 +133,9 @@ export const characterApi = createApi({
       ],
     }),
 
+    /**
+     * Fetches a single character by its unique ID.
+     */
     getCharacterById: builder.query<{ character: Character }, string>({
       query: (characterId) => `/characters/${characterId}`,
       providesTags: (result, error, id) => [{ type: "Character", id }],
@@ -123,5 +148,5 @@ export const {
   useCreateCharacterMutation,
   useUpdateCharacterMutation,
   useDeleteCharacterMutation,
-  useGetCharacterByIdQuery
+  useGetCharacterByIdQuery,
 } = characterApi;

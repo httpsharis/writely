@@ -31,7 +31,7 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  const result = await baseQuery(args, api, extraOptions);
   
   if (result.error && result.error.status === 401) {
     // 🧠 Automatically log out the user if the token is expired/invalid!

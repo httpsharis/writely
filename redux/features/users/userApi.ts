@@ -1,128 +1,122 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { sharedBaseQuery } from '@/redux/api/baseQuery';
 
-interface StateWithAuth {
-    auth: {
-        accessToken: string | null;
-    };
-}
-
-// --- Types based on your backend ---
+// --- Types ---
 export interface RecentDocument {
-    _id: string;
-    title: string;
-    slug: string;
-    type: 'novel' | 'chapter';
-    parentId: string | null;
-    updatedAt: string;
+  _id: string;
+  title: string;
+  slug: string;
+  type: 'novel' | 'chapter';
+  parentId: string | null;
+  updatedAt: string;
 }
 
 export interface MinimalDashboardResponse {
-    wordsToday: number;
-    recentDocuments: RecentDocument[];
+  wordsToday: number;
+  recentDocuments: RecentDocument[];
 }
 
 export interface HeatmapData {
-    _id: string; // The date string: 'YYYY-MM-DD'
-    dailyMax: number;
+  _id: string; // 'YYYY-MM-DD'
+  dailyMax: number;
+}
+
+// Replace 'any' with a proper interface or a safe unknown object
+export interface WritingGoal {
+  _id: string;
+  target: number;
+  type: 'daily' | 'total';
+  // add other goal fields here
 }
 
 export interface UserProfileResponse {
-    profile: {
-        bio?: string;
-        avatarUrl?: string;
-        website?: string;
-        socialLinks?: {
-            twitter?: string;
-            instagram?: string;
-        };
+  profile: {
+    bio?: string;
+    avatarUrl?: string;
+    website?: string;
+    socialLinks?: {
+      twitter?: string;
+      instagram?: string;
     };
-    settings: {
-        theme: 'light' | 'dark' | 'system';
-        notifications: {
-            emailWeeklySummary: boolean;
-            pushMilestones: boolean;
-        };
-        editor: {
-            fontFamily: string;
-            fontSize: number;
-            focusMode: boolean;
-        };
+  };
+  settings: {
+    theme: 'light' | 'dark' | 'system';
+    notifications: {
+      emailWeeklySummary: boolean;
+      pushMilestones: boolean;
     };
-    analytics: {
-        currentStreak: number;
-        longestStreak: number;
-        heatmap: HeatmapData[];
+    editor: {
+      fontFamily: string;
+      fontSize: number;
+      focusMode: boolean;
     };
-    goals: any[]; // Assuming an array of writing goals
+  };
+  analytics: {
+    currentStreak: number;
+    longestStreak: number;
+    heatmap: HeatmapData[];
+  };
+  goals: WritingGoal[]; // Fixed the 'any'!
 }
 
 export interface PublicNovel {
-    _id: string;
-    title: string;
-    slug: string;
-    coverImage?: string;
-    synopsis?: string;
-    genre?: string[];
-    likesCount?: number;
-    createdAt: string;
+  _id: string;
+  title: string;
+  slug: string;
+  coverImage?: string;
+  synopsis?: string;
+  genre?: string[];
+  likesCount?: number;
+  createdAt: string;
 }
 
 export interface PublicAuthorProfileResponse {
-    author: {
-        name: string;
-        bio?: string;
-        avatarUrl?: string;
-        website?: string;
-        socialLinks?: {
-            twitter?: string;
-            instagram?: string;
-        };
-        joinedAt: string;
+  author: {
+    name: string;
+    bio?: string;
+    avatarUrl?: string;
+    website?: string;
+    socialLinks?: {
+      twitter?: string;
+      instagram?: string;
     };
-    novels: PublicNovel[];
+    joinedAt: string;
+  };
+  novels: PublicNovel[];
 }
 
-// --- API Slice ---
+/**
+ * API Slice for fetching User data (Dashboards, Profiles).
+ * This is strictly for READ operations.
+ */
 export const userApi = createApi({
-    reducerPath: 'userApi',
-    baseQuery: fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api',
-        prepareHeaders(headers, { getState }) {
-            const state = getState() as StateWithAuth;
-            const token = state.auth.accessToken;
-            if (token) {
-                headers.set('authorization', `Bearer ${token}`);
-            }
-            return headers;
-        },
+  reducerPath: 'userApi',
+  baseQuery: sharedBaseQuery, // Use shared base query!
+  tagTypes: ['User', 'Document', 'Analytics'],
+  endpoints: (builder) => ({
+    
+    /** Lightweight fetch for the home screen */
+    getMinimalDashboard: builder.query<MinimalDashboardResponse, void>({
+      query: () => '/users/dashboard',
+      providesTags: ['User', 'Document', 'Analytics'],
     }),
-    tagTypes: ['User', 'Document', 'Analytics'],
 
-    endpoints: (builder) => ({
-
-        // GET /api/users/dashboard -> Lightweight fetch for the home screen
-        getMinimalDashboard: builder.query<MinimalDashboardResponse, void>({
-            query: () => '/users/dashboard',
-            // Refetches if a document is updated or analytics change
-            providesTags: ['User', 'Document', 'Analytics'],
-        }),
-
-        // GET /api/users/profile -> Heavy fetch for the Trophy Room / Settings screen
-        getProfileDashboard: builder.query<UserProfileResponse, void>({
-            query: () => '/users/profile',
-            providesTags: ['User', 'Analytics'],
-        }),
-
-        // GET /api/users/public/:userId -> For readers visiting an author's page
-        getPublicAuthorProfile: builder.query<PublicAuthorProfileResponse, string>({
-            query: (userId) => `/users/public/${userId}`,
-            // We don't add heavy tags here because public readers don't edit things.
-        }),
+    /** Heavy fetch for the Trophy Room / Settings screen */
+    getProfileDashboard: builder.query<UserProfileResponse, void>({
+      query: () => '/users/profile',
+      providesTags: ['User', 'Analytics'],
     }),
+
+    /** For readers visiting an author's page */
+    getPublicAuthorProfile: builder.query<PublicAuthorProfileResponse, string>({
+      query: (userId) => `/users/public/${userId}`,
+      // No tags needed for public routes
+    }),
+  }),
 });
 
 export const {
-    useGetMinimalDashboardQuery,
-    useGetProfileDashboardQuery,
-    useGetPublicAuthorProfileQuery, // <-- Successfully exported!
+  useGetMinimalDashboardQuery,
+  useGetProfileDashboardQuery,
+  useGetPublicAuthorProfileQuery,
 } = userApi;

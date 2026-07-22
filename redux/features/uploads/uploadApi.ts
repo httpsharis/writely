@@ -1,47 +1,46 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { sharedBaseQuery } from "../../api/baseQuery";
 
-interface StateWithAuth {
-    auth: {
-        accessToken: string | null;
-    };
-}
-
+/**
+ * Response shape returned by the backend after a successful file upload.
+ */
 export interface UploadResponse {
-    message: string;
-    url: string; // The secure Cloudinary URL to save in your database
+  message: string;
+  /** The secure Cloudinary (or S3) URL to save in the database */
+  url: string; 
 }
 
+/**
+ * API Slice for handling file uploads (e.g., avatars, cover images).
+ * 
+ * Note: When using FormData, the browser automatically sets the correct 
+ * `multipart/form-data` boundary headers. RTK Query's fetchBaseQuery 
+ * detects FormData and skips forcing `application/json`.
+ */
 export const uploadApi = createApi({
-    reducerPath: 'uploadApi',
-    baseQuery: fetchBaseQuery({
-        baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000/api',
-        prepareHeaders(headers, { getState }) {
-            const state = getState() as StateWithAuth;
-            const token = state.auth.accessToken;
-            if (token) {
-                headers.set('authorization', `Bearer ${token}`);
-            }
-            // Note: We DO NOT set 'Content-Type': 'application/json' here!
-            // When using FormData, the browser automatically sets the correct 
-            // multipart/form-data boundary headers for us.
-            return headers;
-        },
-    }),
-    endpoints: (builder) => ({
-        uploadImage: builder.mutation<UploadResponse, File>({
-            query: (file) => {
-                // We pack the file into a FormData object right before sending
-                const body = new FormData();
-                body.append('image', file); // 'image' matches upload.single('image') in your backend
+  reducerPath: 'uploadApi',
+  baseQuery: sharedBaseQuery,
+  endpoints: (builder) => ({
+    
+    /**
+     * Uploads a single image file to the backend.
+     * 
+     * @param file The File object from an `<input type="file" />` or drag-and-drop event.
+     * @returns The public URL of the uploaded image.
+     */
+    uploadImage: builder.mutation<UploadResponse, File>({
+      query: (file) => {
+        const body = new FormData();
+        body.append('image', file); // 'image' must match upload.single('image') in Multer/Backend
 
-                return {
-                    url: '/upload',
-                    method: 'POST',
-                    body,
-                };
-            },
-        }),
+        return {
+          url: '/upload',
+          method: 'POST',
+          body,
+        };
+      },
     }),
+  }),
 });
 
 export const { useUploadImageMutation } = uploadApi;

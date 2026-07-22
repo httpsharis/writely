@@ -1,38 +1,38 @@
 import { sharedBaseQuery } from "@/redux/api/baseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-// 2. Define exactly what a "Document" looks like when it comes from the database.
+/**
+ * Represents a document (Novel or Chapter) in the database.
+ */
 export interface Document {
-  _id: string; // MongoDB's default ID
-  id?: string; // Our custom mapped ID
+  _id: string;
+  id?: string;
   title: string;
-  slug: string; // The URL-friendly version of the title
+  slug: string;
   type: "novel" | "chapter";
   status: "draft" | "published" | "archived";
-  parentId: string | null; // Null if it's a novel, holds an ID if it's a chapter
-  order: number; // Used for arranging chapters
+  parentId: string | null;
+  order: number;
 
   wordCount?: number;
-  content?: Record<string, unknown>; // The rich-text JSON from Tiptap/Novel editor
+  content?: Record<string, unknown>;
   coverImage?: string;
   icon?: string;
   synopsis?: string;
   authorNote?: string;
   genre?: string[];
-  likesCount?: number; // Holds the public likes
+  likesCount?: number;
 
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null; // Used for our "soft delete" trash bin
-  chapters: Document[]; // Holds the child chapters when we fetch a full novel
+  deletedAt: string | null;
+  chapters: Document[];
 }
 
-// 3. Define the exact data needed to create a new document
 export interface CreateDocumentPayload {
   title: string;
   type: "novel" | "chapter";
   parentId?: string | null;
-  // Add these new optional fields!
   tags?: string[];
   targetWords?: number;
   synopsis?: string;
@@ -41,108 +41,91 @@ export interface CreateDocumentPayload {
   content?: Record<string, unknown>;
 }
 
-// 4. Define the exact data needed to update an existing document
 export interface UpdateDocumentPayload {
   id: string;
-  data: Partial<Document>; // "Partial" means we can update just one field or all of them
+  data: Partial<Document>;
 }
 
-// 5. Build the actual API Slice
+/**
+ * API Slice for managing Documents (Novels & Chapters).
+ * Handles CRUD operations, trash management, and public reader interactions.
+ */
 export const documentApi = createApi({
-  // The unique name for this slice in the Redux store
   reducerPath: "documentApi",
-
-  // Set up the base URL and default settings for every request
   baseQuery: sharedBaseQuery,
-
-  // Tag types act like labels for our cached data.
-  // When we invalidate a tag, Redux knows it needs to fetch fresh data.
   tagTypes: ["Document", "Trash"],
-
-  // 6. Define all of our specific API endpoints (GET, POST, PUT, DELETE)
   endpoints: (builder) => ({
-    // Fetch all of the user's active novels for the dashboard
-    // Fetch all of the user's active novels for the dashboard
-    getDocuments: builder.query<
-      { documents: Document[] },
-      { type?: string } | void
-    >({
+    /**
+     * Fetches active documents for the authenticated user.
+     * @param params Optional filter object (e.g., { type: "novel" })
+     */
+    getDocuments: builder.query<{ documents: Document[] }, { type?: string } | void>({
       query: (params) => {
-        // If the component passes { type: "novel" }, append it to the URL
-        if (params && params.type) {
-          return `/documents?type=${params.type}`;
-        }
-        // Otherwise, fetch all documents normally
-        return "/documents";
+        // Minimalist URL building
+        const queryStr = params?.type ? `?type=${params.type}` : "";
+        return `/documents${queryStr}`;
       },
-      // Label this list so we can update it later when a new document is made
       providesTags: (result) =>
         result?.documents
           ? [
-              ...result.documents.map(({ _id }) => ({
-                type: "Document" as const,
-                id: _id,
-              })),
+              ...result.documents.map(({ _id }) => ({ type: "Document" as const, id: _id })),
               { type: "Document" as const, id: "LIST" },
             ]
           : [{ type: "Document" as const, id: "LIST" }],
     }),
 
-    // Fetch one specific document by its ID (used in the editor)
+    /**
+     * Fetches a single document by ID.
+     * Provides tags for both the document itself and its child chapters,
+     * ensuring the parent refetches if a child is updated.
+     */
     getDocumentById: builder.query<{ document: Document }, string>({
       query: (id) => `/documents/${id}`,
-      // Label this specific document so it updates when we edit it
-      providesTags: (result, error, id) => {
-        if (result?.document) {
-          const tags = [{ type: "Document" as const, id }];
-          const children = (result.document as any).children || result.document.chapters || [];
-          children.forEach((child: Document) => {
-            tags.push({ type: "Document" as const, id: child._id });
-          });
-          return tags;
-        }
-        return [{ type: "Document", id }];
-      },
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "Document" as const, id: result.document._id },
+              ...result.document.chapters.map(({ _id }) => ({ type: "Document" as const, id: _id })),
+            ]
+          : [{ type: "Document" as const, id: "LIST" }], // Fallback for error state
     }),
 
-    // Create a new novel or chapter
-    createDocument: builder.mutation<
-      { document: { _id: string; title: string; slug: string } }, // response shape
-      CreateDocumentPayload
-    >({
+    /**
+     * Creates a new document.
+     * Invalidates the parent document (if chapter) or the global list (if novel).
+     */
+    createDocument: builder.mutation<{ document: { _id: string; title: string; slug: string } }, CreateDocumentPayload>({
       query: (body) => ({
         url: "/documents",
         method: "POST",
         body,
       }),
-      // Tell Redux that the main list is out of date and needs a refresh
       invalidatesTags: (result, error, arg) =>
         arg.parentId
           ? [{ type: "Document", id: arg.parentId }]
           : [{ type: "Document", id: "LIST" }],
     }),
 
-    // Update an existing document (triggered by auto-save)
-    updateDocument: builder.mutation<
-      { document: Document },
-      UpdateDocumentPayload
-    >({
+    /**
+     * Updates an existing document (usually triggered by auto-save).
+     */
+    updateDocument: builder.mutation<{ document: Document }, UpdateDocumentPayload>({
       query: ({ id, data }) => ({
         url: `/documents/${id}`,
         method: "PUT",
         body: data,
       }),
-      // Tell Redux to refresh the cached data for this specific document
       invalidatesTags: (result, error, { id }) => [{ type: "Document", id }],
     }),
 
-    // Soft delete a document (move to trash)
+    /**
+     * Soft-deletes a document, moving it to the trash.
+     */
     trashDocument: builder.mutation<{ message: string }, string>({
       query: (id) => ({
         url: `/documents/${id}`,
         method: "DELETE",
       }),
-      // Refresh the main list, the specific document, AND the trash list
       invalidatesTags: (result, error, id) => [
         { type: "Document", id: "LIST" },
         { type: "Document", id },
@@ -150,34 +133,39 @@ export const documentApi = createApi({
       ],
     }),
 
-    // Fetch all documents currently sitting in the trash
+    /**
+     * Fetches all documents currently in the trash.
+     */
     getTrash: builder.query<{ documents: Document[] }, void>({
       query: () => "/documents/trash",
-      // Label this data as "Trash"
-      providesTags: ["Trash"],
+      providesTags: [{ type: "Trash", id: "LIST" }],
     }),
 
-    // Restore a document from the trash back to the main library
+    /**
+     * Restores a document from the trash back to the active library.
+     */
     restoreFromTrash: builder.mutation<{ document: Document }, string>({
       query: (id) => ({
         url: `/documents/trash/${id}/restore`,
         method: "PATCH",
       }),
-      // Refresh both the main list and the trash list
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: [
         { type: "Document", id: "LIST" },
         { type: "Trash", id: "LIST" },
       ],
     }),
 
-    // Public route for readers viewing a published document via its slug URL
+    /**
+     * Public route: Fetches a published document via its slug.
+     */
     getPublicDocument: builder.query<{ document: Document }, string>({
       query: (slug) => `/documents/public/${slug}`,
-      // We don't need tags here because public readers can't edit or delete things, but we might want to update likes
       providesTags: (result, error, slug) => [{ type: "Document", id: slug }],
     }),
 
-    // Public route to like a document
+    /**
+     * Public route: Likes a document.
+     */
     likePublicDocument: builder.mutation<{ message: string }, string>({
       query: (slug) => ({
         url: `/documents/public/${slug}/like`,
@@ -188,7 +176,6 @@ export const documentApi = createApi({
   }),
 });
 
-// 7. Export the auto-generated React hooks for our components to use
 export const {
   useGetDocumentsQuery,
   useGetDocumentByIdQuery,

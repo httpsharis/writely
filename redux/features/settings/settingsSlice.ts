@@ -1,26 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// Helper to pull from local storage
-const getLocalStorage = <T>(key: string, defaultValue: T): T => {
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem(key);
-    if (stored !== null) {
-      return JSON.parse(stored) as T;
-    }
-  }
-  return defaultValue;
-};
-
-interface SettingsState {
+export interface SettingsState {
   isFocusMode: boolean;
   dailyGoal: number;
   editorFont: "sans" | "serif";
 }
 
+// Read from local storage ONCE during initialization
 const initialState: SettingsState = {
-  isFocusMode: getLocalStorage("isFocusMode", false),
-  dailyGoal: getLocalStorage("dailyGoal", 2000),
-  editorFont: getLocalStorage("editorFont", "serif"),
+  isFocusMode: JSON.parse(localStorage.getItem("isFocusMode") || "false"),
+  dailyGoal: JSON.parse(localStorage.getItem("dailyGoal") || "2000"),
+  editorFont: (localStorage.getItem("editorFont") as "sans" | "serif") || "serif",
 };
 
 const settingsSlice = createSlice({
@@ -29,31 +19,15 @@ const settingsSlice = createSlice({
   reducers: {
     toggleFocusMode: (state) => {
       state.isFocusMode = !state.isFocusMode;
-      if (typeof window !== "undefined")
-        window.localStorage.setItem(
-          "isFocusMode",
-          JSON.stringify(state.isFocusMode),
-        );
     },
     setDailyGoal: (state, action: PayloadAction<number>) => {
       state.dailyGoal = action.payload;
-      if (typeof window !== "undefined")
-        window.localStorage.setItem(
-          "dailyGoal",
-          JSON.stringify(state.dailyGoal),
-        );
     },
     setEditorFont: (state, action: PayloadAction<"sans" | "serif">) => {
       state.editorFont = action.payload;
-      if (typeof window !== "undefined")
-        window.localStorage.setItem(
-          "editorFont",
-          JSON.stringify(state.editorFont),
-        );
     },
   },
 });
 
-export const { toggleFocusMode, setDailyGoal, setEditorFont } =
-  settingsSlice.actions;
+export const { toggleFocusMode, setDailyGoal, setEditorFont } = settingsSlice.actions;
 export default settingsSlice.reducer;
