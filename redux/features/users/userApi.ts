@@ -1,12 +1,18 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { sharedBaseQuery } from '@/redux/api/baseQuery';
+/**
+ * @file userApi.ts
+ * @desc RTK Query endpoints for fetching User Dashboards, Profiles, and Settings.
+ * Injects into the master apiSlice to share auth middleware and global caching.
+ */
 
-// --- Types ---
+import { apiSlice } from "../../api/apiSlice";
+
+// --- Strict Interfaces ---
+
 export interface RecentDocument {
   _id: string;
   title: string;
   slug: string;
-  type: 'novel' | 'chapter';
+  type: "novel" | "chapter";
   parentId: string | null;
   updatedAt: string;
 }
@@ -17,16 +23,14 @@ export interface MinimalDashboardResponse {
 }
 
 export interface HeatmapData {
-  _id: string; // 'YYYY-MM-DD'
+  _id: string; // Format: 'YYYY-MM-DD'
   dailyMax: number;
 }
 
-// Replace 'any' with a proper interface or a safe unknown object
 export interface WritingGoal {
   _id: string;
   target: number;
-  type: 'daily' | 'total';
-  // add other goal fields here
+  type: "daily" | "total";
 }
 
 export interface UserProfileResponse {
@@ -34,29 +38,19 @@ export interface UserProfileResponse {
     bio?: string;
     avatarUrl?: string;
     website?: string;
-    socialLinks?: {
-      twitter?: string;
-      instagram?: string;
-    };
+    socialLinks?: { twitter?: string; instagram?: string };
   };
   settings: {
-    theme: 'light' | 'dark' | 'system';
-    notifications: {
-      emailWeeklySummary: boolean;
-      pushMilestones: boolean;
-    };
-    editor: {
-      fontFamily: string;
-      fontSize: number;
-      focusMode: boolean;
-    };
+    theme: "light" | "dark" | "system";
+    notifications: { emailWeeklySummary: boolean; pushMilestones: boolean };
+    editor: { fontFamily: string; fontSize: number; focusMode: boolean };
   };
   analytics: {
     currentStreak: number;
     longestStreak: number;
     heatmap: HeatmapData[];
   };
-  goals: WritingGoal[]; // Fixed the 'any'!
+  goals: WritingGoal[]; 
 }
 
 export interface PublicNovel {
@@ -76,42 +70,36 @@ export interface PublicAuthorProfileResponse {
     bio?: string;
     avatarUrl?: string;
     website?: string;
-    socialLinks?: {
-      twitter?: string;
-      instagram?: string;
-    };
+    socialLinks?: { twitter?: string; instagram?: string };
     joinedAt: string;
   };
   novels: PublicNovel[];
 }
 
-/**
- * API Slice for fetching User data (Dashboards, Profiles).
- * This is strictly for READ operations.
- */
-export const userApi = createApi({
-  reducerPath: 'userApi',
-  baseQuery: sharedBaseQuery, // Use shared base query!
-  tagTypes: ['User', 'Document', 'Analytics'],
+// --- API Injection ---
+
+export const userApi = apiSlice.injectEndpoints({
+  overrideExisting: true, // Prevents Next.js hot-reload crashes
   endpoints: (builder) => ({
     
-    /** Lightweight fetch for the home screen */
+    /** Fetches lightweight data required for the main home dashboard screen */
     getMinimalDashboard: builder.query<MinimalDashboardResponse, void>({
-      query: () => '/users/dashboard',
-      providesTags: ['User', 'Document', 'Analytics'],
+      query: () => "/users/dashboard",
+      providesTags: ["User", "Document", "Analytics"],
     }),
 
-    /** Heavy fetch for the Trophy Room / Settings screen */
+    /** Fetches heavy, detailed data for the private Trophy Room / Settings screen */
     getProfileDashboard: builder.query<UserProfileResponse, void>({
-      query: () => '/users/profile',
-      providesTags: ['User', 'Analytics'],
+      query: () => "/users/profile",
+      providesTags: ["User", "Analytics"],
     }),
 
-    /** For readers visiting an author's page */
+    /** Public route: Fetches an author's public portfolio for readers to view */
     getPublicAuthorProfile: builder.query<PublicAuthorProfileResponse, string>({
       query: (userId) => `/users/public/${userId}`,
-      // No tags needed for public routes
+      // No providesTags needed: Public viewers don't trigger or receive live cache invalidations
     }),
+    
   }),
 });
 

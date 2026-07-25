@@ -1,50 +1,48 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { sharedBaseQuery } from '@/redux/api/baseQuery';
-
 /**
- * API Slice for handling data exports.
- * Uses mutations for GET requests because exports should only trigger 
- * on explicit user action (e.g., clicking a "Download" button), not on component mount.
+ * @file exportApi.ts
+ * @desc RTK Query endpoints for exporting and downloading manuscripts.
+ * Injects into the master apiSlice to share auth middleware.
  */
-export const exportApi = createApi({
-  reducerPath: 'exportApi',
-  baseQuery: sharedBaseQuery,
+
+import { apiSlice } from "../../api/apiSlice";
+
+export const exportApi = apiSlice.injectEndpoints({
+  overrideExisting: true, // Prevents Next.js hot-reload crashes
   endpoints: (builder) => ({
-    /**
-     * Exports a specific novel as raw text/Markdown.
-     * Use this when you need to display the markdown in the UI or editor.
+    
+    /** * Exports a specific novel as raw text/Markdown.
+     * Useful for displaying the raw output in a UI preview window.
      */
     exportNovel: builder.mutation<string, string>({
       query: (novelId) => ({
         url: `/export/novel/${novelId}`,
-        method: 'GET',
-        responseHandler: 'text', 
+        method: "GET",
+        responseHandler: "text", 
       }),
     }),
 
-    /**
-     * Exports a specific chapter as raw text/Markdown.
-     */
+    /** Exports a single chapter as raw text/Markdown. */
     exportChapter: builder.mutation<string, string>({
       query: (chapterId) => ({
         url: `/export/chapter/${chapterId}`,
-        method: 'GET',
-        responseHandler: 'text',
+        method: "GET",
+        responseHandler: "text",
       }),
     }),
 
     /**
      * Downloads a novel as a physical file (e.g., PDF, DOCX, or Markdown).
-     * Returns a Blob so the browser can trigger a native file download.
+     * Parses the response as a Blob so the browser can trigger a native file download.
      */
-    downloadNovelFile: builder.mutation<Blob, { novelId: string; format: 'pdf' | 'docx' | 'md' }>({
+    downloadNovelFile: builder.mutation<Blob, { novelId: string; format: "pdf" | "docx" | "md" }>({
       query: ({ novelId, format }) => ({
         url: `/export/novel/${novelId}/download`,
-        method: 'GET',
-        params: { format }, // Appends ?format=pdf to the URL
+        method: "GET",
+        params: { format }, // Automatically appends ?format=pdf
         responseHandler: (response) => response.blob(),
       }),
     }),
+    
   }),
 });
 

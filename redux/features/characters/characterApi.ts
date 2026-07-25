@@ -1,25 +1,23 @@
 /**
  * @file characterApi.ts
  * @description RTK Query API slice for character and world-building management.
+ * Injects endpoints into the master apiSlice to share the base query and token logic.
  */
 
-import { RootState } from "@/redux/store";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { apiSlice } from "../../api/apiSlice";
 
 /**
  * Defines the relationship between two characters in a novel
  */
 export interface CharacterRelationship {
-  targetCharacterId:
-    | string
-    | { _id: string; name: string; role: string; avatarUrl?: string };
+  targetCharacterId: string | { _id: string; name: string; role: string; avatarUrl?: string };
   relationshipType: string;
   _id?: string;
 }
 
 /**
  * Character INTERFACE
- * Represents a character with in a novel
+ * Represents a character within a novel or the global roster
  */
 export interface Character {
   _id: string;
@@ -47,41 +45,22 @@ export interface UpdateCharacterPayload {
 }
 
 /**
- * RTK Query API slice for managing characters.
- * Handles CRUD operations and cache invalidation for character entities.
+ * RTK Query Endpoints for managing characters.
  */
-export const characterApi = createApi({
-  reducerPath: "characterApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000/api",
-    prepareHeaders(headers, { getState }) {
-      const token = (getState() as RootState).auth.accessToken;
-
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      return headers;
-    },
-  }),
-  tagTypes: ["Character"],
-
+export const characterApi = apiSlice.injectEndpoints({
+  overrideExisting: true, // Prevents hot-reload crashes in Next.js development
   endpoints: (builder) => ({
+    
     /**
      * Fetches all the characters Associated with a specific Novel.
      * Falls back to 'global' if no novelId is provided.
      */
-    getNovelCharacters: builder.query<
-      { characters: Character[] },
-      string | undefined
-    >({
+    getNovelCharacters: builder.query<{ characters: Character[] }, string | undefined>({
       query: (novelId = "global") => `/characters/novel/${novelId}`,
       providesTags: (result) =>
         result
           ? [
-              ...result.characters.map(({ _id }) => ({
-                type: "Character" as const,
-                id: _id,
-              })),
+              ...result.characters.map(({ _id }) => ({ type: "Character" as const, id: _id })),
               { type: "Character" as const, id: "LIST" },
             ]
           : [{ type: "Character" as const, id: "LIST" }],
@@ -90,10 +69,7 @@ export const characterApi = createApi({
     /**
      * Creates a new character and invalidates the novel's character list cache.
      */
-    createCharacter: builder.mutation<
-      { character: Character },
-      CreateCharacterPayload
-    >({
+    createCharacter: builder.mutation<{ character: Character }, CreateCharacterPayload>({
       query: ({ novelId, data }) => ({
         url: `/characters/novel/${novelId}`,
         method: "POST",
@@ -105,10 +81,7 @@ export const characterApi = createApi({
     /**
      * Updates an existing character's profile, bio, or traits.
      */
-    updateCharacter: builder.mutation<
-      { character: Character },
-      UpdateCharacterPayload
-    >({
+    updateCharacter: builder.mutation<{ character: Character }, UpdateCharacterPayload>({
       query: ({ characterId, data }) => ({
         url: `/characters/${characterId}`,
         method: "PUT",
@@ -140,9 +113,11 @@ export const characterApi = createApi({
       query: (characterId) => `/characters/${characterId}`,
       providesTags: (result, error, id) => [{ type: "Character", id }],
     }),
+    
   }),
 });
 
+// Export the auto-generated hooks for your UI components
 export const {
   useGetNovelCharactersQuery,
   useCreateCharacterMutation,

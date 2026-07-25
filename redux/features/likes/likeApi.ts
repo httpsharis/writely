@@ -1,5 +1,10 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { sharedBaseQuery } from '@/redux/api/baseQuery'; // Use your shared query!
+/**
+ * @file likeApi.ts
+ * @desc RTK Query endpoints for handling document likes.
+ * Uses Optimistic Updates to ensure instant UI feedback (zero latency).
+ */
+
+import { apiSlice } from "../../api/apiSlice";
 
 export interface LikeStatusResponse {
   isLiked: boolean;
@@ -10,54 +15,43 @@ export interface ToggleLikeResponse {
   likesCount: number;
 }
 
-/**
- * API Slice for handling user likes on documents.
- * Uses optimistic updates to ensure instant UI feedback when a user clicks "Like".
- */
-export const likeApi = createApi({
-  reducerPath: 'likeApi',
-  baseQuery: sharedBaseQuery,
-  // We include 'Document' here so we can trigger a refresh of the Document's like count
-  tagTypes: ['Like', 'Document'], 
+export const likeApi = apiSlice.injectEndpoints({
+  overrideExisting: true, // Prevents Next.js hot-reload crashes
   endpoints: (builder) => ({
-        
-    /**
-     * Fetches whether the current user has liked a specific document.
-     */
+    
+    /** Fetches whether the current user has liked a specific document. */
     getLikeStatus: builder.query<LikeStatusResponse, string>({
       query: (documentId) => `/likes/${documentId}/status`,
-      providesTags: (result, error, documentId) => [{ type: 'Like', id: documentId }],
+      providesTags: (_, __, documentId) => [{ type: "Likes", id: documentId }],
     }),
 
-    /**
-     * Toggles a like on a document.
-     * Uses onQueryStarted to optimistically update the cache instantly,
-     * preventing UI flicker while waiting for the server.
+    /** * Toggles a like on a document.
+     * Uses onQueryStarted to optimistically update the cache instantly.
      */
     toggleLike: builder.mutation<ToggleLikeResponse, string>({
       query: (documentId) => ({
         url: `/likes/${documentId}`,
-        method: 'POST',
+        method: "POST",
       }),
+      // 🟢 Automatically refetches the Document to update the total 'likesCount' for other readers
+      invalidatesTags: (_, __, documentId) => [{ type: "Document", id: documentId }],
+      
       async onQueryStarted(documentId, { dispatch, queryFulfilled }) {
-        // Optimistically update the Like status to true instantly
+        // 🟢 Optimistically update the Like status to true/false instantly in the UI
         const patchResult = dispatch(
-          likeApi.util.updateQueryData('getLikeStatus', documentId, (draft) => {
-            draft.isLiked = !draft.isLiked; // Toggle it instantly in the UI
+          likeApi.util.updateQueryData("getLikeStatus", documentId, (draft) => {
+            draft.isLiked = !draft.isLiked; 
           })
         );
         try {
-          await queryFulfilled;
-          // If successful, invalidate the Document tag so the total count updates in the background
-          dispatch(
-            likeApi.util.invalidateTags([{ type: 'Document', id: documentId }])
-          );
+          await queryFulfilled; // Wait for the backend to confirm
         } catch {
-          // If the request fails, roll back the optimistic update
+          // 🔴 If the backend fails (network error), instantly roll back the heart icon
           patchResult.undo();
         }
       },
     }),
+    
   }),
 });
 

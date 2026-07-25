@@ -1,7 +1,12 @@
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { sharedBaseQuery } from "../../api/baseQuery";
+/**
+ * @file profileApi.ts
+ * @desc RTK Query endpoints for fetching and updating Author Profiles.
+ * Injects into the master apiSlice to share auth middleware.
+ */
+import { apiSlice } from "../../api/apiSlice";
+import { Document } from "../documents/documentApi"; // Need this to type the published works!
 
-// --- 1. Strict Type Definitions ---
+// --- Strict Type Definitions ---
 export interface SocialLinks {
   twitter?: string;
   instagram?: string;
@@ -11,83 +16,75 @@ export interface SocialLinks {
 export interface UserProfile {
   _id: string;
   username: string;
-  displayName: string;
+  name: string; 
   bio?: string;
   avatarUrl?: string;
-  socialLinks: SocialLinks;
-  joinedAt: string;
+  coverImageUrl?: string; 
+  socialLinks?: SocialLinks;
+  createdAt: string; 
 }
 
 // Partial allows us to update only the fields the user actually changed
-export type UpdateProfilePayload = Partial<Omit<UserProfile, '_id' | 'joinedAt'>>;
+export type UpdateProfilePayload = Partial<Omit<UserProfile, "_id" | "createdAt">>;
 
 export interface PublicProfileResponse {
-  author: Pick<UserProfile, 'displayName' | 'bio' | 'avatarUrl' | 'socialLinks' | 'joinedAt'>;
-  stats: {
-    totalNovels: number;
-    totalWords: number;
-  };
+  _id: string;
+  name: string;
+  username: string;
+  bio?: string;
+  avatarUrl?: string;
+  coverImageUrl?: string;
+  socialLinks?: SocialLinks;
+  createdAt: string;
+  publishedWorks: Document[]; // 🟢 Essential for rendering the author's portfolio!
 }
 
+// --- API Injection ---
 
-// --- 2. API Slice ---
-
-/**
- * API Slice for managing User Profiles.
- * Handles both private (auth-required) and public profile operations.
- */
-export const profileApi = createApi({
-  reducerPath: 'profileApi',
-  baseQuery: sharedBaseQuery, // Always use the shared base query!
-  tagTypes: ['Profile'],
+export const profileApi = apiSlice.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
-
-    /**
-     * Fetches the authenticated user's private profile.
-     * Used in Settings and Dashboard screens.
-     */
+    
+    /** Fetches the authenticated user's private profile for the Settings page. */
     getMyProfile: builder.query<UserProfile, void>({
-      query: () => '/profile/me',
-      providesTags: (result, error) => [{ type: 'Profile', id: 'ME' }],
+      query: () => "/profile/me",
+      providesTags: ["Profile"],
     }),
 
     /**
      * Updates the authenticated user's profile.
-     * Uses an Optimistic Update to instantly reflect changes in the UI 
-     * without waiting for the server response.
+     * Uses an Optimistic Update to instantly reflect changes in the UI.
      */
     updateMyProfile: builder.mutation<UserProfile, UpdateProfilePayload>({
       query: (body) => ({
-        url: '/profile/me',
-        method: 'PUT',
+        url: "/profile/me",
+        method: "PUT",
         body,
       }),
       async onQueryStarted(patch, { dispatch, queryFulfilled }) {
-        // Optimistically update the cached profile instantly
+        // 🟢 Optimistically update the cached profile instantly
         const patchResult = dispatch(
-          profileApi.util.updateQueryData('getMyProfile', undefined, (draft) => {
-            // Merge the patched fields into the draft
+          profileApi.util.updateQueryData("getMyProfile", undefined, (draft) => {
             Object.assign(draft, patch);
           })
         );
         try {
           await queryFulfilled;
         } catch {
-          // If the server rejects it, roll back the UI instantly
+          // 🔴 If the server rejects it (e.g., username taken), roll back the UI instantly
           patchResult.undo();
         }
       },
+      // Invalidate 'User' tag as well just in case the top-nav avatar needs to refresh
+      invalidatesTags: ["Profile", "User"], 
     }),
 
-    /**
-     * Fetches a public profile by username.
-     * Used when readers visit an author's public page.
-     * We use `username` instead of `_id` for SEO-friendly URLs.
-     */
+    /** Fetches a public profile and their published novels by username. */
     getPublicProfile: builder.query<PublicProfileResponse, string>({
       query: (username) => `/profile/public/${username}`,
-      // No tags provided here because public viewers don't trigger updates.
+      providesTags: (result, error, username) => [{ type: "Profile", id: username }],
     }),
+    
   }),
 });
 

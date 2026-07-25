@@ -1,49 +1,46 @@
+/**
+ * @file store.ts
+ * @desc The master Redux store. Combines the unified apiSlice engine 
+ * with all local domain-specific UI slices.
+ */
 import { configureStore } from "@reduxjs/toolkit";
 import { apiSlice } from "./api/apiSlice";
+
+// Local UI Slices
 import authReducer from "./features/auth/authSlice";
-
 import settingsReducer from "./features/settings/settingsSlice";
-
-import { documentApi } from "./features/documents/documentApi";
-import { characterApi } from "./features/characters/characterApi";
-import { noteApi } from "./features/notes/noteApi";
-import { analyticsApi } from "./features/analytics/analyticsApi";
-import { likeApi } from "./features/likes/likeApi";
-import { userApi } from "./features/users/userApi";
-import { uploadApi } from "./features/uploads/uploadApi";
-import { exportApi } from "./features/exports/exportApi";
-import { searchApi } from "./features/search/searchApi";
+import documentReducer from "./features/documents/documentSlice";
+import characterReducer from "./features/characters/characterSlice";
+import analyticsReducer from "./features/analytics/analyticsSlice";
+import userReducer from "./features/users/userSlice";
+import profileReducer from "./features/profile/profileSlice";
+import exportReducer from "./features/exports/exportSlice";
+import noteReducer from "./features/notes/noteSlice";
+import searchReducer from "./features/search/searchSlice";
 
 export const store = configureStore({
   reducer: {
+    // 1. The Single Source of Truth for Server Data
     [apiSlice.reducerPath]: apiSlice.reducer,
 
+    // 2. Client-Side UI State Slices
     auth: authReducer,
     settings: settingsReducer,
-
-    [documentApi.reducerPath]: documentApi.reducer,
-    [characterApi.reducerPath]: characterApi.reducer,
-    [noteApi.reducerPath]: noteApi.reducer,
-    [analyticsApi.reducerPath]: analyticsApi.reducer,
-    [likeApi.reducerPath]: likeApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
-    [uploadApi.reducerPath]: uploadApi.reducer,
-    [exportApi.reducerPath]: exportApi.reducer,
-    [searchApi.reducerPath]: searchApi.reducer,
+    documents: documentReducer,
+    characters: characterReducer,
+    analytics: analyticsReducer,
+    user: userReducer,
+    profile: profileReducer,
+    export: exportReducer,
+    notes: noteReducer,
+    search: searchReducer,
   },
+  
+  // 3. RTK Query middleware enables automatic caching, polling, and refetching
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      apiSlice.middleware,
-      documentApi.middleware,
-      characterApi.middleware,
-      noteApi.middleware,
-      analyticsApi.middleware,
-      likeApi.middleware,
-      userApi.middleware,
-      uploadApi.middleware,
-      exportApi.middleware,
-      searchApi.middleware,
-    ),
+    getDefaultMiddleware().concat(apiSlice.middleware),
+    
+  devTools: process.env.NODE_ENV !== "production",
 });
 
 export type RootState = ReturnType<typeof store.getState>;
