@@ -9,6 +9,8 @@ export interface NovelDocument {
   wordCount?: number;
   updatedAt: string;
   coverImage?: string | null;
+  likesCount?: number;
+  viewsCount?: number;
 }
 
 export function useLibraryData() {

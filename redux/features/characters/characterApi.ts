@@ -21,7 +21,7 @@ export interface CharacterRelationship {
  */
 export interface Character {
   _id: string;
-  novelId: string | null;
+  novelId: { _id: string; title: string } | string | null;
   name: string;
   role: string;
   bio?: string;

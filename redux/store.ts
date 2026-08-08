@@ -7,7 +7,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { apiSlice } from "./api/apiSlice";
 
 // Local UI Slices
-import authReducer from "./features/auth/authSlice";
 import settingsReducer from "./features/settings/settingsSlice";
 import documentReducer from "./features/documents/documentSlice";
 import characterReducer from "./features/characters/characterSlice";
@@ -24,7 +23,6 @@ export const store = configureStore({
     [apiSlice.reducerPath]: apiSlice.reducer,
 
     // 2. Client-Side UI State Slices
-    auth: authReducer,
     settings: settingsReducer,
     documents: documentReducer,
     characters: characterReducer,

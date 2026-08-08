@@ -71,7 +71,18 @@ export const analyticsApi = apiSlice.injectEndpoints({
 
     /** Fetches aggregated stats and recent projects for the user profile */
     getProfileDashboard: builder.query<ProfileDashboardResponse, void>({
-      query: () => "/profile/dashboard",
+      query: () => "/users/dashboard",
+      transformResponse: (response: any) => ({
+        success: true,
+        data: {
+          stats: { 
+            totalWords: response.wordsToday || 0,
+            currentStreak: 0,
+            activeProjects: response.recentDocuments?.length || 0 
+          },
+          recentDocuments: response.recentDocuments || [],
+        }
+      }),
       providesTags: ["Analytics", "User"],
     }),
 

@@ -43,11 +43,23 @@ export const exportApi = apiSlice.injectEndpoints({
       }),
     }),
     
+    /**
+     * Exports the entire user library as a JSON blob.
+     */
+    exportLibrary: builder.mutation<Blob, void>({
+      query: () => ({
+        url: "/export/library",
+        method: "GET",
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+    
   }),
 });
 
 export const { 
   useExportNovelMutation, 
   useExportChapterMutation, 
-  useDownloadNovelFileMutation 
+  useDownloadNovelFileMutation,
+  useExportLibraryMutation
 } = exportApi;

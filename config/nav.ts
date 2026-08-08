@@ -17,7 +17,7 @@ export interface NavItem {
 
 export const MAIN_NAV_LINKS: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Projects", href: "/project", icon: Book, hasDot: true },
+  { name: "Library", href: "/library", icon: Book, hasDot: true },
   { name: "Inbox", href: "/inbox", icon: Inbox },
   { name: "Characters", href: "/characters", icon: Users },
   { name: "Search", href: "/search", icon: Search }

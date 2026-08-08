@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { User } from "@/types";
 import { useUpdateProfileMutation } from "@/redux/features/auth/authApi";
+import { UserProfile } from "@/redux/features/profile/profileApi";
 import { Pencil, Check, X, Loader2 } from "lucide-react";
 
-export function AuthorIdentity({ user }: { user: User | null }) {
+export function AuthorIdentity({ user, myProfile }: { user: User | null; myProfile?: UserProfile }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [username, setUsername] = useState(user?.username || "");
@@ -90,26 +91,30 @@ export function AuthorIdentity({ user }: { user: User | null }) {
   }
 
   return (
-    <section className="px-2 md:px-4 mb-10 group relative w-fit">
-      <button 
-        onClick={() => setIsEditing(true)}
-        className="absolute -right-12 top-2 p-2 rounded-full bg-secondary text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground transition-all duration-300"
-      >
-        <Pencil className="w-4 h-4" />
-      </button>
-
-      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 pr-8">
-        {user.name}
-      </h1>
-      <p className="text-base text-primary font-medium mb-4">
-        {displayUsername}
-      </p>
-      {user.bio ? (
-        <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl whitespace-pre-wrap">
-          {user.bio}
+    <section className="mb-12 md:mb-16">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight mb-2">
+            {myProfile?.name || user?.name || "Author Name"}
+          </h1>
+          <p className="text-muted-foreground font-medium flex items-center gap-2">
+            @{myProfile?.username || user.username || "username"}
+          </p>
+        </div>
+        <button 
+          onClick={() => setIsEditing(true)}
+          className="p-2 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-all duration-300 w-fit"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
+      </div>
+      
+      {myProfile?.bio || user.bio ? (
+        <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-2xl mt-4 whitespace-pre-wrap">
+          {myProfile?.bio || user.bio}
         </p>
       ) : (
-        <p className="text-sm md:text-base text-muted-foreground/60 italic leading-relaxed max-w-2xl">
+        <p className="text-sm md:text-base text-muted-foreground/60 italic leading-relaxed max-w-2xl mt-4">
           No description provided yet. Click the pencil icon to edit your profile.
         </p>
       )}

@@ -47,8 +47,9 @@ export const profileApi = apiSlice.injectEndpoints({
     
     /** Fetches the authenticated user's private profile for the Settings page. */
     getMyProfile: builder.query<UserProfile, void>({
-      query: () => "/profile/me",
+      query: () => "/auth/me",
       providesTags: ["Profile"],
+      transformResponse: (res: any) => res.user,
     }),
 
     /**
@@ -57,10 +58,11 @@ export const profileApi = apiSlice.injectEndpoints({
      */
     updateMyProfile: builder.mutation<UserProfile, UpdateProfilePayload>({
       query: (body) => ({
-        url: "/profile/me",
+        url: "/users/profile",
         method: "PUT",
         body,
       }),
+      transformResponse: (response: { user: UserProfile }) => response.user,
       async onQueryStarted(patch, { dispatch, queryFulfilled }) {
         // 🟢 Optimistically update the cached profile instantly
         const patchResult = dispatch(
@@ -81,7 +83,25 @@ export const profileApi = apiSlice.injectEndpoints({
 
     /** Fetches a public profile and their published novels by username. */
     getPublicProfile: builder.query<PublicProfileResponse, string>({
-      query: (username) => `/profile/public/${username}`,
+      query: (username) => `/profile/${username}`,
+      transformResponse: (response: any) => {
+        // Handle Bento Box format from profileService
+        if (response.author && response.works) {
+          return {
+            _id: response.author.id,
+            name: response.author.name,
+            username: response.author.username,
+            bio: response.author.bio,
+            avatarUrl: response.author.avatarUrl,
+            coverImageUrl: response.author.coverImageUrl,
+            socialLinks: response.author.socialLinks,
+            createdAt: response.author.joinedAt,
+            publishedWorks: response.works,
+          };
+        }
+        // Fallback for flat response
+        return response;
+      },
       providesTags: (result, error, username) => [{ type: "Profile", id: username }],
     }),
     

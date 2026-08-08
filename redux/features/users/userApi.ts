@@ -29,8 +29,9 @@ export interface HeatmapData {
 
 export interface WritingGoal {
   _id: string;
-  target: number;
-  type: "daily" | "total";
+  targetWords: number;
+  currentWords?: number; // Added by frontend or aggregation occasionally
+  type: "daily" | "weekly" | "novel_total";
 }
 
 export interface UserProfileResponse {
@@ -89,14 +90,14 @@ export const userApi = apiSlice.injectEndpoints({
     }),
 
     /** Fetches heavy, detailed data for the private Trophy Room / Settings screen */
-    getProfileDashboard: builder.query<UserProfileResponse, void>({
-      query: () => "/users/profile",
+    getUserDashboard: builder.query<UserProfileResponse, void>({
+      query: () => "/users/analytics",
       providesTags: ["User", "Analytics"],
     }),
 
     /** Public route: Fetches an author's public portfolio for readers to view */
     getPublicAuthorProfile: builder.query<PublicAuthorProfileResponse, string>({
-      query: (userId) => `/users/public/${userId}`,
+      query: (username) => `/users/${username}`,
       // No providesTags needed: Public viewers don't trigger or receive live cache invalidations
     }),
     
@@ -105,6 +106,6 @@ export const userApi = apiSlice.injectEndpoints({
 
 export const {
   useGetMinimalDashboardQuery,
-  useGetProfileDashboardQuery,
+  useGetUserDashboardQuery,
   useGetPublicAuthorProfileQuery,
 } = userApi;

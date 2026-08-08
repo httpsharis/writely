@@ -1,5 +1,6 @@
 services:
-  writely:
+  # 🖥️ FRONTEND
+  writely-frontend:
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -8,11 +9,27 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-      - /app/node_modules
-      - /app/.next
     env_file:
-      - .env
+      - .env.local  
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true 
+      # 🟢 Pulls the URL directly from .env.local
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL} 
+    restart: unless-stopped
+    depends_on:
+      - writely-backend
+
+  # ⚙️ BACKEND
+  writely-backend:
+    build:
+      context: /mnt/a0d79cc5-6dd9-440b-b6fc-23c61c69d7e8/personal-projects/writely-backend
+      dockerfile: Dockerfile
+    container_name: writely-backend
+    ports:
+      - "4000:4000" 
+    volumes:
+      - /mnt/a0d79cc5-6dd9-440b-b6fc-23c61c69d7e8/personal-projects/writely-backend:/app
+    env_file:
+      - /mnt/a0d79cc5-6dd9-440b-b6fc-23c61c69d7e8/personal-projects/writely-backend/.env
     restart: unless-stopped

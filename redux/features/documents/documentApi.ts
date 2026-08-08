@@ -25,9 +25,11 @@ export interface Document {
   authorNote?: string;
   genre?: string[];
   likesCount?: number;
+  viewsCount?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  characters?: any[];
   chapters?: Document[];
 }
 
@@ -63,12 +65,12 @@ export const documentApi = apiSlice.injectEndpoints({
       providesTags: (result) =>
         result?.documents
           ? [
-              ...result.documents.map(({ _id }) => ({
-                type: "Document" as const,
-                id: _id,
-              })),
-              { type: "Document" as const, id: "LIST" },
-            ]
+            ...result.documents.map(({ _id }) => ({
+              type: "Document" as const,
+              id: _id,
+            })),
+            { type: "Document" as const, id: "LIST" },
+          ]
           : [{ type: "Document" as const, id: "LIST" }],
     }),
 
@@ -78,12 +80,12 @@ export const documentApi = apiSlice.injectEndpoints({
       providesTags: (result) =>
         result?.document
           ? [
-              { type: "Document" as const, id: result.document._id },
-              ...(result.document.chapters?.map(({ _id }) => ({
-                type: "Document" as const,
-                id: _id,
-              })) || []),
-            ]
+            { type: "Document" as const, id: result.document._id },
+            ...(result.document.chapters?.map(({ _id }) => ({
+              type: "Document" as const,
+              id: _id,
+            })) || []),
+          ]
           : [{ type: "Document" as const, id: "LIST" }],
     }),
 
@@ -100,16 +102,32 @@ export const documentApi = apiSlice.injectEndpoints({
     }),
 
     /** Updates an existing document (e.g., auto-save). */
-    updateDocument: builder.mutation<
-      { document: Document },
-      UpdateDocumentPayload
-    >({
+    /** Updates an existing document with Senior-level Optimistic Caching */
+    updateDocument: builder.mutation<{ document: Document }, UpdateDocumentPayload>({
       query: ({ id, data }) => ({
         url: `/documents/${id}`,
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: (_, __, { id }) => [{ type: "Document", id }],
+      // 🟢 OPTIMISTIC UPDATE: We intercept the cache and update it instantly in memory
+      async onQueryStarted({ id, data }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          documentApi.util.updateQueryData('getDocumentById', id, (draft) => {
+            // Instantly merge the new data (like wordCount) into the local Redux cache
+            Object.assign(draft.document, data);
+          })
+        );
+        try {
+          await queryFulfilled; // Wait for the actual DB save to confirm
+        } catch {
+          patchResult.undo(); // If the internet drops or DB fails, roll back the UI
+        }
+      },
+      invalidatesTags: (_, __, { id }) => [
+        { type: "Document", id },
+        "Document",
+        "Project"
+      ],
     }),
 
     /** Soft-deletes a document, moving it to the trash. */
@@ -154,6 +172,15 @@ export const documentApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (_, __, slug) => [{ type: "Document", id: slug }],
     }),
+
+    recordView: builder.mutation<{ success: boolean; viewsCount: number }, string>({
+      query: (slug) => ({
+        url: `/documents/public/${slug}/view`, // Ensure this matches your backend route!
+        method: "POST",
+      }),
+      // We don't invalidate tags here because we don't want to force 
+      // the whole page to reload just because a view was counted!
+    }),
   }),
 });
 
@@ -167,4 +194,5 @@ export const {
   useRestoreFromTrashMutation,
   useGetPublicDocumentQuery,
   useLikePublicDocumentMutation,
+  useRecordViewMutation
 } = documentApi;

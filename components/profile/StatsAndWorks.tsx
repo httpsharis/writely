@@ -3,10 +3,10 @@ import { Flame, PenTool, BookOpen, Clock, FileText, Hash } from "lucide-react";
 interface Project {
   _id: string;
   title: string;
-  type: string;
-  status: string;
-  chapters: number;
-  wordCount: number;
+  type?: string;
+  status?: string;
+  chapters?: number;
+  wordCount?: number;
   updatedAt: string;
 }
 
