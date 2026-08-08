@@ -17,6 +17,7 @@ import {
   setDailyGoal,
   setEditorFont,
 } from "@/redux/features/settings/settingsSlice";
+import { useExportLibraryMutation } from "@/redux/features/exports/exportApi";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -96,6 +97,7 @@ export default function SettingsPage() {
 
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [exportLibrary, { isLoading: isExporting }] = useExportLibraryMutation();
 
   const { isFocusMode, dailyGoal, editorFont } = useSelector(
     (state: RootState) => state.settings,
@@ -209,10 +211,28 @@ export default function SettingsPage() {
         <SettingRow
           icon={Download}
           title="Export Library"
-          description="Download a complete backup of all your novels, chapters, and notes as markdown files."
+          description="Download a complete backup of all your novels, chapters, and notes as a JSON file."
         >
-          <button className="px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-foreground border border-border/50 rounded-full hover:bg-foreground hover:text-background transition-all duration-300">
-            Export .Zip
+          <button 
+            disabled={isExporting}
+            onClick={async () => {
+              try {
+                const blob = await exportLibrary().unwrap();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `writely-backup-${new Date().toISOString().split("T")[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+              } catch (e) {
+                console.error("Failed to export library:", e);
+                alert("Failed to export library.");
+              }
+            }}
+          className="px-5 py-2 text-[10px] md:text-xs font-bold uppercase tracking-widest text-foreground border border-border/50 rounded-full hover:bg-foreground hover:text-background transition-all duration-300 disabled:opacity-50 flex items-center gap-2">
+            {isExporting ? "Exporting..." : "Export Data"}
           </button>
         </SettingRow>
 

@@ -14,6 +14,7 @@ import {
   BookOpen,
   Loader2,
   Book,
+  Upload,
 } from "lucide-react";
 import { useCreateCharacterMutation } from "@/redux/features/characters/characterApi";
 import { useGetDocumentsQuery } from "@/redux/features/documents/documentApi";
@@ -53,6 +54,22 @@ export default function NewCharacterPage() {
 
   const removeTrait = (traitToRemove: string) => {
     setTraits(traits.filter(t => t !== traitToRemove));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image size should be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -143,13 +160,26 @@ ${history || "No history defined."}`.trim();
                 )}
               </div>
 
-              <input
-                type="text"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="Paste Image URL..."
-                className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 text-[13px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors"
-              />
+              <div className="flex gap-2">
+                <label className="flex-1 cursor-pointer bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold text-[#ede9e2] hover:bg-[#29272f] hover:border-[#c9975a] transition-all group">
+                  <Upload className="w-4 h-4 text-[#5c5868] group-hover:text-[#c9975a] transition-colors" />
+                  <span>Upload Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                {avatarUrl && (
+                  <button
+                    onClick={() => setAvatarUrl("")}
+                    className="px-4 rounded-xl bg-red-400/10 text-red-400 text-[12px] font-bold hover:bg-red-400/20 transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="md:col-span-8 flex flex-col gap-8 w-full mt-2">

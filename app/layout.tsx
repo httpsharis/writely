@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "@/app/provider";
 import { ThemeProvider } from "next-themes";
 import { CommandPalette } from "@/components/shared/CommandPalette";
-import { AuthWrapper } from "../components/shared/AuthWrapper";
+import { ClerkProvider } from "@clerk/nextjs";
 
 // 1. Configure the UI Font (Inter)
 const inter = Inter({
@@ -49,12 +49,12 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <Providers>
-            <AuthWrapper>
+          <ClerkProvider>
+            <Providers>
               <CommandPalette />
               {children}
-            </AuthWrapper>
-          </Providers>
+            </Providers>
+          </ClerkProvider>
         </ThemeProvider>
       </body>
     </html>
