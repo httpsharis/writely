@@ -40,7 +40,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "config/nav.ts"
-,     "database/db.ts",     "database/mongodb-client.ts"  ],
+,     "database/db.ts",     "database/mongodb-client.ts", "features/editor/components/PublishDialog.tsx", "features/editor/components/EditorSidebar.tsx", "features/editor/components/NovelEditor.tsx", "features/editor/context/EditorContext.tsx", "features/project/components/ManuscriptList.tsx", "features/project/hooks/useProjectHub.ts", "features/library/components/LibraryControls.tsx", "features/library/components/LibraryGird.tsx", "features/library/components/LibraryHeader.tsx"  ],
   "exclude": [
     "node_modules"
   ]
