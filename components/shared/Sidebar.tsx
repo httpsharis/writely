@@ -4,9 +4,9 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronLeft, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, LogOut } from "lucide-react";
 import { MAIN_NAV_LINKS, USER_MENU_LINKS, type NavItem } from "@/config/nav";
-import { useAuth } from "@/hooks/useAuth";
+import { UserButton, useUser, SignOutButton } from "@clerk/nextjs";
 
 interface SidebarUser {
   name?: string | null;
@@ -17,7 +17,7 @@ export function AppSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const { user } = useAuth();
+  const { user } = useUser();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   return (
@@ -67,51 +67,37 @@ export function AppSidebar() {
       </div>
 
       <div className="shrink-0 p-3 pt-2 mt-auto border-t border-border/50">
-        <Link
-          href="/profile"
-          className={`group w-full flex h-14 items-center rounded-xl transition-all duration-200 active:scale-[0.98] hover:bg-secondary/80 ${
+        <div
+          className={`group w-full flex h-14 items-center rounded-xl transition-all duration-200 ${
             isCollapsed
-              ? "justify-center bg-transparent border-transparent px-0"
+              ? "justify-center px-0"
               : "justify-between px-3 bg-secondary/30 border border-border/50 shadow-sm"
           }`}
         >
-          <div
-            className={`flex items-center overflow-hidden transition-all duration-200 ${isCollapsed ? "gap-0" : "gap-3"}`}
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background text-muted-foreground transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
-              {user?.picture ? (
-                <Image
-                  src={user.picture}
-                  alt="Profile"
-                  width={32}
-                  height={32}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span
-                  suppressHydrationWarning
-                  className="text-[11px] font-bold text-foreground uppercase"
+          <div className={`flex items-center ${isCollapsed ? "justify-center" : "w-full justify-between"}`}>
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonBox: isCollapsed ? "justify-center" : "justify-start gap-3",
+                  userButtonOuterIdentifier: "text-foreground font-bold text-[13px]",
+                  avatarBox: "w-8 h-8 rounded-full border border-border hover:scale-105 transition-transform"
+                }
+              }}
+              showName={!isCollapsed}
+            />
+            {!isCollapsed && (
+              <SignOutButton>
+                <button
+                  className="text-muted-foreground hover:text-destructive transition-colors p-2 rounded-md hover:bg-destructive/10"
+                  aria-label="Log out"
+                  title="Log out"
                 >
-                  {user?.name?.charAt(0) || "W"}
-                </span>
-              )}
-            </div>
-
-            <div
-              className={`flex flex-col items-start min-w-0 transition-all duration-200 ${isCollapsed ? "w-0 opacity-0 pointer-events-none" : "w-28 opacity-100"}`}
-            >
-              <span className="w-full truncate text-[13px] font-bold leading-tight text-foreground group-hover:text-brand transition-colors duration-200">
-                {user?.name || "Writer"}
-              </span>
-              <span className="w-full truncate text-[11px] font-medium text-muted-foreground mt-0.5">
-                View Profile
-              </span>
-            </div>
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </SignOutButton>
+            )}
           </div>
-          <MoreHorizontal
-            className={`shrink-0 text-muted-foreground transition-all duration-200 group-hover:text-foreground ${isCollapsed ? "w-0 opacity-0 pointer-events-none" : "h-4 w-4 opacity-100"}`}
-          />
-        </Link>
+        </div>
       </div>
     </aside>
   );
