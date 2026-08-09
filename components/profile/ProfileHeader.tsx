@@ -39,7 +39,7 @@ export function ProfileHeader({ user, myProfile }: { user: User | null; myProfil
         <div className="relative flex h-24 w-24 md:h-32 md:w-32 items-center justify-center rounded-full bg-card border-4 md:border-8 border-background shadow-xl text-foreground overflow-hidden">
           {myProfile?.avatarUrl || user?.picture ? (
             <Image 
-              src={myProfile?.avatarUrl || user.picture} 
+              src={(myProfile?.avatarUrl || user?.picture) as string} 
               alt="Profile" 
               width={128} height={128}
               className="object-cover w-full h-full"

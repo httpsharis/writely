@@ -168,7 +168,7 @@ export default function CharacterDetailsPage() {
               personality={personality} setPersonality={setPersonality}
               history={history} setHistory={setHistory}
               traitsInput={traitsInput} setTraitsInput={setTraitsInput}
-              traits={traits} setTraits={setTraits}
+              traits={traits}
               handleAddTrait={handleAddTrait} removeTrait={removeTrait}
               handleImageUpload={handleImageUpload}
               selectedNovelId={selectedNovelId} setSelectedNovelId={setSelectedNovelId}

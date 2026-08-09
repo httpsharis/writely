@@ -3,9 +3,9 @@ name: Writely CI Pipeline
 # 1. When should this action run?
 on:
   push:
-    branches: ["redesign", "main"]
+    branches: ["redesign", "main", "master"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "master"]
 
 jobs:
   build-and-validate:

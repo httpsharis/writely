@@ -12,6 +12,7 @@ import { ReaderMobileHeader } from "@/features/reader/components/ReaderMobileHea
 import { ReaderSidebar } from "@/features/reader/components/ReaderSidebar";
 import { ReadOnlyCanvas } from "@/features/reader/components/ReadOnlyCanvas";
 import { ReaderFooter } from "@/features/reader/components/ReaderFooter";
+import { CharacterData } from "@/components/shared/CharacterHoverCard";
 
 export default function PublicChapterReaderPage() {
   const router = useRouter();
@@ -82,7 +83,7 @@ export default function PublicChapterReaderPage() {
             </h1>
           </header>
 
-          <ReadOnlyCanvas content={chapter.content} characters={characters} />
+          <ReadOnlyCanvas content={chapter.content} characters={characters as CharacterData[]} />
           
           <ReaderFooter 
             chapter={chapter}

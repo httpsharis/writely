@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
-interface CharacterData {
+export interface CharacterData {
   name: string;
   bio?: string;
   avatarUrl?: string;

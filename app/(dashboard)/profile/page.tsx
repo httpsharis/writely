@@ -64,7 +64,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-5xl mx-auto flex flex-col h-auto w-full animate-in fade-in duration-700 pb-32 md:pb-12 px-4 md:px-8 pt-6 md:pt-10 no-scrollbar">
       
-      <ProfileHeader user={user} myProfile={myProfile} />
+      <ProfileHeader user={user || null} myProfile={myProfile} />
       
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 mb-8 border-b border-border pb-4 mt-12 md:mt-16">

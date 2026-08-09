@@ -3,11 +3,11 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import { CharacterMention, getSuggestionOptions } from "../../editor/components/extensions/CharacterMention";
-import { CharacterHoverCard } from "../../../components/shared/CharacterHoverCard";
+import { CharacterHoverCard, CharacterData } from "../../../components/shared/CharacterHoverCard";
 
 interface ReadOnlyCanvasProps {
   content?: Record<string, unknown> | string;
-  characters?: Record<string, unknown>[];
+  characters?: CharacterData[];
 }
 
 export const ReadOnlyCanvas = ({ content, characters = [] }: ReadOnlyCanvasProps) => {
