@@ -1,6 +1,7 @@
 import { Moon, Plus, Sunset, Sun } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -23,6 +24,12 @@ function getGreetingPeriod(): GreetingPeriod {
 }
 
 export function DashboardHeader({ userName, stats }: DashboardHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const firstName = userName?.split(" ")[0] || "Writer";
   const progress = stats?.dailyGoalProgress || 0;
   const target = stats?.dailyGoalTarget || 2000;
@@ -44,18 +51,22 @@ export function DashboardHeader({ userName, stats }: DashboardHeaderProps) {
       <div className="flex flex-col gap-1.5 md:gap-2">
         {/* Scaled down to text-3xl on mobile to prevent wrapping awkwardness */}
         <h1 className=" flex text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-          {label && (
-            <>
-              <Icon
-                className="w-7 h-7 md:w-9 md:h-9 text-amber-500 shrink-0 mt-3.5 mr-3"
-                strokeWidth={1.5}
-              />
-              {label}, {firstName}.
-            </>
+          {mounted ? (
+            label && (
+              <>
+                <Icon
+                  className="w-7 h-7 md:w-9 md:h-9 text-amber-500 shrink-0 mt-3.5 mr-3"
+                  strokeWidth={1.5}
+                />
+                {label}, {firstName}.
+              </>
+            )
+          ) : (
+            <span className="opacity-0">Loading...</span>
           )}
         </h1>
         <p className="text-muted-foreground text-base md:text-lg font-medium">
-          {dynamicSubtitle}
+          {mounted ? dynamicSubtitle : <span className="opacity-0">Loading...</span>}
         </p>
       </div>
 

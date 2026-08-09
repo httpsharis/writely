@@ -51,9 +51,5 @@
   },
   "resolutions": {
     "some-package": "^1.2.3"
-  },
-  "onlyBuiltDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+  }
 }

@@ -64,6 +64,22 @@ export function AppSidebar() {
           currentPath={pathname}
           isCollapsed={isCollapsed}
         />
+        
+        <SignOutButton>
+          <button
+            className={`group flex mt-1 h-10 items-center rounded-r-xl border-l-[3px] border-transparent text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-300 font-medium ${isCollapsed ? "justify-center px-0 mx-auto w-10 rounded-l-xl" : "px-3.5 w-full -ml-3"}`}
+            title={isCollapsed ? "Log out" : ""}
+          >
+            <div className="relative flex shrink-0 items-center justify-center">
+              <LogOut className="h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-110 stroke-2" />
+            </div>
+            <span
+              className={`whitespace-nowrap text-[13px] transition-all duration-300 overflow-hidden text-left ${isCollapsed ? "w-0 opacity-0 ml-0 pointer-events-none" : "w-28 opacity-100 ml-3.5"}`}
+            >
+              Log out
+            </span>
+          </button>
+        </SignOutButton>
       </div>
 
       <div className="shrink-0 p-3 pt-2 mt-auto border-t border-border/50">
@@ -74,28 +90,17 @@ export function AppSidebar() {
               : "justify-between px-3 bg-secondary/30 border border-border/50 shadow-sm"
           }`}
         >
-          <div className={`flex items-center ${isCollapsed ? "justify-center" : "w-full justify-between"}`}>
+          <div className="flex items-center justify-center w-full">
             <UserButton
               appearance={{
                 elements: {
-                  userButtonBox: isCollapsed ? "justify-center" : "justify-start gap-3",
+                  userButtonBox: isCollapsed ? "justify-center" : "justify-start gap-3 w-full",
                   userButtonOuterIdentifier: "text-foreground font-bold text-[13px]",
                   avatarBox: "w-8 h-8 rounded-full border border-border hover:scale-105 transition-transform"
                 }
               }}
               showName={!isCollapsed}
             />
-            {!isCollapsed && (
-              <SignOutButton>
-                <button
-                  className="text-muted-foreground hover:text-destructive transition-colors p-2 rounded-md hover:bg-destructive/10"
-                  aria-label="Log out"
-                  title="Log out"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </SignOutButton>
-            )}
           </div>
         </div>
       </div>
