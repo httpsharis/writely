@@ -1,4 +1,5 @@
 import { User, Eye, Brain, BookOpen } from "lucide-react";
+import Image from "next/image";
 
 interface CharacterDetailViewProps {
   avatarUrl: string;
@@ -29,9 +30,11 @@ export function CharacterDetailView({
         <div className="flex flex-col gap-6">
           {avatarUrl ? (
             <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.05)]">
-              <img
+              <Image
                 src={avatarUrl}
                 alt={name}
+                width={400}
+                height={400}
                 className="w-full h-full object-cover object-top"
               />
             </div>

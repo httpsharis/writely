@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Plus, Map, Shield, Sparkles, BookOpen } from "lucide-react";
+import Image from "next/image";
 
 // ==========================================
 // MOCK DATA
@@ -122,9 +123,11 @@ export default function WorldPage() {
             
             {/* Thumbnail (Optional based on data) */}
             {entry.imageUrl ? (
-              <img 
+              <Image 
                 src={entry.imageUrl} 
                 alt={entry.name}
+                width={400}
+                height={400}
                 // Rectangular aspect ratio for world elements (locations, artifacts) looks more serious than circles
                 className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-lg object-cover border border-[#E8E0D5] dark:border-[#242424] shrink-0"
               />

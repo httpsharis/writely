@@ -7,6 +7,7 @@ import {
   useDeleteCharacterMutation 
 } from "@/redux/features/characters/characterApi";
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { CharacterSidebar } from "@/features/characters/components/CharacterSidebar";
 
@@ -94,7 +95,7 @@ export function CharacterManager({ project }: CharacterManagerProps) {
             >
               <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shadow-inner group-hover:border-[#c9975a]/40 transition-colors">
                 {char.avatarUrl ? (
-                  <img src={char.avatarUrl} alt={char.name} className="w-full h-full object-cover" />
+                  <Image src={char.avatarUrl} alt={char.name} width={48} height={48} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[#948fa0] text-sm font-bold uppercase group-hover:text-[#ede9e2] transition-colors">
                     {char.name.charAt(0)}

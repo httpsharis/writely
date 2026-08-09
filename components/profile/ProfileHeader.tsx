@@ -2,8 +2,9 @@ import Image from "next/image";
 import { Share2, Check } from "lucide-react";
 import { useState } from "react";
 import { UserProfile } from "@/redux/features/profile/profileApi";
+import { User } from "@/types";
 
-export function ProfileHeader({ user, myProfile }: { user: any; myProfile?: UserProfile }) {
+export function ProfileHeader({ user, myProfile }: { user: User | null; myProfile?: UserProfile }) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {

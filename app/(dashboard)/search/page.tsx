@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, Book, FileText, User, File, Loader2 } from "lucide-react";
-import { useGlobalSearchQuery, SearchableEntityType } from "@/redux/features/search/searchApi";
+import { useGlobalSearchQuery, SearchableEntityType, GlobalSearchResult } from "@/redux/features/search/searchApi";
 import { useRouter } from "next/navigation";
 
 function SearchResultIcon({ type }: { type: SearchableEntityType }) {
@@ -41,7 +41,7 @@ export default function SearchPage() {
 
   const results = data?.results || [];
 
-  const handleResultClick = (result: any) => {
+  const handleResultClick = (result: GlobalSearchResult) => {
     if (result.type === "novel" || result.type === "chapter") {
       router.push(`/project/${result._id}/write`);
     } else if (result.type === "user") {
@@ -122,7 +122,7 @@ export default function SearchPage() {
           !isLoading &&
           !isFetching && (
             <div className="h-40 flex items-center justify-center text-muted-foreground flex-col gap-3 animate-in zoom-in-95 duration-300">
-              <p className="text-sm font-medium">No results found for "{debouncedQuery}"</p>
+              <p className="text-sm font-medium">No results found for &quot;{debouncedQuery}&quot;</p>
             </div>
           )
         )}

@@ -7,7 +7,11 @@ import {
 
 declare global {
   interface Window {
-    Clerk: any;
+    Clerk: {
+      session?: {
+        getToken: () => Promise<string | null>;
+      };
+    };
   }
 }
 

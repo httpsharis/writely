@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 
 interface CharacterData {
   name: string;
@@ -90,8 +91,9 @@ export function CharacterHoverCard({ characters }: CharacterHoverCardProps) {
     document.addEventListener("touchend", handleDocumentClick);
 
     // Provide handlers to window so the portal can use them
-    (window as any).__handleHoverCardEnter = handleCardMouseEnter;
-    (window as any).__handleHoverCardLeave = handleCardMouseLeave;
+    const win = window as Window & { __handleHoverCardEnter?: () => void; __handleHoverCardLeave?: () => void; };
+    win.__handleHoverCardEnter = handleCardMouseEnter;
+    win.__handleHoverCardLeave = handleCardMouseLeave;
 
     return () => {
       document.removeEventListener("mouseover", handleMouseOver);
@@ -116,13 +118,13 @@ export function CharacterHoverCard({ characters }: CharacterHoverCardProps) {
         <div
           className="character-hover-card-portal fixed z-[9999] pointer-events-auto transform -translate-x-1/2 -translate-y-full animate-in fade-in slide-in-from-bottom-2 duration-200"
           style={{ top: hoverState.y, left: hoverState.x }}
-          onMouseEnter={(window as any).__handleHoverCardEnter}
-          onMouseLeave={(window as any).__handleHoverCardLeave}
+          onMouseEnter={(window as Window & { __handleHoverCardEnter?: () => void }).__handleHoverCardEnter}
+          onMouseLeave={(window as Window & { __handleHoverCardLeave?: () => void }).__handleHoverCardLeave}
         >
           <div className="p-3 bg-[#131217] border border-white/10 rounded-xl shadow-2xl flex items-start gap-4 w-[360px]">
             <div className="w-12 h-12 rounded-full bg-black/40 flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/5">
               {hoverState.char.avatarUrl ? (
-                <img src={hoverState.char.avatarUrl} alt={hoverState.char.name} className="w-full h-full object-cover" />
+                <Image src={hoverState.char.avatarUrl} alt={hoverState.char.name} width={48} height={48} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-[#948fa0] text-lg font-bold uppercase">{hoverState.char.name.charAt(0)}</span>
               )}
@@ -158,7 +160,7 @@ export function CharacterHoverCard({ characters }: CharacterHoverCardProps) {
             <div className="flex flex-col items-center text-center mt-2">
               <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center overflow-hidden border-2 border-white/10 mb-4 shadow-xl">
                 {activeCharacter.avatarUrl ? (
-                  <img src={activeCharacter.avatarUrl} alt={activeCharacter.name} className="w-full h-full object-cover" />
+                  <Image src={activeCharacter.avatarUrl} alt={activeCharacter.name} width={80} height={80} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[#948fa0] text-3xl font-bold uppercase">{activeCharacter.name.charAt(0)}</span>
                 )}

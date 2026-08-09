@@ -112,7 +112,7 @@ export function AnalyticsDashboard({
         
         {goals.length === 0 ? (
           <div className="py-12 rounded-3xl border border-dashed border-border bg-card/50 flex flex-col items-center justify-center text-center">
-            <p className="text-sm font-medium text-muted-foreground mb-4">You haven't set any active writing goals.</p>
+            <p className="text-sm font-medium text-muted-foreground mb-4">You haven&apos;t set any active writing goals.</p>
             <button className="px-6 py-2 rounded-full bg-primary/20 text-primary font-bold text-sm hover:bg-primary/30 transition-colors">
               Set a Goal
             </button>

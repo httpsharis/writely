@@ -13,6 +13,7 @@ export default function EditorTitleInput({ initialTitle, onAutoSave }: EditorTit
 
   // 🟢 THE FIX: Sync local state when the backend finishes loading the real title
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(initialTitle);
   }, [initialTitle]);
 

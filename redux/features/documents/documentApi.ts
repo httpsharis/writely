@@ -29,7 +29,7 @@ export interface Document {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  characters?: any[];
+  characters?: Record<string, unknown>[];
   chapters?: Document[];
 }
 

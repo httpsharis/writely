@@ -34,13 +34,13 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
-      # 6. Check for messy code / syntax errors
+      # 6. Check for messy code / syntax errors (Fixed command)
       - name: Run ESLint
-        run: pnpm run lint
+        run: pnpm lint
 
-      # 7. Strictly check TypeScript (No red squiggles allowed)
+      # 7. Strictly check TypeScript (Fixed command)
       - name: Type Check
-        run: pnpm tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
       # 8. Attempt a Full Production Build
       - name: Build Next.js App

@@ -40,6 +40,7 @@ export default function CharacterDetailsPage() {
   useEffect(() => {
     if (data?.character) {
       const char = data.character;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(char.name || "");
       setRole(char.role || "supporting");
       setAvatarUrl(char.avatarUrl || "");

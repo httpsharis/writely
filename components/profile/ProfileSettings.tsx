@@ -17,6 +17,7 @@ export function ProfileSettings({ profile }: { profile?: UserProfile }) {
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         name: profile.name || "",
         username: profile.username || "",

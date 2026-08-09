@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Users, Trash2, Book } from "lucide-react";
+import Image from "next/image";
 import { Character } from "@/redux/features/characters/characterApi";
 
 interface CharacterCardProps {
@@ -31,9 +32,11 @@ export function CharacterCard({
         className="relative aspect-[4/3] w-full overflow-hidden bg-[#29272f] flex items-center justify-center"
       >
         {char.avatarUrl ? (
-          <img
+          <Image
             src={char.avatarUrl}
             alt={char.name}
+            width={400}
+            height={400}
             className="w-full h-full object-cover grayscale-[20%] transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
           />
         ) : (

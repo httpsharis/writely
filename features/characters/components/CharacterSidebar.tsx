@@ -55,6 +55,7 @@ export function CharacterSidebar({ isOpen, onClose, projectId, characterId }: Ch
     if (isOpen) {
       if (!characterId) {
         // Create Mode
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsEditing(true);
         setName("");
         setRole("supporting");

@@ -440,7 +440,7 @@ function EditableNoteCard({ note }: { note: Note }) {
           <div className="flex items-center justify-between mt-1">
             <select
               value={type}
-              onChange={(e) => setType(e.target.value as any)}
+              onChange={(e) => setType(e.target.value as Note["type"])}
               className="bg-transparent border border-editor-border rounded text-[10px] text-editor-text-secondary p-1 uppercase tracking-wider"
             >
               <option value="lore">Lore</option>
@@ -554,7 +554,7 @@ function NewNoteCard({ novelId, onCancel, onSuccess }: { novelId: string, onCanc
         <div className="flex items-center justify-between">
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as any)}
+            onChange={(e) => setType(e.target.value as Note["type"])}
             className="bg-transparent border border-editor-border rounded text-[10px] text-editor-text-secondary p-1 uppercase tracking-wider"
           >
             <option value="lore">Lore</option>

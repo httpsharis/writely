@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
+import Image from "next/image";
 
 interface MentionNode {
   id: string;
@@ -72,7 +73,7 @@ export const MentionList = forwardRef((props: SuggestionProps<MentionNode>, ref)
         >
           <div className="w-8 h-8 rounded-full bg-black/40 flex-shrink-0 flex items-center justify-center overflow-hidden border border-white/5">
             {item.avatar ? (
-              <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
+              <Image src={item.avatar} alt={item.name} width={40} height={40} className="w-full h-full object-cover" />
             ) : (
               <span className="text-[#948fa0] text-[10px] font-bold uppercase">{item.name.charAt(0)}</span>
             )}

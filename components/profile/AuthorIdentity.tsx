@@ -16,8 +16,9 @@ export function AuthorIdentity({ user, myProfile }: { user: User | null; myProfi
     try {
       await updateProfile({ name, username, bio }).unwrap();
       setIsEditing(false);
-    } catch (err: any) {
-      alert(err.data?.error || "Failed to update profile");
+    } catch (err: unknown) {
+      const error = err as { data?: { error?: string } };
+      alert(error.data?.error || "Failed to update profile");
     }
   };
 
@@ -30,8 +31,7 @@ export function AuthorIdentity({ user, myProfile }: { user: User | null; myProfi
 
   if (!user) return null;
 
-  const displayUsername = user.username ? `@${user.username}` : `@${user.name.split(' ').join('').toLowerCase()}`;
-
+  // removed displayUsername
   if (isEditing) {
     return (
       <section className="px-2 md:px-4 mb-10 flex flex-col gap-4 animate-in fade-in">

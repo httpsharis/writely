@@ -3,7 +3,6 @@ import {
   Book, 
   Inbox, 
   Users, 
-  Globe, 
   Search,
   Settings 
 } from "lucide-react";

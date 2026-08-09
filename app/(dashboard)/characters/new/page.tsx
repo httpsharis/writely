@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -145,10 +146,11 @@ ${history || "No history defined."}`.trim();
 
               <div className="w-full aspect-[3/4] rounded-2xl bg-[#29272f] border border-[rgba(255,255,255,0.07)] flex items-center justify-center overflow-hidden relative">
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={avatarUrl}
                     alt="Preview"
-                    className="w-full h-full object-cover object-top"
+                    fill
+                    className="object-cover object-top"
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-3 text-[#5c5868] p-4 text-center">

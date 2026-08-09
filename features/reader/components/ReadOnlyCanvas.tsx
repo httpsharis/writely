@@ -7,7 +7,7 @@ import { CharacterHoverCard } from "../../../components/shared/CharacterHoverCar
 
 interface ReadOnlyCanvasProps {
   content?: Record<string, unknown> | string;
-  characters?: any[];
+  characters?: Record<string, unknown>[];
 }
 
 export const ReadOnlyCanvas = ({ content, characters = [] }: ReadOnlyCanvasProps) => {
@@ -26,6 +26,7 @@ export const ReadOnlyCanvas = ({ content, characters = [] }: ReadOnlyCanvasProps
         HTMLAttributes: {
           class: 'character-mention',
         },
+        // eslint-disable-next-line react-hooks/refs
         suggestion: getSuggestionOptions(() => charactersRef.current),
       }),
     ],

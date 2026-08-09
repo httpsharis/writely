@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
 
-import BubbleToolbar from "../../../components/editor/BubbleToolbar";
+
 import EditorTitleInput from "../../../components/editor/EditorTitleInput";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { CharacterMention, getSuggestionOptions } from "./extensions/CharacterMention";
@@ -27,7 +27,6 @@ export default function NovelEditor() {
     novel,
     activeChapter: chapter,
     handleAutoSave,
-    saveStatus,
     setLiveWordCount,
   } = useEditorContext();
 
@@ -40,7 +39,7 @@ export default function NovelEditor() {
   const { data } = useGetNovelCharactersQuery(novel?._id ?? "", {
     skip: !novel?._id,
   });
-  const characters = data?.characters || [];
+  const characters = useMemo(() => data?.characters || [], [data?.characters]);
   const charactersRef = useRef(characters);
 
   useEffect(() => {
@@ -66,6 +65,7 @@ export default function NovelEditor() {
         HTMLAttributes: {
           class: 'character-mention',
         },
+        // eslint-disable-next-line react-hooks/refs
         suggestion: getSuggestionOptions(() => charactersRef.current),
       }),
     ],

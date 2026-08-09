@@ -31,6 +31,7 @@ export function useReaderEngine(slug: string) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasLiked(!!localStorage.getItem(`liked_${slug}`));
     }
   }, [slug]);

@@ -9,6 +9,7 @@ import {
   Save,
   Upload,
 } from "lucide-react";
+import Image from "next/image";
 
 interface CharacterDetailEditProps {
   name: string;
@@ -26,13 +27,12 @@ interface CharacterDetailEditProps {
   traitsInput: string;
   setTraitsInput: (val: string) => void;
   traits: string[];
-  setTraits: (traits: string[]) => void;
   handleAddTrait: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   removeTrait: (trait: string) => void;
   handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedNovelId: string;
   setSelectedNovelId: (id: string) => void;
-  novels: any[];
+  novels: { _id: string; title: string }[];
   isLoading: boolean;
   handleSave: () => void;
   setIsEditing: (val: boolean) => void;
@@ -49,7 +49,7 @@ export function CharacterDetailEdit({
   personality, setPersonality,
   history, setHistory,
   traitsInput, setTraitsInput,
-  traits, setTraits,
+  traits,
   handleAddTrait, removeTrait,
   handleImageUpload,
   selectedNovelId, setSelectedNovelId,
@@ -71,9 +71,11 @@ export function CharacterDetailEdit({
 
           <div className="w-full aspect-[3/4] rounded-2xl bg-[#17161b] border border-[rgba(255,255,255,0.05)] flex items-center justify-center overflow-hidden relative shadow-inner">
             {avatarUrl ? (
-              <img
+              <Image
                 src={avatarUrl}
                 alt="Preview"
+                width={400}
+                height={400}
                 className="w-full h-full object-cover object-top"
               />
             ) : (

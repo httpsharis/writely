@@ -3,21 +3,17 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+
 import { ChevronLeft, LogOut } from "lucide-react";
 import { MAIN_NAV_LINKS, USER_MENU_LINKS, type NavItem } from "@/config/nav";
 import { UserButton, useUser, SignOutButton } from "@clerk/nextjs";
 
-interface SidebarUser {
-  name?: string | null;
-  picture?: string | null;
-}
 
 export function AppSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const { user } = useUser();
+  useUser();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   return (

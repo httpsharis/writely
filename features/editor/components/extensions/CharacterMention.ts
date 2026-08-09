@@ -3,6 +3,7 @@ import { ReactRenderer } from "@tiptap/react";
 import tippy, { Instance as TippyInstance } from "tippy.js";
 import { MentionList } from "./MentionList";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getSuggestionOptions = (getCharacters: () => any[]) => {
   return {
     items: ({ query }: { query: string }) => {
@@ -23,10 +24,12 @@ export const getSuggestionOptions = (getCharacters: () => any[]) => {
         });
     },
     render: () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let component: ReactRenderer<any>;
       let popup: TippyInstance[];
 
       return {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onStart: (props: any) => {
           component = new ReactRenderer(MentionList, {
             props,
@@ -48,6 +51,7 @@ export const getSuggestionOptions = (getCharacters: () => any[]) => {
           });
         },
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onUpdate(props: any) {
           component.updateProps(props);
 
@@ -60,6 +64,7 @@ export const getSuggestionOptions = (getCharacters: () => any[]) => {
           });
         },
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onKeyDown(props: any) {
           if (props.event.key === "Escape") {
             popup[0].hide();

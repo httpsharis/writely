@@ -49,7 +49,7 @@ export const profileApi = apiSlice.injectEndpoints({
     getMyProfile: builder.query<UserProfile, void>({
       query: () => "/auth/me",
       providesTags: ["Profile"],
-      transformResponse: (res: any) => res.user,
+      transformResponse: (res: { user: UserProfile }) => res.user,
     }),
 
     /**
@@ -84,7 +84,7 @@ export const profileApi = apiSlice.injectEndpoints({
     /** Fetches a public profile and their published novels by username. */
     getPublicProfile: builder.query<PublicProfileResponse, string>({
       query: (username) => `/profile/${username}`,
-      transformResponse: (response: any) => {
+      transformResponse: (response: { author?: { id: string; name: string; username: string; bio?: string; avatarUrl?: string; coverImageUrl?: string; socialLinks?: SocialLinks; joinedAt: string; }; works?: Document[] } & PublicProfileResponse) => {
         // Handle Bento Box format from profileService
         if (response.author && response.works) {
           return {
