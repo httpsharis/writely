@@ -36,7 +36,7 @@ jobs:
 
       # 6. Check for messy code / syntax errors
       - name: Run ESLint
-        run: pnpm run lint
+        run: pnpm lint
 
       # 7. Strictly check TypeScript (No red squiggles allowed)
       - name: Type Check
