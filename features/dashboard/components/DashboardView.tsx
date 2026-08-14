@@ -1,51 +1,67 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import dynamic from 'next/dynamic'
+import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PenLine, Clock, ArrowRight, Sun, Sunset, Moon, Plus, Target, Flame, BookOpen, Users, Globe, Map, FileText, Loader2 } from "lucide-react";
+import { PenLine, Clock, ArrowRight, Sun, Sunset, Moon, Plus, Target, Flame, BookOpen, Users, Globe, Map, Loader2 } from "lucide-react";
 import { useDashboardData, type DashboardDoc } from "../hooks/useDashboardData";
-import { useUser } from '@clerk/nextjs'
 
 export function DashboardView() {
-    const router = useRouter();
-    const { user } = useUser()
     const { isLoading, stats, activeDraft, recentFiles } = useDashboardData();
-
-    const userName = user?.firstName || "Writer";
 
     if (isLoading) return <div className="flex h-screen items-center justify-center bg-background"><Loader2 className="h-8 w-8 animate-spin text-brand" /></div>;
 
     return (
         <div className="w-full mx-auto px-6 py-12 md:py-16 flex flex-col min-h-screen animate-in fade-in duration-700 max-w-[1200px]">
-            <Header userName={userName} progress={stats.dailyGoalProgress} target={stats.dailyGoalTarget} />
+            <Header userName="Writer" progress={stats.dailyGoalProgress} target={stats.dailyGoalTarget} />
             <DraftWidget draft={activeDraft} />
             <hr className="border-border my-8" />
             <StatsGrid stats={stats} />
             <hr className="border-border my-8" />
-            <RecentList files={recentFiles} router={router} />
+            <RecentList files={recentFiles} />
         </div>
     );
 }
 
-/* --- MICRO-COMPONENTS (Aggressively Condensed) --- */
-
-const Header = ({ userName, progress, target }: { userName: string; progress: number; target: number }) => {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
-
+const GreetingContent = ({ userName }: { userName: string }) => {
     const h = new Date().getHours();
-    const { l: label, I: Icon } = h < 12 ? { l: "Good morning", I: Sun } : h < 18 ? { l: "Good afternoon", I: Sunset } : { l: "Good evening", I: Moon };
+    const { l: label, I: Icon } = h < 12
+        ? { l: "Good morning", I: Sun }
+        : h < 18
+            ? { l: "Good afternoon", I: Sunset }
+            : { l: "Good evening", I: Moon };
+
+    return (
+        <>
+            <Icon className="w-7 h-7 md:w-9 md:h-9 text-brand shrink-0 mt-2 mr-3" strokeWidth={1.5} />
+            {label}, {userName}.
+        </>
+    );
+};
+
+const DynamicGreeting = dynamic(() => Promise.resolve(GreetingContent), {
+    ssr: false,
+    loading: () => <span className="opacity-0">Loading...</span> // Prevents layout shift
+});
+
+/* --- MICRO-COMPONENTS --- */
+const Header = ({ userName, progress, target }: { userName: string; progress: number; target: number }) => {
     const wordsLeft = target - progress;
-    const subtitle = wordsLeft > 0 && progress > 0 ? `You're ${wordsLeft.toLocaleString()} words from your daily goal.` : wordsLeft <= 0 ? "Daily goal crushed. Your universe is expanding." : "Your universe is waiting for you.";
+    const subtitle = wordsLeft > 0 && progress > 0
+        ? `You're ${wordsLeft.toLocaleString()} words from your daily goal.`
+        : wordsLeft <= 0
+            ? "Daily goal crushed. Your universe is expanding."
+            : "Your universe is waiting for you.";
 
     return (
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10 shrink-0">
             <div className="flex flex-col gap-2">
                 <h1 className="flex text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-                    {mounted ? <><Icon className="w-7 h-7 md:w-9 md:h-9 text-brand shrink-0 mt-2 mr-3" strokeWidth={1.5} />{label}, {userName}.</> : <span className="opacity-0">Loading...</span>}
+                    {/* Inject the dynamic component here */}
+                    <DynamicGreeting userName={userName} />
                 </h1>
-                <p className="text-muted-foreground text-base font-medium">{mounted ? subtitle : ""}</p>
+                <p className="text-muted-foreground text-base font-medium">{subtitle}</p>
             </div>
             <Link href="/project/new" className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-foreground text-background hover:bg-foreground/90 uppercase tracking-widest text-xs font-bold transition-all">
                 <Plus className="w-4 h-4" /> Create Novel
@@ -84,7 +100,7 @@ const DraftWidget = ({ draft }: { draft: DashboardDoc | null }) => !draft ? (
     </Link>
 );
 
-const StatsGrid = ({ stats }: { stats: any }) => {
+const StatsGrid = ({ stats }: { stats: ReturnType<typeof useDashboardData>["stats"] }) => {
     const p = Math.min((stats.dailyGoalProgress || 0) / (stats.dailyGoalTarget || 2000), 1);
     return (
         <section className="flex flex-col gap-6 w-full">
@@ -98,7 +114,7 @@ const StatsGrid = ({ stats }: { stats: any }) => {
     );
 };
 
-const StatCard = ({ title, icon, val, sub, renderRing }: { title: string; icon: any; val: string | number; sub: string; renderRing?: { p: number } }) => (
+const StatCard = ({ title, icon, val, sub, renderRing }: { title: string; icon: React.ReactNode; val: string | number; sub: string; renderRing?: { p: number } }) => (
     <div className="flex flex-col py-10 px-0 md:px-10 first:pl-0 last:pr-0 group text-center md:text-left">
         <div className="flex items-center justify-center md:justify-start gap-2.5 mb-8 text-foreground group-hover:text-brand transition-colors">{icon}<span className="text-xs uppercase font-bold tracking-widest">{title}</span></div>
         {renderRing ? (
@@ -115,8 +131,10 @@ const StatCard = ({ title, icon, val, sub, renderRing }: { title: string; icon: 
     </div>
 );
 
-const RecentList = ({ files, router }: { files: DashboardDoc[]; router: any }) => {
+const RecentList = ({ files }: { files: DashboardDoc[] }) => {
+    const router = useRouter();
     const getStyle = (t: string) => t === "character" ? { I: Users, c: "text-rose-500 border-rose-500" } : t === "lore" ? { I: Globe, c: "text-purple-500 border-purple-500" } : t === "location" ? { I: Map, c: "text-teal-500 border-teal-500" } : { I: BookOpen, c: "text-brand border-brand" };
+
     return (
         <section className="flex flex-col gap-6 w-full pb-10">
             <h2 className="text-sm font-bold tracking-widest uppercase flex items-center gap-4">Recent Workspace <span className="h-px flex-1 bg-border" /></h2>
