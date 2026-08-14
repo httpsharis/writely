@@ -5,41 +5,49 @@ import { useRouter } from "next/navigation";
 import { Search, Book, FileText, User, File, Loader2, ArrowRight } from "lucide-react";
 import { useGlobalSearchQuery, type SearchableEntityType, type GlobalSearchResult } from "@/redux/features/search/searchApi";
 
+type SearchResponseWrapper = {
+  results?: GlobalSearchResult[];
+  data?: GlobalSearchResult[];
+  documents?: GlobalSearchResult[];
+  characters?: GlobalSearchResult[];
+  notes?: GlobalSearchResult[];
+};
+
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // 1. Debounce Input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 500);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // 2. Fetch Data
   const { data, isLoading, isFetching } = useGlobalSearchQuery(
     { q: debouncedQuery, limit: 20 },
     { skip: debouncedQuery.trim().length === 0 }
   );
 
+  // 🟢 LINT FIX: Strictly typed defensive unwrapping
   const results: GlobalSearchResult[] = useMemo(() => {
     if (!data) return [];
-    const raw = data as any;
 
-    // Fallbacks for standard arrays
+    // Using a safe type assertion instead of 'any'
+    const raw = data as SearchResponseWrapper | GlobalSearchResult[];
+
     if (Array.isArray(raw)) return raw;
-    if (Array.isArray(raw.results)) return raw.results;
-    if (Array.isArray(raw.data)) return raw.data;
 
-    // Combine the categorized arrays from your Express backend into one list
+    const categorized = raw as SearchResponseWrapper;
+    if (categorized.results && Array.isArray(categorized.results)) return categorized.results;
+    if (categorized.data && Array.isArray(categorized.data)) return categorized.data;
+
     return [
-      ...(raw.documents || []),
-      ...(raw.characters || []),
-      ...(raw.notes || [])
+      ...(categorized.documents || []),
+      ...(categorized.characters || []),
+      ...(categorized.notes || [])
     ];
   }, [data]);
 
-  // 4. Clean Routing
   const handleResultClick = (result: GlobalSearchResult) => {
     if (result.type === "user" && result.slug) return router.push(`/author/${result.slug}`);
     router.push(`/project/${result._id}${result.type === "chapter" ? "/write" : ""}`);
@@ -47,8 +55,6 @@ export default function SearchPage() {
 
   return (
     <div className="w-full max-w-3xl mx-auto h-full flex flex-col pt-8 md:pt-16 px-6 pb-32 animate-in fade-in duration-700">
-
-      {/* HEADER & SEARCH BAR */}
       <header className="mb-10 shrink-0">
         <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight mb-8">
           Global Search
@@ -73,7 +79,6 @@ export default function SearchPage() {
         </div>
       </header>
 
-      {/* RESULTS AREA */}
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {debouncedQuery.trim().length === 0 ? (
           <EmptyState icon={<Search className="w-8 h-8 opacity-20" />} text="Type something to search your workspace." />
