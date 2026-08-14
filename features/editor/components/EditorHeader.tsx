@@ -4,10 +4,6 @@ import Link from "next/link";
 import { ArrowLeft, Globe, Menu } from "lucide-react";
 import { useEditorContext } from "../context/EditorContext";
 
-/**
- * EditorHeader: The top navigation and command bar for the writing interface.
- * Mobile-responsive: collapses breadcrumbs, labels, and secondary stats on small screens.
- */
 export function EditorHeader() {
   const {
     novel,
@@ -23,42 +19,33 @@ export function EditorHeader() {
   const isChapterPublished = activeChapter?.status === "published";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-editor-border bg-editor-bg px-3 sm:px-6">
-      {/* Left: Navigation & Breadcrumbs */}
-      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+    <header className="flex h-14 w-full items-center justify-between border-b border-editor-border bg-editor-bg px-2 sm:px-6 gap-2">
+      {/* 🟢 LEFT: Navigation & Breadcrumbs (Aggressively truncates on mobile) */}
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-4">
         <Link
           href={`/project/${novel?._id}`}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border-none bg-transparent text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary focus-visible:outline-2 focus-visible:outline-editor-gold-dim focus-visible:outline-offset-2"
-          aria-label="Back to project"
+          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-md text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div className="flex min-w-0 items-center gap-2 whitespace-nowrap text-[13px] text-editor-text-secondary">
-          {/* Novel title - only on larger screens */}
-          <span className="hidden max-w-[140px] truncate font-serif text-[15px] font-medium tracking-[0.01em] text-editor-text-primary lg:inline xl:max-w-none">
+
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 whitespace-nowrap text-[13px] text-editor-text-secondary">
+          <span className="hidden max-w-[140px] truncate font-serif text-[15px] font-medium text-editor-text-primary lg:inline xl:max-w-none">
             {novel?.title || "Draft"}
           </span>
           <span className="hidden text-editor-text-tertiary lg:inline">/</span>
 
-          {/* Chapter + Status */}
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <span className="truncate text-editor-text-secondary sm:max-w-[180px] md:max-w-[260px] lg:max-w-none">
-              {activeChapter?.title || "Untitled Chapter"}
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
+            {/* 🟢 FIXED: Extremely tight max-width on mobile to prevent pushing right-side icons off screen */}
+            <span className="truncate max-w-[70px] xs:max-w-[100px] sm:max-w-[180px] md:max-w-[260px] lg:max-w-none">
+              {activeChapter?.title || "Untitled"}
             </span>
 
             {activeChapter?._id !== "draft" && (
               <button
-                onClick={() =>
-                  handleChangeChapterStatus(
-                    activeChapter._id,
-                    isChapterPublished ? "draft" : "published",
-                  )
-                }
-                className={`shrink-0 rounded-[4px] px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-                  isChapterPublished
-                    ? "bg-[#7cbf8e]/10 text-[#7cbf8e] hover:bg-[#7cbf8e]/20"
-                    : "bg-editor-surface-hover text-editor-text-tertiary hover:text-editor-text-secondary"
-                }`}
+                onClick={() => handleChangeChapterStatus(activeChapter._id, isChapterPublished ? "draft" : "published")}
+                className={`shrink-0 rounded-[4px] px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest transition-colors ${isChapterPublished ? "bg-[#7cbf8e]/10 text-[#7cbf8e]" : "bg-editor-surface-hover text-editor-text-tertiary"
+                  }`}
               >
                 {isChapterPublished ? "Published" : "Draft"}
               </button>
@@ -67,49 +54,44 @@ export function EditorHeader() {
         </div>
       </div>
 
-      {/* Right: Stats, Status, & Actions */}
+      {/* 🟢 RIGHT: Stats, Status, & Actions (Now visible and scaled for mobile) */}
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        {/* Word count - hidden on very small screens */}
-        <div className="hidden flex-col items-end leading-[1.15] sm:flex">
-          <span className="font-mono tabular-nums text-[14px] font-medium text-editor-text-primary">
+
+        {/* 🟢 FIXED: Removed 'hidden', scaled text size for mobile */}
+        <div className="flex flex-col items-end leading-[1.15]">
+          <span className="font-mono tabular-nums text-[11px] sm:text-[14px] font-medium text-editor-text-primary">
             {liveWordCount.toLocaleString()}
           </span>
-          <span className="text-[10px] uppercase tracking-[0.08em] text-editor-text-tertiary">
+          <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.08em] text-editor-text-tertiary">
             Words
           </span>
         </div>
-        <div className="hidden h-5 w-px bg-editor-border-strong sm:block" />
 
-        {/* Save Status Indicator - dot only on mobile */}
-        <div className="flex items-center gap-1.5 rounded-[20px] border border-editor-border-strong bg-editor-surface px-2 py-1 text-[12px] text-editor-text-secondary sm:px-3">
-          <span
-            className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200 ${
-              saveStatus === "saving"
-                ? "animate-pulse bg-editor-gold"
-                : "bg-editor-green"
-            }`}
-          />
-          <span className="hidden sm:inline">
+        <div className="h-4 sm:h-5 w-px bg-editor-border-strong" />
+
+        {/* Save Status Indicator */}
+        <div className="flex items-center justify-center gap-1.5 rounded-full sm:rounded-[20px] border border-editor-border-strong bg-editor-surface w-6 h-6 sm:w-auto sm:h-auto sm:px-3 sm:py-1">
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200 ${saveStatus === "saving" ? "animate-pulse bg-editor-gold" : "bg-editor-green"}`} />
+          <span className="hidden sm:inline text-[12px] text-editor-text-secondary">
             {saveStatus === "saving" ? "Saving" : "Saved"}
           </span>
         </div>
 
-        {/* Novel Publish / Share Settings Button - icon only on mobile */}
+        {/* Share Button */}
         <button
           onClick={() => setIsPublishModalOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-md border border-white/10 bg-transparent px-2 text-[10px] font-bold uppercase tracking-widest text-[#5c5868] transition-colors hover:bg-white/5 hover:text-[#ede9e2] sm:px-3"
-          aria-label="Share novel"
+          className="flex h-6 w-6 sm:h-8 sm:w-auto items-center justify-center gap-2 rounded-md border border-white/10 sm:px-3 text-[10px] font-bold uppercase tracking-widest text-[#5c5868] hover:bg-white/5 hover:text-[#ede9e2] transition-colors"
         >
           <Globe className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Share</span>
         </button>
-        <div className="h-5 w-px bg-editor-border-strong" />
+
+        <div className="h-4 sm:h-5 w-px bg-editor-border-strong" />
 
         {/* Sidebar Toggle */}
         <button
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary focus-visible:outline-2 focus-visible:outline-editor-gold-dim focus-visible:outline-offset-2"
-          aria-label="Toggle Sidebar"
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-md text-editor-text-secondary hover:bg-editor-surface-hover hover:text-editor-text-primary transition-colors"
         >
           <Menu className="h-4 w-4" />
         </button>
