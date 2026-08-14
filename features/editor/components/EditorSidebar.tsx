@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Book, Users, StickyNote, Plus, Folder, Trash2 } from "lucide-react";
+import Image from "next/image";
+import { Book, Users, StickyNote, Plus, Folder, Trash2, X } from "lucide-react";
 import { useEditorContext } from "../context/EditorContext";
+import { useTrashDocumentMutation } from "@/redux/features/documents/documentApi";
 import { useGetNovelCharactersQuery } from "@/redux/features/characters/characterApi";
 import {
   useGetNovelNotesQuery,
@@ -11,16 +13,25 @@ import {
   useCreateInboxNoteMutation,
   useUpdateNoteMutation,
   useDeleteNoteMutation,
+  type Note,
 } from "@/redux/features/notes/noteApi";
-import type { Note } from "@/redux/features/notes/noteApi";
-import { useTrashDocumentMutation } from "@/redux/features/documents/documentApi";
-import Image from "next/image";
 
-/**
- * EditorSidebar: The author's contextual workspace.
- * Manages manuscript navigation, character reference (Cast), and project notes.
- * Fetches specific contextual data dynamically based on the active novel's ID.
- */
+/* --- Constants for DRY Rendering --- */
+const TABS = [
+  { id: "chapters", label: "Chapters", Icon: Book },
+  { id: "characters", label: "Cast", Icon: Users },
+  { id: "notes", label: "Notes", Icon: StickyNote },
+] as const;
+
+const NOTE_TYPES = [
+  "lore",
+  "plot",
+  "worldbuilding",
+  "research",
+  "timeline",
+  "misc",
+] as const;
+
 export default function EditorSidebar() {
   const {
     novel,
@@ -30,17 +41,17 @@ export default function EditorSidebar() {
     handleCreateChapter,
     handleChangeChapterStatus,
     liveWordCount,
+    setIsSidebarOpen,
   } = useEditorContext();
 
-  const [activeTab, setActiveTab] = useState<
-    "chapters" | "characters" | "notes"
-  >("chapters");
+  const [activeTab, setActiveTab] =
+    useState<(typeof TABS)[number]["id"]>("chapters");
   const [chapterToDelete, setChapterToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
 
-  // Contextual Data Queries (Skipped safely if novel isn't loaded yet)
   const { data: charData } = useGetNovelCharactersQuery(novel?._id || "", {
     skip: !novel?._id,
   });
@@ -51,20 +62,21 @@ export default function EditorSidebar() {
   const { data: inboxNoteData } = useGetInboxNotesQuery(undefined, {
     skip: !novel?._id,
   });
-
-  const characters = charData?.characters || [];
-  
-  const novelNotes = noteData?.notes || [];
-  const globalNotes = inboxNoteData?.notes || [];
-  const notes = [...novelNotes, ...globalNotes].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
-
-  const [isCreatingNote, setIsCreatingNote] = useState(false);
-
   const [trashDocument] = useTrashDocumentMutation();
 
-  /** Trashes the selected chapter and clears the modal state */
+  const characters = charData?.characters || [];
+  const notes = [
+    ...(noteData?.notes || []),
+    ...(inboxNoteData?.notes || []),
+  ].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+
+  const closeOnMobile = () =>
+    typeof window !== "undefined" &&
+    window.innerWidth < 768 &&
+    setIsSidebarOpen(false);
+
   const confirmTrash = async () => {
     if (!chapterToDelete) return;
     await trashDocument(chapterToDelete.id).unwrap();
@@ -72,46 +84,39 @@ export default function EditorSidebar() {
   };
 
   return (
-    <aside className="flex min-h-0 w-80 shrink-0 flex-col border-l border-editor-border bg-editor-bg transition-all duration-300">
-      {/* --- Sidebar Navigation Tabs --- */}
-      <div className="flex shrink-0 border-b border-editor-border">
-        <SidebarTab
-          icon={<Book strokeWidth={1.8} className="h-[17px] w-[17px]" />}
-          label="Chapters"
-          isActive={activeTab === "chapters"}
-          onClick={() => setActiveTab("chapters")}
-        />
-        <SidebarTab
-          icon={<Users strokeWidth={1.8} className="h-[17px] w-[17px]" />}
-          label="Cast"
-          isActive={activeTab === "characters"}
-          onClick={() => setActiveTab("characters")}
-        />
-        <SidebarTab
-          icon={<StickyNote strokeWidth={1.8} className="h-[17px] w-[17px]" />}
-          label="Notes"
-          isActive={activeTab === "notes"}
-          onClick={() => setActiveTab("notes")}
-        />
+    <aside className="flex min-h-0 w-full shrink-0 flex-col border-l border-editor-border bg-editor-bg transition-all duration-300 md:w-80">
+      {/* Header Tabs */}
+      <div className="flex shrink-0 items-stretch border-b border-editor-border">
+        <div className="flex flex-1">
+          {TABS.map(({ id, label, Icon }) => (
+            <SidebarTab
+              key={id}
+              Icon={Icon}
+              label={label}
+              isActive={activeTab === id}
+              onClick={() => setActiveTab(id)}
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(false)}
+          className="flex w-12 shrink-0 items-center justify-center border-l border-editor-border text-editor-text-tertiary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary md:hidden"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
-      {/* --- Tab Content Area --- */}
-      <div className="no-scrollbar flex-1 overflow-y-auto p-6">
-        {/* 1. CHAPTERS TAB */}
+      {/* Main Content Area */}
+      <div className="no-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
         {activeTab === "chapters" && (
           <div className="flex flex-col gap-[2px]">
-            <div className="mb-4 flex items-center justify-between px-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-editor-text-tertiary">
-                Manuscript
-              </span>
-              <button
-                onClick={handleCreateChapter}
-                className="flex cursor-pointer items-center gap-[5px] rounded-md border-none bg-transparent px-2 py-[5px] text-[12px] font-medium text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-gold"
-              >
-                <Plus strokeWidth={2} className="h-[13px] w-[13px]" /> New
-              </button>
-            </div>
-
+            <SidebarSectionHeader
+              title="Manuscript"
+              onNew={() => {
+                handleCreateChapter();
+                closeOnMobile();
+              }}
+            />
             <div className="mb-3 flex items-center gap-2 p-2 text-[12.5px] text-editor-text-secondary">
               <Folder
                 strokeWidth={1.8}
@@ -120,119 +125,80 @@ export default function EditorSidebar() {
               All chapters
             </div>
 
-            {chapters.map((chapter, index) => {
-              const isActive = chapter._id === activeChapterId;
-              const num = String(index + 1).padStart(2, "0");
+            {chapters.map((chapter, i) => (
+              <div
+                key={chapter._id}
+                onClick={() => {
+                  handleSelectChapter(chapter._id);
+                  closeOnMobile();
+                }}
+                data-active={chapter._id === activeChapterId}
+                className="group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-transparent bg-transparent p-3 pl-4 text-left text-editor-text-secondary transition-colors hover:bg-editor-surface data-[active=true]:border-editor-border-strong data-[active=true]:bg-editor-surface-raised data-[active=true]:before:absolute data-[active=true]:before:-left-px data-[active=true]:before:bottom-1.5 data-[active=true]:before:top-1.5 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-sm data-[active=true]:before:bg-editor-gold"
+              >
+                {chapter._id === activeChapterId && (
+                  <span
+                    className="absolute right-[14px] top-[-1px] h-[16px] w-[10px] bg-editor-gold"
+                    style={{
+                      clipPath:
+                        "polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%)",
+                    }}
+                  />
+                )}
 
-              return (
-                <div
-                  key={chapter._id}
-                  onClick={() => handleSelectChapter(chapter._id)}
-                  data-active={isActive}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleSelectChapter(chapter._id)
-                  }
-                  className="group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-transparent bg-transparent p-3 pl-4 text-left text-editor-text-secondary transition-colors hover:bg-editor-surface data-[active=true]:border-editor-border-strong data-[active=true]:bg-editor-surface-raised data-[active=true]:before:absolute data-[active=true]:before:-left-px data-[active=true]:before:bottom-1.5 data-[active=true]:before:top-1.5 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-sm data-[active=true]:before:bg-editor-gold"
-                >
-                  {isActive && (
-                    <span
-                      className="absolute right-[14px] top-[-1px] h-[16px] w-[10px] bg-editor-gold"
-                      style={{
-                        clipPath:
-                          "polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%)",
-                      }}
-                    />
-                  )}
-
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="w-4 shrink-0 font-['JetBrains_Mono'] text-[11px] text-editor-text-tertiary group-data-[active=true]:text-editor-gold">
-                      {num}
-                    </span>
-                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[14px] group-data-[active=true]:font-medium group-data-[active=true]:text-editor-text-primary">
-                      {chapter.title || "Untitled Chapter"}
-                    </span>
-                  </div>
-
-                  <span className="mr-2 tabular-nums font-['JetBrains_Mono'] text-[11.5px] text-editor-text-tertiary">
-                    {isActive
-                      ? liveWordCount.toLocaleString()
-                      : chapter.wordCount?.toLocaleString() || 0}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="w-4 shrink-0 font-['JetBrains_Mono'] text-[11px] text-editor-text-tertiary group-data-[active=true]:text-editor-gold">
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-
-                  {/* Chapter Actions (Hover Reveal) */}
-                  <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md border border-editor-border bg-editor-bg/90 p-[3px] opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100 group-data-[active=true]:bg-editor-surface-raised/90">
-                    <select
-                      value={chapter.status}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        handleChangeChapterStatus(chapter._id, e.target.value);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="cursor-pointer appearance-none rounded border border-editor-border bg-transparent px-1.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-editor-text-secondary transition-colors hover:text-editor-text-primary focus:outline-none"
-                    >
-                      <option
-                        value="draft"
-                        className="uppercase bg-editor-surface text-editor-text-primary"
-                      >
-                        Draft
-                      </option>
-                      <option
-                        value="published"
-                        className="uppercase bg-editor-surface text-editor-text-primary"
-                      >
-                        Published
-                      </option>
-                      <option
-                        value="archived"
-                        className="uppercase bg-editor-surface text-editor-text-primary"
-                      >
-                        Archived
-                      </option>
-                    </select>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChapterToDelete({
-                          id: chapter._id,
-                          title: chapter.title,
-                        });
-                      }}
-                      title="Move to Trash"
-                      className="flex cursor-pointer items-center justify-center rounded-md border-none bg-transparent p-1 text-editor-text-secondary transition-colors hover:bg-red-500/10 hover:text-red-500"
-                    >
-                      <Trash2 strokeWidth={2} className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <span className="truncate text-[14px] group-data-[active=true]:font-medium group-data-[active=true]:text-editor-text-primary">
+                    {chapter.title || "Untitled Chapter"}
+                  </span>
                 </div>
-              );
-            })}
+
+                <span className="mr-2 hidden font-['JetBrains_Mono'] text-[11.5px] tabular-nums text-editor-text-tertiary sm:inline">
+                  {(chapter._id === activeChapterId
+                    ? liveWordCount
+                    : chapter.wordCount || 0
+                  ).toLocaleString()}
+                </span>
+
+                <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-md border border-editor-border bg-editor-bg/90 p-[3px] opacity-100 shadow-sm backdrop-blur-sm transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-data-[active=true]:opacity-100 md:group-data-[active=true]:bg-editor-surface-raised/90">
+                  <ChapterStatusSelect
+                    status={chapter.status}
+                    onChange={(val) =>
+                      handleChangeChapterStatus(chapter._id, val)
+                    }
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setChapterToDelete({
+                        id: chapter._id,
+                        title: chapter.title,
+                      });
+                    }}
+                    className="flex rounded-md p-1 text-editor-text-secondary transition-colors hover:bg-red-500/10 hover:text-red-500"
+                  >
+                    <Trash2 strokeWidth={2} className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* 2. CHARACTERS TAB */}
         {activeTab === "characters" && (
           <div className="flex flex-col gap-[2px]">
-            <div className="mb-4 flex items-center justify-between px-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-editor-text-tertiary">
-                Cast
-              </span>
-              <button className="flex cursor-pointer items-center gap-[5px] rounded-md border-none bg-transparent px-2 py-[5px] text-[12px] font-medium text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-gold">
-                <Plus strokeWidth={2} className="h-[13px] w-[13px]" /> New
-              </button>
-            </div>
-
-            {characters.length === 0 ? (
-              <div className="flex items-center gap-3 rounded-lg bg-transparent p-[10px_12px] transition-colors hover:bg-editor-surface">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-editor-border-strong bg-editor-surface-raised font-['Fraunces'] text-[13px] text-editor-gold">
+            <SidebarSectionHeader title="Cast" />
+            {!characters.length ? (
+              <div className="flex items-center gap-3 rounded-lg p-[10px_12px] hover:bg-editor-surface">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-editor-border-strong bg-editor-surface-raised font-['Fraunces'] text-[13px] text-editor-gold">
                   ?
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] text-editor-text-primary">
+                  <div className="truncate text-[13.5px] text-editor-text-primary">
                     Add your first character
                   </div>
-                  <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] text-editor-text-tertiary">
+                  <div className="truncate text-[11.5px] text-editor-text-tertiary">
                     No characters yet
                   </div>
                 </div>
@@ -241,7 +207,7 @@ export default function EditorSidebar() {
               characters.map((char) => (
                 <div
                   key={char._id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg bg-transparent p-[10px_12px] transition-colors hover:bg-editor-surface"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg p-[10px_12px] transition-colors hover:bg-editor-surface"
                 >
                   <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-editor-border-strong bg-editor-surface-raised font-['Fraunces'] text-[13px] text-editor-gold">
                     {char.avatarUrl ? (
@@ -249,18 +215,18 @@ export default function EditorSidebar() {
                         src={char.avatarUrl}
                         alt={char.name}
                         fill
-                        className="object-cover"
                         sizes="32px"
+                        className="object-cover"
                       />
                     ) : (
                       char.name.charAt(0)
                     )}
                   </div>
                   <div className="flex min-w-0 flex-col">
-                    <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[13.5px] text-editor-text-primary">
+                    <div className="truncate text-[13.5px] text-editor-text-primary">
                       {char.name}
                     </div>
-                    <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[11.5px] text-editor-text-tertiary">
+                    <div className="truncate text-[11.5px] text-editor-text-tertiary">
                       {char.role}
                     </div>
                   </div>
@@ -270,38 +236,25 @@ export default function EditorSidebar() {
           </div>
         )}
 
-        {/* 3. NOTES TAB */}
         {activeTab === "notes" && (
           <div className="flex flex-col gap-[2px]">
-            <div className="mb-4 flex items-center justify-between px-2">
-              <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-editor-text-tertiary">
-                Notes
-              </span>
-              <button 
-                onClick={() => setIsCreatingNote(true)}
-                className="flex cursor-pointer items-center gap-[5px] rounded-md border-none bg-transparent px-2 py-[5px] text-[12px] font-medium text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-gold"
-              >
-                <Plus strokeWidth={2} className="h-[13px] w-[13px]" /> New
-              </button>
-            </div>
-
+            <SidebarSectionHeader
+              title="Notes"
+              onNew={() => setIsCreatingNote(true)}
+            />
             {isCreatingNote && (
-              <NewNoteCard 
+              <NewNoteCard
                 novelId={novel?._id || ""}
                 onCancel={() => setIsCreatingNote(false)}
-                onSuccess={() => setIsCreatingNote(false)}
               />
             )}
-
-            {notes.length === 0 && !isCreatingNote ? (
-              <div className="mb-2 rounded-lg border border-editor-border bg-transparent p-3">
+            {!notes.length && !isCreatingNote ? (
+              <div className="mb-2 rounded-lg border border-editor-border p-3 text-editor-text-tertiary text-[12px] leading-[1.5]">
                 <div className="mb-1 text-[13px] text-editor-text-primary">
                   No notes yet
                 </div>
-                <div className="leading-[1.5] text-[12px] text-editor-text-tertiary">
-                  Jot down worldbuilding details, timeline notes, or anything
-                  you want to keep close while you write.
-                </div>
+                Jot down worldbuilding details, timeline notes, or anything you
+                want to keep close while you write.
               </div>
             ) : (
               notes.map((note) => (
@@ -312,30 +265,30 @@ export default function EditorSidebar() {
         )}
       </div>
 
-      {/* --- Delete Confirmation Modal --- */}
+      {/* Trash Modal */}
       {chapterToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm animate-in zoom-in-95 fade-in rounded-xl border border-editor-border bg-editor-surface p-6 shadow-2xl duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-editor-border bg-editor-surface p-6 shadow-2xl">
             <h3 className="mb-2 font-['Fraunces'] text-lg font-semibold text-editor-text-primary">
               Move to Trash?
             </h3>
-            <p className="mb-6 leading-relaxed text-[13px] text-editor-text-secondary">
+            <p className="mb-6 text-[13px] text-editor-text-secondary">
               Are you sure you want to move &quot;
               <span className="font-medium text-editor-text-primary">
                 {chapterToDelete.title || "Untitled Chapter"}
               </span>
-              &quot; to the trash? You can restore it later from your library.
+              &quot; to the trash?
             </p>
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={() => setChapterToDelete(null)}
-                className="cursor-pointer rounded-lg border border-editor-border bg-transparent px-4 py-2 text-[13px] font-medium text-editor-text-secondary transition-colors hover:bg-editor-surface-hover"
+                className="rounded-lg px-4 py-2 text-[13px] text-editor-text-secondary hover:bg-editor-surface-hover"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmTrash}
-                className="cursor-pointer rounded-lg border border-red-500/50 bg-red-500/80 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-red-500"
+                className="rounded-lg bg-red-500/80 px-4 py-2 text-[13px] font-medium text-white hover:bg-red-500"
               >
                 Move to Trash
               </button>
@@ -347,14 +300,69 @@ export default function EditorSidebar() {
   );
 }
 
-/** Micro-component for the top navigation tabs */
+/* --- Extracted Micro-Components --- */
+
+function SidebarSectionHeader({
+  title,
+  onNew,
+}: {
+  title: string;
+  onNew?: () => void;
+}) {
+  return (
+    <div className="mb-4 flex items-center justify-between px-2">
+      <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-editor-text-tertiary">
+        {title}
+      </span>
+      {onNew && (
+        <button
+          onClick={onNew}
+          className="flex cursor-pointer items-center gap-[5px] rounded-md px-2 py-[5px] text-[12px] font-medium text-editor-text-secondary hover:bg-editor-surface-hover hover:text-editor-gold"
+        >
+          <Plus strokeWidth={2} className="h-[13px] w-[13px]" /> New
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ChapterStatusSelect({
+  status,
+  onChange,
+}: {
+  status: string;
+  onChange: (val: string) => void;
+}) {
+  return (
+    <select
+      value={status}
+      onChange={(e) => {
+        e.stopPropagation();
+        onChange(e.target.value);
+      }}
+      onClick={(e) => e.stopPropagation()}
+      className="appearance-none rounded border border-editor-border bg-transparent px-1.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-editor-text-secondary focus:outline-none hover:text-editor-text-primary cursor-pointer"
+    >
+      {["draft", "published", "archived"].map((s) => (
+        <option
+          key={s}
+          value={s}
+          className="bg-editor-surface text-editor-text-primary uppercase"
+        >
+          {s}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function SidebarTab({
-  icon,
+  Icon,
   label,
   isActive,
   onClick,
 }: {
-  icon: React.ReactNode;
+  Icon: React.ElementType;
   label: string;
   isActive: boolean;
   onClick: () => void;
@@ -363,15 +371,14 @@ function SidebarTab({
     <button
       onClick={onClick}
       data-active={isActive}
-      className="flex flex-1 cursor-pointer flex-col items-center gap-1.5 border-b-2 border-transparent bg-transparent pb-[12px] pt-[14px] text-[10.5px] font-semibold uppercase tracking-[0.07em] text-editor-text-tertiary transition-colors hover:text-editor-text-secondary data-[active=true]:border-editor-gold data-[active=true]:text-editor-gold"
+      className="flex flex-1 flex-col items-center gap-1.5 border-b-2 border-transparent pb-[12px] pt-[14px] text-[10.5px] font-semibold uppercase tracking-[0.07em] text-editor-text-tertiary transition-colors hover:text-editor-text-secondary data-[active=true]:border-editor-gold data-[active=true]:text-editor-gold"
     >
-      {icon}
+      <Icon strokeWidth={1.8} className="h-[17px] w-[17px]" />
       <span>{label}</span>
     </button>
   );
 }
 
-/** Micro-component for updating notes instantly on blur */
 function EditableNoteCard({ note }: { note: Note }) {
   const [isEditing, setIsEditing] = useState(false);
   const [updateNote] = useUpdateNoteMutation();
@@ -380,33 +387,27 @@ function EditableNoteCard({ note }: { note: Note }) {
   const initialContent =
     typeof note.content === "string"
       ? note.content
-      : note.content
-        ? JSON.stringify(note.content)
-        : note.title;
-
-  const [text, setText] = useState<string>(initialContent);
+      : JSON.stringify(note.content || "");
+  const [text, setText] = useState(initialContent);
   const [type, setType] = useState(note.type);
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (text !== initialContent || type !== note.type) {
+    if (text !== initialContent || type !== note.type)
       updateNote({ noteId: note._id, data: { content: text, type } });
-    }
   };
-
-  const isGlobal = !note.novelId;
 
   return (
     <div
-      className="group relative mb-2 cursor-pointer rounded-lg border border-editor-border p-3 transition-colors hover:border-editor-gold-dim"
+      className="group relative mb-2 cursor-pointer rounded-lg border border-editor-border p-3 hover:border-editor-gold-dim"
       onClick={() => !isEditing && setIsEditing(true)}
     >
-      <div className="mb-2 flex items-center justify-between">
-        <div className="text-[13px] font-semibold text-editor-text-primary">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="truncate text-[13px] font-semibold text-editor-text-primary">
           {note.title || "Untitled"}
         </div>
-        <div className="flex gap-2">
-          {isGlobal && (
+        <div className="flex shrink-0 gap-2">
+          {!note.novelId && (
             <span className="rounded bg-[#5c5868]/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest text-[#948fa0]">
               Global
             </span>
@@ -415,99 +416,93 @@ function EditableNoteCard({ note }: { note: Note }) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm("Delete this note?")) {
-                  deleteNote(note._id);
-                }
+                if (window.confirm("Delete note?")) deleteNote(note._id);
               }}
-              className="text-editor-text-tertiary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="text-editor-text-tertiary opacity-0 transition-opacity hover:text-red-500 md:group-hover:opacity-100"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="h-3 w-3" />
             </button>
           )}
         </div>
       </div>
-      
+
       {isEditing ? (
         <div className="flex flex-col gap-2">
           <textarea
             autoFocus
-            className="m-0 w-full resize-none rounded bg-black/20 p-2 font-sans text-[12px] leading-[1.5] text-editor-text-secondary outline-none border border-white/5 focus:border-editor-gold/50"
+            className="w-full resize-none rounded border border-white/5 bg-black/20 p-2 text-[12px] text-editor-text-secondary outline-none focus:border-editor-gold/50"
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={Math.max(3, text.split("\n").length)}
-            placeholder="Write your note..."
           />
-          <div className="flex items-center justify-between mt-1">
+          <div className="mt-1 flex items-center justify-between gap-2">
             <select
               value={type}
               onChange={(e) => setType(e.target.value as Note["type"])}
-              className="bg-transparent border border-editor-border rounded text-[10px] text-editor-text-secondary p-1 uppercase tracking-wider"
+              className="rounded border border-editor-border bg-transparent p-1 text-[10px] uppercase tracking-wider text-editor-text-secondary"
             >
-              <option value="lore">Lore</option>
-              <option value="plot">Plot</option>
-              <option value="worldbuilding">Worldbuilding</option>
-              <option value="research">Research</option>
-              <option value="timeline">Timeline</option>
-              <option value="misc">Misc</option>
+              {NOTE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleBlur();
               }}
-              className="px-3 py-1 bg-editor-surface-hover rounded text-xs text-editor-text-primary hover:text-editor-gold"
+              className="rounded bg-editor-surface-hover px-3 py-1 text-xs text-editor-text-primary hover:text-editor-gold"
             >
               Done
             </button>
           </div>
         </div>
       ) : (
-        <div className="whitespace-pre-wrap leading-[1.5] text-[12px] text-editor-text-tertiary line-clamp-6">
-          {text || "Empty note..."}
-        </div>
-      )}
-      {!isEditing && (
-        <div className="mt-3 text-[9px] font-bold uppercase tracking-widest text-[#c9975a]/70">
-          {note.type}
-        </div>
+        <>
+          <div className="line-clamp-6 whitespace-pre-wrap text-[12px] text-editor-text-tertiary">
+            {text || "Empty note..."}
+          </div>
+          <div className="mt-3 text-[9px] font-bold uppercase tracking-widest text-[#c9975a]/70">
+            {note.type}
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function NewNoteCard({ novelId, onCancel, onSuccess }: { novelId: string, onCancel: () => void, onSuccess: () => void }) {
+function NewNoteCard({
+  novelId,
+  onCancel,
+}: {
+  novelId: string;
+  onCancel: () => void;
+}) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [type, setType] = useState<Note["type"]>("lore");
   const [isGlobal, setIsGlobal] = useState(false);
-  
-  const [createNote, { isLoading: isCreatingLocal }] = useCreateNoteMutation();
-  const [createInboxNote, { isLoading: isCreatingGlobal }] = useCreateInboxNoteMutation();
 
-  const isSaving = isCreatingLocal || isCreatingGlobal;
+  // ✅ FIX: Renamed the aliases to prevent block-scope collision
+  const [createNote, { isLoading: isCreatingLocal }] = useCreateNoteMutation();
+  const [createInboxNote, { isLoading: isCreatingGlobal }] =
+    useCreateInboxNoteMutation();
 
   const handleSave = async () => {
-    if (!title.trim() && !text.trim()) {
-      onCancel();
-      return;
-    }
-    
+    if (!title.trim() && !text.trim()) return onCancel();
     try {
       const data = {
         title: title.trim() || "Untitled Note",
         content: text.trim(),
         type,
       };
-
-      if (isGlobal) {
-        await createInboxNote({ data }).unwrap();
-      } else {
-        await createNote({ novelId, data }).unwrap();
-      }
-      onSuccess();
+      await (
+        isGlobal ? createInboxNote({ data }) : createNote({ novelId, data })
+      ).unwrap();
+      onCancel();
     } catch (err) {
       console.error("Failed to create note:", err);
-      alert("Failed to save note");
     }
   };
 
@@ -519,65 +514,62 @@ function NewNoteCard({ novelId, onCancel, onSuccess }: { novelId: string, onCanc
         placeholder="Note Title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full bg-transparent text-[13px] font-semibold text-editor-text-primary outline-none placeholder:text-editor-text-tertiary mb-2"
+        className="mb-2 w-full bg-transparent text-[13px] font-semibold text-editor-text-primary outline-none placeholder:text-editor-text-tertiary"
       />
       <textarea
-        className="w-full resize-none rounded bg-black/20 p-2 font-sans text-[12px] leading-[1.5] text-editor-text-secondary outline-none border border-white/5 focus:border-editor-gold/50"
+        className="w-full resize-none rounded border border-white/5 bg-black/20 p-2 text-[12px] text-editor-text-secondary outline-none focus:border-editor-gold/50"
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={4}
         placeholder="Write your note..."
       />
-      
-      <div className="flex flex-col gap-3 mt-3">
-        <div className="flex items-center gap-4 text-[11px] text-editor-text-secondary">
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input 
-              type="radio" 
-              checked={!isGlobal} 
+
+      <div className="mt-3 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-4 text-[11px] text-editor-text-secondary">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="radio"
+              checked={!isGlobal}
               onChange={() => setIsGlobal(false)}
-              className="accent-[#c9975a]" 
-            />
+              className="accent-[#c9975a]"
+            />{" "}
             This Novel
           </label>
-          <label className="flex items-center gap-1.5 cursor-pointer">
-            <input 
-              type="radio" 
-              checked={isGlobal} 
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="radio"
+              checked={isGlobal}
               onChange={() => setIsGlobal(true)}
-              className="accent-[#c9975a]" 
-            />
+              className="accent-[#c9975a]"
+            />{" "}
             Global Inbox
           </label>
         </div>
-
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <select
             value={type}
             onChange={(e) => setType(e.target.value as Note["type"])}
-            className="bg-transparent border border-editor-border rounded text-[10px] text-editor-text-secondary p-1 uppercase tracking-wider"
+            className="rounded border border-editor-border bg-transparent p-1 text-[10px] uppercase tracking-wider text-editor-text-secondary"
           >
-            <option value="lore">Lore</option>
-            <option value="plot">Plot</option>
-            <option value="worldbuilding">Worldbuilding</option>
-            <option value="research">Research</option>
-            <option value="timeline">Timeline</option>
-            <option value="misc">Misc</option>
+            {NOTE_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
-
           <div className="flex items-center gap-2">
             <button
               onClick={onCancel}
-              className="text-xs text-editor-text-tertiary hover:text-white transition-colors"
+              className="text-xs text-editor-text-tertiary hover:text-white"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving}
-              className="px-3 py-1 bg-[#c9975a] text-black font-medium rounded text-xs hover:bg-[#d4a872] disabled:opacity-50 transition-colors"
+              disabled={isCreatingLocal || isCreatingGlobal}
+              className="rounded bg-[#c9975a] px-3 py-1 text-xs font-medium text-black hover:bg-[#d4a872] disabled:opacity-50"
             >
-              {isSaving ? "Saving..." : "Save"}
+              {isCreatingLocal || isCreatingGlobal ? "Saving..." : "Save"}
             </button>
           </div>
         </div>

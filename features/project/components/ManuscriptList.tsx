@@ -54,9 +54,10 @@ export function ManuscriptList({
             return (
               <div
                 key={chapter._id}
-                className="group flex items-center justify-between py-4 transition-colors hover:bg-white/5 -mx-4 px-4 rounded-lg"
+                // 🟢 MOBILE FIX: Allow stacking into a flex-col layout on tiny screens if needed, otherwise clean flex-row
+                className="group flex flex-col sm:flex-row sm:items-center justify-between py-4 transition-colors hover:bg-white/5 -mx-2 px-2 sm:-mx-4 sm:px-4 rounded-lg gap-4 sm:gap-0"
               >
-                <div className="flex items-start gap-5 flex-1 min-w-0">
+                <div className="flex items-start gap-4 sm:gap-5 flex-1 min-w-0">
                   <span className="font-['JetBrains_Mono'] text-[12px] text-[#5c5868] pt-1">
                     {num}
                   </span>
@@ -67,7 +68,7 @@ export function ManuscriptList({
                       onSave={(val) =>
                         onUpdateChapter(chapter._id, "title", val)
                       }
-                      className="font-serif text-[17px] font-medium text-[#ede9e2] group-hover:text-[#c9975a]"
+                      className="font-serif text-[16px] sm:text-[17px] font-medium text-[#ede9e2] group-hover:text-[#c9975a]"
                     />
 
                     <div className="flex items-center gap-1.5 mt-1">
@@ -84,9 +85,9 @@ export function ManuscriptList({
                               chapter._id,
                               "status",
                               e.target.value as
-                                | "draft"
-                                | "published"
-                                | "archived",
+                              | "draft"
+                              | "published"
+                              | "archived",
                             )
                           }
                           className="bg-transparent text-[10px] uppercase tracking-widest text-[#5c5868] outline-none cursor-pointer hover:text-[#ede9e2] font-bold appearance-none"
@@ -103,8 +104,9 @@ export function ManuscriptList({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 shrink-0">
-                  <div className="font-['JetBrains_Mono'] text-[12px] text-[#5c5868]">
+                {/* 🟢 MOBILE FIX: pl-9 on mobile indents the stats to align perfectly with the title (past the numbers) */}
+                <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 pl-9 sm:pl-0">
+                  <div className="font-['JetBrains_Mono'] text-[11px] sm:text-[12px] text-[#5c5868]">
                     {(chapter.wordCount ?? 0).toLocaleString()} w
                   </div>
 
@@ -114,7 +116,8 @@ export function ManuscriptList({
                         `/project/${projectId}/write?chapterId=${chapter._id}`,
                       )
                     }
-                    className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-[#5c5868] opacity-0 transition-all group-hover:opacity-100 group-hover:text-[#c9975a]"
+                    // 🟢 MOBILE FIX: Mobile doesn't have hover, so set base opacity to 100 on mobile, 0 on sm screens
+                    className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-widest text-[#c9975a] sm:text-[#5c5868] opacity-100 sm:opacity-0 transition-all group-hover:opacity-100 group-hover:text-[#c9975a]"
                   >
                     Write <ChevronRight className="w-3 h-3" />
                   </button>

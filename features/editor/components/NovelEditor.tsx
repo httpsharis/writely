@@ -7,10 +7,12 @@ import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
 
-
 import EditorTitleInput from "../../../components/editor/EditorTitleInput";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
-import { CharacterMention, getSuggestionOptions } from "./extensions/CharacterMention";
+import {
+  CharacterMention,
+  getSuggestionOptions,
+} from "./extensions/CharacterMention";
 import { CharacterHoverCard } from "../../../components/shared/CharacterHoverCard";
 import { useGetNovelCharactersQuery } from "@/redux/features/characters/characterApi";
 
@@ -22,7 +24,6 @@ const BASE_EXTENSIONS = [
 ];
 
 export default function NovelEditor() {
-  // Pull necessary state and functions from the Editor Provider
   const {
     novel,
     activeChapter: chapter,
@@ -30,7 +31,6 @@ export default function NovelEditor() {
     setLiveWordCount,
   } = useEditorContext();
 
-  // Refs for debounce timers and tracking the currently loaded document
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -46,7 +46,6 @@ export default function NovelEditor() {
     charactersRef.current = characters;
   }, [characters]);
 
-  // The Live Mirror: Ensures Tiptap always calls the most recent save function
   const autoSaveRef = useRef(handleAutoSave);
   const latestDataRef = useRef({
     content: chapter?.content,
@@ -63,7 +62,7 @@ export default function NovelEditor() {
       ...BASE_EXTENSIONS,
       CharacterMention.configure({
         HTMLAttributes: {
-          class: 'character-mention',
+          class: "character-mention",
         },
         // eslint-disable-next-line react-hooks/refs
         suggestion: getSuggestionOptions(() => charactersRef.current),
@@ -72,7 +71,7 @@ export default function NovelEditor() {
     editorProps: {
       attributes: {
         class:
-          "font-['Fraunces'] text-[19px] leading-[1.75] text-editor-text-primary outline-none min-h-[300px] whitespace-pre-wrap [&_p]:mb-[1.2em]",
+          "font-['Fraunces'] text-[17px] sm:text-[19px] leading-[1.75] text-editor-text-primary outline-none min-h-[300px] whitespace-pre-wrap [&_p]:mb-[1.2em]",
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -80,21 +79,20 @@ export default function NovelEditor() {
       const content = ed.getJSON();
 
       setLiveWordCount(words);
-      latestDataRef.current = { content, words }; // Always strictly up to date
+      latestDataRef.current = { content, words };
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       debounceRef.current = setTimeout(() => {
         autoSaveRef.current({ content, wordCount: words });
-        debounceRef.current = undefined; // Clear it out when done
+        debounceRef.current = undefined;
       }, 2000);
     },
   });
 
-  // 2. The Fail-Safe Unmount
+  // Fail-Safe Unmount
   useEffect(() => {
     return () => {
-      // If there is a pending save when they hit the Back button, fire it instantly!
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         autoSaveRef.current({
@@ -105,19 +103,16 @@ export default function NovelEditor() {
     };
   }, []);
 
-  // Safe content injection: Prevents cursor jumping and race conditions
+  // Safe content injection
   useEffect(() => {
     if (!editor || !chapter) return;
 
-    // Condition A: The user clicked a completely different chapter in the sidebar
     if (loadedChapterIdRef.current !== chapter._id) {
       setTimeout(() => {
         editor.commands.setContent(chapter.content || "");
       }, 0);
       loadedChapterIdRef.current = chapter._id;
-    }
-    // Condition B: The backend just finished fetching text for the current blank screen
-    else if (editor.isEmpty && chapter.content) {
+    } else if (editor.isEmpty && chapter.content) {
       const hasText = Object.keys(chapter.content).length > 0;
 
       if (hasText) {
@@ -128,43 +123,42 @@ export default function NovelEditor() {
     }
   }, [chapter, editor]);
 
-  // Do not render the editor UI if no chapter data exists yet
   if (!chapter) return null;
 
   return (
-    <div className="overflow-y-auto flex justify-center py-16 px-8 h-full w-full">
+    <div className="h-full w-full flex justify-center overflow-y-auto px-4 py-6 sm:px-8 sm:py-12 md:py-16">
       <div className="w-full max-w-[680px]">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center gap-[2px] p-1 rounded-lg border border-editor-border bg-editor-surface">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-[2px] rounded-lg border border-editor-border bg-editor-surface p-1">
             <button
               onClick={() => editor?.chain().focus().toggleBold().run()}
-              className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-bold"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
             >
               B
             </button>
             <button
               onClick={() => editor?.chain().focus().toggleItalic().run()}
-              className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary italic font-['Fraunces']"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-['Fraunces'] italic text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
             >
               i
             </button>
-            <div className="w-px h-4 bg-editor-border-strong mx-1"></div>
+            <div className="mx-1 h-4 w-px bg-editor-border-strong"></div>
             <button
               onClick={() =>
                 editor?.chain().focus().toggleHeading({ level: 2 }).run()
               }
-              className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-bold"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
             >
               H
             </button>
             <button
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-              className="w-7 h-7 flex items-center justify-center border-none bg-transparent rounded-[5px] text-editor-text-secondary text-[13px] transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary font-serif"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent font-serif text-[13px] text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
             >
               &rdquo;
             </button>
           </div>
-          <span className="text-[12px] text-editor-text-tertiary font-['JetBrains_Mono']">
+          <span className="hidden text-[12px] font-['JetBrains_Mono'] text-editor-text-tertiary sm:inline">
             Chapter {chapter.order || 1} · no target set
           </span>
         </div>

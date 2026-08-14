@@ -28,7 +28,6 @@ export function ProjectSidebar({
   const [showCoverInput, setShowCoverInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 🟢 NEW: State for the share link
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
@@ -65,13 +64,14 @@ export function ProjectSidebar({
 
   return (
     <div className="flex flex-col">
-      <div className="group relative mb-6 flex aspect-[2/3] flex-col items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#1b1a21]">
+      {/* 🟢 MOBILE FIX: Constrained width on mobile so it doesn't take up the whole screen */}
+      <div className="group relative mb-6 mx-auto lg:mx-0 w-48 sm:w-56 lg:w-full flex aspect-[2/3] flex-col items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#1b1a21]">
         {project.coverImage ? (
           <Image
             src={project.coverImage}
             alt="Cover"
             fill
-            sizes="(max-width: 768px) 100vw, 264px"
+            sizes="(max-width: 768px) 192px, (max-width: 1024px) 224px, 264px"
             className="object-cover"
           />
         ) : (
@@ -172,7 +172,6 @@ export function ProjectSidebar({
         </div>
       </div>
 
-      {/* 🟢 DEBUG FIX: Added project.type and project.title so you can see exactly what React is holding! */}
       <div className="mb-4 rounded-lg border border-white/5 bg-white/5 p-3">
         <label className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-[#5c5868]">
           <span>
@@ -204,7 +203,6 @@ export function ProjectSidebar({
         </div>
       </div>
 
-      {/* Synopsis (Existing) */}
       <h4 className="mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-editor-text-tertiary">
         Synopsis
       </h4>
