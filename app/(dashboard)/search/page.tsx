@@ -1,132 +1,151 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Book, FileText, User, File, Loader2 } from "lucide-react";
-import { useGlobalSearchQuery, SearchableEntityType, GlobalSearchResult } from "@/redux/features/search/searchApi";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-
-function SearchResultIcon({ type }: { type: SearchableEntityType }) {
-  switch (type) {
-    case "novel":
-      return <Book className="w-5 h-5 text-indigo-500" />;
-    case "chapter":
-      return <FileText className="w-5 h-5 text-sky-500" />;
-    case "note":
-      return <File className="w-5 h-5 text-amber-500" />;
-    case "user":
-      return <User className="w-5 h-5 text-emerald-500" />;
-    default:
-      return <File className="w-5 h-5 text-muted-foreground" />;
-  }
-}
+import { Search, Book, FileText, User, File, Loader2, ArrowRight } from "lucide-react";
+import { useGlobalSearchQuery, type SearchableEntityType, type GlobalSearchResult } from "@/redux/features/search/searchApi";
 
 export default function SearchPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Debounce the search input to avoid spamming the API
+  // 1. Debounce Input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(query);
-    }, 500);
+    const timer = setTimeout(() => setDebouncedQuery(query), 500);
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Execute the search query
+  // 2. Fetch Data
   const { data, isLoading, isFetching } = useGlobalSearchQuery(
     { q: debouncedQuery, limit: 20 },
     { skip: debouncedQuery.trim().length === 0 }
   );
 
-  const results = data?.results || [];
+  const results: GlobalSearchResult[] = useMemo(() => {
+    if (!data) return [];
+    const raw = data as any;
 
+    // Fallbacks for standard arrays
+    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw.results)) return raw.results;
+    if (Array.isArray(raw.data)) return raw.data;
+
+    // Combine the categorized arrays from your Express backend into one list
+    return [
+      ...(raw.documents || []),
+      ...(raw.characters || []),
+      ...(raw.notes || [])
+    ];
+  }, [data]);
+
+  // 4. Clean Routing
   const handleResultClick = (result: GlobalSearchResult) => {
-    if (result.type === "novel" || result.type === "chapter") {
-      router.push(`/project/${result._id}/write`);
-    } else if (result.type === "user") {
-      if (result.slug) {
-        router.push(`/author/${result.slug}`);
-      }
-    } else {
-      // Notes or generic
-      router.push(`/project/${result._id}/write`); // fallback
-    }
+    if (result.type === "user" && result.slug) return router.push(`/author/${result.slug}`);
+    router.push(`/project/${result._id}${result.type === "chapter" ? "/write" : ""}`);
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto h-full flex flex-col pt-8 md:pt-12 px-4 md:px-8 pb-32 animate-in fade-in duration-700">
-      <header className="mb-8 shrink-0">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight mb-6">
+    <div className="w-full max-w-3xl mx-auto h-full flex flex-col pt-8 md:pt-16 px-6 pb-32 animate-in fade-in duration-700">
+
+      {/* HEADER & SEARCH BAR */}
+      <header className="mb-10 shrink-0">
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight mb-8">
           Global Search
         </h1>
         <div className="relative group">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+          <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-brand transition-colors">
             <Search className="w-5 h-5" />
           </div>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search across your novels, chapters, characters, and notes..."
-            className="w-full bg-secondary/30 border border-border/50 rounded-2xl py-4 pl-12 pr-12 text-foreground focus:outline-none focus:ring-1 focus:ring-primary shadow-sm text-lg transition-all"
+            placeholder="Search novels, chapters, lore, characters..."
+            className="w-full bg-secondary/20 border border-border/50 rounded-2xl py-4 pl-14 pr-12 text-foreground focus:outline-none focus:border-brand/50 focus:bg-secondary/40 transition-all font-medium text-lg placeholder:text-muted-foreground/50"
             autoFocus
           />
           {(isLoading || isFetching) && (
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            <div className="absolute inset-y-0 right-0 pr-5 flex items-center">
+              <Loader2 className="w-5 h-5 animate-spin text-brand" />
             </div>
           )}
         </div>
       </header>
 
+      {/* RESULTS AREA */}
       <div className="flex-1 overflow-y-auto no-scrollbar">
         {debouncedQuery.trim().length === 0 ? (
-          <div className="h-40 flex items-center justify-center text-muted-foreground flex-col gap-3">
-            <Search className="w-8 h-8 opacity-20" />
-            <p className="text-sm font-medium">Type something to start searching...</p>
-          </div>
+          <EmptyState icon={<Search className="w-8 h-8 opacity-20" />} text="Type something to search your workspace." />
         ) : results.length > 0 ? (
-          <div className="grid gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {results.map((result) => (
-              <div
-                key={result._id}
-                onClick={() => handleResultClick(result)}
-                className="flex flex-col md:flex-row gap-4 p-4 rounded-xl bg-card border border-border/50 hover:bg-secondary/50 hover:border-border transition-all cursor-pointer group"
-              >
-                <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-secondary/50 shrink-0">
-                  <SearchResultIcon type={result.type} />
-                </div>
-                <div className="flex flex-col justify-center min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                      {result.type}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {new Date(result.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    {result.title}
-                  </h3>
-                  {result.excerpt && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                      {result.excerpt}
-                    </p>
-                  )}
-                </div>
-              </div>
+              <ResultCard key={result._id} result={result} onClick={() => handleResultClick(result)} />
             ))}
           </div>
-        ) : (
-          !isLoading &&
-          !isFetching && (
-            <div className="h-40 flex items-center justify-center text-muted-foreground flex-col gap-3 animate-in zoom-in-95 duration-300">
-              <p className="text-sm font-medium">No results found for &quot;{debouncedQuery}&quot;</p>
-            </div>
-          )
-        )}
+        ) : (!isLoading && !isFetching) ? (
+          <EmptyState text={`No results found for "${debouncedQuery}"`} />
+        ) : null}
       </div>
     </div>
   );
+}
+
+/* --- MICRO-COMPONENTS --- */
+
+function ResultCard({ result, onClick }: { result: GlobalSearchResult; onClick: () => void }) {
+  const { icon, color } = getResultTheme(result.type);
+
+  return (
+    <div
+      onClick={onClick}
+      className="group flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-transparent border border-transparent hover:bg-secondary/20 hover:border-border/50 transition-all cursor-pointer items-start sm:items-center"
+    >
+      <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/30 shrink-0 border-l-2 transition-colors ${color}`}>
+        {icon}
+      </div>
+
+      <div className="flex flex-col justify-center min-w-0 flex-1">
+        <h3 className="text-base font-bold text-foreground group-hover:text-brand transition-colors truncate">
+          {result.title || "Untitled"}
+        </h3>
+        {result.excerpt && (
+          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+            {result.excerpt}
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4 sm:ml-auto w-full sm:w-auto justify-between sm:justify-end shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-md">
+            {result.type}
+          </span>
+          <span className="text-xs font-['JetBrains_Mono'] text-muted-foreground hidden sm:block">
+            {new Date(result.updatedAt).toLocaleDateString()}
+          </span>
+        </div>
+        <ArrowRight className="w-4 h-4 text-brand opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon, text }: { icon?: React.ReactNode; text: string }) {
+  return (
+    <div className="h-40 flex items-center justify-center text-muted-foreground flex-col gap-4">
+      {icon}
+      <p className="text-sm font-medium font-serif italic">{text}</p>
+    </div>
+  );
+}
+
+function getResultTheme(type: SearchableEntityType) {
+  switch (type) {
+    case "novel": return { icon: <Book className="w-5 h-5" />, color: "border-indigo-500 text-indigo-400" };
+    case "chapter": return { icon: <FileText className="w-5 h-5" />, color: "border-sky-500 text-sky-400" };
+    case "note": return { icon: <File className="w-5 h-5" />, color: "border-amber-500 text-amber-400" };
+    case "user": return { icon: <User className="w-5 h-5" />, color: "border-emerald-500 text-emerald-400" };
+    default: return { icon: <File className="w-5 h-5" />, color: "border-muted-foreground text-muted-foreground" };
+  }
 }
