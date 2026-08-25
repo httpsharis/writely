@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -8,10 +8,14 @@ import { ChevronLeft, LogOut } from "lucide-react";
 import { MAIN_NAV_LINKS, USER_MENU_LINKS, type NavItem } from "@/config/nav";
 import { UserButton, useUser, SignOutButton } from "@clerk/nextjs";
 
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function AppSidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const isMounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
 
   useUser();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
@@ -86,17 +90,26 @@ export function AppSidebar() {
               : "justify-between px-3 bg-secondary/30 border border-border/50 shadow-sm"
           }`}
         >
-          <div className="flex items-center justify-center w-full">
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonBox: isCollapsed ? "justify-center" : "justify-start gap-3 w-full",
-                  userButtonOuterIdentifier: "text-foreground font-bold text-[13px]",
-                  avatarBox: "w-8 h-8 rounded-full border border-border hover:scale-105 transition-transform"
-                }
-              }}
-              showName={!isCollapsed}
-            />
+          <div className="flex items-center justify-center w-full min-h-[32px]">
+            {isMounted ? (
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonBox: isCollapsed ? "justify-center" : "justify-start gap-3 w-full",
+                    userButtonOuterIdentifier: "text-foreground font-bold text-[13px]",
+                    avatarBox: "w-8 h-8 rounded-full border border-border hover:scale-105 transition-transform"
+                  }
+                }}
+                showName={!isCollapsed}
+              />
+            ) : (
+              <div className={`flex items-center w-full ${isCollapsed ? "justify-center" : "gap-3"}`}>
+                <div className="w-8 h-8 rounded-full bg-secondary/60 animate-pulse shrink-0 border border-border/50" />
+                {!isCollapsed && (
+                  <div className="h-3.5 w-24 rounded bg-secondary/60 animate-pulse" />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
