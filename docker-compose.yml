@@ -9,8 +9,9 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
+      - /app/node_modules
     env_file:
-      - .env.local  
+      - .env.local
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
@@ -25,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: writely-backend
     ports:
-      - "4000:4000" 
+      - "4000:4000"
     volumes:
       - /mnt/a0d79cc5-6dd9-440b-b6fc-23c61c69d7e8/personal-projects/writely-backend:/app
     env_file:
