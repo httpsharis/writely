@@ -105,7 +105,8 @@ export default function CharacterDetailsPage() {
       toast.success("Portrait updated successfully!", { id: "char-upload" });
     } catch (err: unknown) {
       console.error("Cloudinary upload failed", err);
-      toast.error("Failed to upload portrait to Cloudinary.", { id: "char-upload" });
+      const msg = err instanceof Error ? err.message : "Failed to upload portrait to Cloudinary.";
+      toast.error(msg, { id: "char-upload" });
     } finally {
       setIsUploading(false);
     }

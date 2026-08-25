@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
+import { toast } from "sonner";
 
 import EditorTitleInput from "../../../components/editor/EditorTitleInput";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
@@ -15,6 +16,11 @@ import {
 } from "./extensions/CharacterMention";
 import { CharacterHoverCard } from "../../../components/shared/CharacterHoverCard";
 import { useGetNovelCharactersQuery } from "@/redux/features/characters/characterApi";
+import {
+  saveLocalDraft,
+  getLocalDraft,
+  isLocalDraftNewer,
+} from "@/lib/draftStorage";
 
 const BASE_EXTENSIONS = [
   StarterKit,
@@ -81,6 +87,15 @@ export default function NovelEditor() {
       setLiveWordCount(words);
       latestDataRef.current = { content, words };
 
+      // 🛡️ Instant Local Storage Safety Net (0 data loss on every keystroke)
+      if (chapter?._id) {
+        saveLocalDraft(chapter._id, {
+          content,
+          wordCount: words,
+          title: chapter.title,
+        });
+      }
+
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       debounceRef.current = setTimeout(() => {
@@ -90,9 +105,22 @@ export default function NovelEditor() {
     },
   });
 
-  // Fail-Safe Unmount
+  // Fail-Safe Unmount & beforeunload window listener
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (chapter?._id && latestDataRef.current.content) {
+        saveLocalDraft(chapter._id, {
+          content: latestDataRef.current.content,
+          wordCount: latestDataRef.current.words,
+          title: chapter.title,
+        });
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
         autoSaveRef.current({
@@ -101,15 +129,29 @@ export default function NovelEditor() {
         });
       }
     };
-  }, []);
+  }, [chapter?._id, chapter?.title]);
 
-  // Safe content injection
+  // Safe content injection with Local Storage Recovery Check
   useEffect(() => {
     if (!editor || !chapter) return;
 
     if (loadedChapterIdRef.current !== chapter._id) {
+      let contentToLoad = chapter.content || "";
+
+      // 🛡️ Check if a newer offline/unsaved draft exists in localStorage
+      if (chapter._id && isLocalDraftNewer(chapter._id, chapter.updatedAt)) {
+        const localDraft = getLocalDraft(chapter._id);
+        if (localDraft && localDraft.content) {
+          contentToLoad = localDraft.content;
+          toast.info("Restored un-synced edits from local device", {
+            description: `Recovered draft from ${new Date(localDraft.timestamp).toLocaleTimeString()}`,
+            id: `recovery-${chapter._id}`,
+          });
+        }
+      }
+
       setTimeout(() => {
-        editor.commands.setContent(chapter.content || "");
+        editor.commands.setContent(contentToLoad);
       }, 0);
       loadedChapterIdRef.current = chapter._id;
     } else if (editor.isEmpty && chapter.content) {
@@ -131,29 +173,33 @@ export default function NovelEditor() {
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-[2px] rounded-lg border border-editor-border bg-editor-surface p-1">
             <button
+              type="button"
               onClick={() => editor?.chain().focus().toggleBold().run()}
-              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary cursor-pointer"
             >
               B
             </button>
             <button
+              type="button"
               onClick={() => editor?.chain().focus().toggleItalic().run()}
-              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-['Fraunces'] italic text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-['Fraunces'] italic text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary cursor-pointer"
             >
               i
             </button>
             <div className="mx-1 h-4 w-px bg-editor-border-strong"></div>
             <button
+              type="button"
               onClick={() =>
                 editor?.chain().focus().toggleHeading({ level: 2 }).run()
               }
-              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent text-[13px] font-bold text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary cursor-pointer"
             >
               H
             </button>
             <button
+              type="button"
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent font-serif text-[13px] text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary"
+              className="flex h-7 w-7 items-center justify-center rounded-[5px] border-none bg-transparent font-serif text-[13px] text-editor-text-secondary transition-colors hover:bg-editor-surface-hover hover:text-editor-text-primary cursor-pointer"
             >
               &rdquo;
             </button>

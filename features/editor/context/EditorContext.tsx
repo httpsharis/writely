@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useRef } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useGetCurrentUserQuery } from "@/redux/features/auth/authApi";
 import {
@@ -91,6 +92,32 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     setPrevChapterId(activeChapterId);
     setLiveWordCount(activeChapter?.wordCount || 0);
   }
+
+  // 🌐 Network status monitoring with Local Storage assurance
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.success("Back online. Edits are syncing with cloud.", {
+        id: "network-status",
+      });
+    };
+
+    const handleOffline = () => {
+      setSaveStatus("off");
+      toast.warning("Working offline. Your writing is safely backed up to local storage.", {
+        id: "network-status",
+        duration: 6000,
+      });
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   // --- Core Mutations ---
 
   const handleCreateChapter = async () => {

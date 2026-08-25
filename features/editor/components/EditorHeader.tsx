@@ -70,10 +70,19 @@ export function EditorHeader() {
         <div className="h-4 sm:h-5 w-px bg-editor-border-strong" />
 
         {/* Save Status Indicator */}
-        <div className="flex items-center justify-center gap-1.5 rounded-full sm:rounded-[20px] border border-editor-border-strong bg-editor-surface w-6 h-6 sm:w-auto sm:h-auto sm:px-3 sm:py-1">
-          <span className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200 ${saveStatus === "saving" ? "animate-pulse bg-editor-gold" : "bg-editor-green"}`} />
+        <div 
+          className="flex items-center justify-center gap-1.5 rounded-full sm:rounded-[20px] border border-editor-border-strong bg-editor-surface w-6 h-6 sm:w-auto sm:h-auto sm:px-3 sm:py-1"
+          title={saveStatus === "saving" ? "Saving to server..." : saveStatus === "off" ? "Saved to local device (offline)" : "All changes saved to cloud"}
+        >
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-200 ${
+            saveStatus === "saving" 
+              ? "animate-pulse bg-editor-gold" 
+              : saveStatus === "off" 
+              ? "bg-amber-400" 
+              : "bg-editor-green"
+          }`} />
           <span className="hidden sm:inline text-[12px] text-editor-text-secondary">
-            {saveStatus === "saving" ? "Saving" : "Saved"}
+            {saveStatus === "saving" ? "Saving" : saveStatus === "off" ? "Local Draft" : "Saved"}
           </span>
         </div>
 
