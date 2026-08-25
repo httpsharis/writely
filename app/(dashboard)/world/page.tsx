@@ -54,40 +54,40 @@ export default function WorldPage() {
   });
 
   return (
-    <div className="max-w-[720px] mx-auto px-8 py-12 md:py-16 flex flex-col">
+    <div className="max-w-[720px] mx-auto px-4 sm:px-8 py-8 sm:py-12 md:py-16 flex flex-col">
       
       {/* Header Area */}
-      <div className="flex items-start justify-between mb-12">
+      <div className="flex items-start justify-between mb-8 sm:mb-12">
         <div className="flex flex-col gap-2">
-          <h1 className="text-[32px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] leading-none">
+          <h1 className="text-2xl sm:text-[32px] font-serif font-semibold tracking-tight text-foreground leading-none">
             World Codex
           </h1>
-          <p className="text-[14px] text-[#9C8870] dark:text-[#5C5652]">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Encyclopedia of locations, factions, lore, and magic systems.
           </p>
         </div>
         
-        {/* Outline Button matching your spec */}
-        <button className="flex items-center gap-2 px-4 py-1.5 rounded-md text-[12px] font-medium border border-[#E8E0D5] dark:border-[#242424] text-[#1A1008] dark:text-[#F0EBE4] hover:border-[#C8973F] dark:hover:border-[#C8973F] transition-colors bg-transparent shrink-0">
+        {/* Action Button */}
+        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-border text-foreground hover:border-brand hover:text-brand transition-colors bg-card shadow-sm shrink-0 cursor-pointer">
           <Plus className="w-3.5 h-3.5" />
           New Entry
         </button>
       </div>
 
-      {/* Search Bar (Minimalist) */}
+      {/* Search Bar */}
       <div className="relative mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9C8870] dark:text-[#5C5652]" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input 
           type="text"
           placeholder="Search the codex..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-transparent border border-[#E8E0D5] dark:border-[#242424] rounded-xl pl-11 pr-4 py-3 text-[13px] text-[#1A1008] dark:text-[#F0EBE4] placeholder:text-[#9C8870] dark:placeholder:text-[#5C5652] focus:outline-none focus:border-[#C8973F] dark:focus:border-[#C8973F] transition-colors"
+          className="w-full bg-secondary/30 border border-border rounded-xl pl-11 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-brand transition-colors"
         />
       </div>
 
       {/* Editorial Tabs */}
-      <div className="flex items-center gap-8 border-b border-[#E8E0D5] dark:border-[#242424] mb-4 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-6 sm:gap-8 border-b border-border mb-4 overflow-x-auto no-scrollbar">
         {[
           { name: "All", icon: null },
           { name: "Locations", icon: Map },
@@ -98,16 +98,16 @@ export default function WorldPage() {
           <button
             key={tab.name}
             onClick={() => setActiveTab(tab.name)}
-            className={`pb-3 text-[12px] uppercase tracking-[0.1em] font-medium transition-colors relative flex items-center gap-2 whitespace-nowrap ${
+            className={`pb-3 text-xs uppercase tracking-[0.1em] font-bold transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === tab.name 
-                ? "text-[#1A1008] dark:text-[#F0EBE4]" 
-                : "text-[#9C8870] dark:text-[#5C5652] hover:text-[#1A1008] dark:hover:text-[#F0EBE4]"
+                ? "text-foreground" 
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {tab.icon && <tab.icon className="w-3.5 h-3.5 mb-0.5" />}
             {tab.name}
             {activeTab === tab.name && (
-              <div className="absolute bottom-[-1px] left-0 w-full h-[1px] bg-[#1A1008] dark:bg-[#F0EBE4]" />
+              <div className="absolute bottom-[-1px] left-0 w-full h-[2px] bg-brand" />
             )}
           </button>
         ))}
@@ -118,23 +118,23 @@ export default function WorldPage() {
         {filteredEntries.map((entry) => (
           <div 
             key={entry.id}
-            className="group flex flex-col sm:flex-row sm:items-center gap-6 py-6 border-b border-[#E8E0D5] dark:border-[#242424] hover:bg-[#1A1008]/[0.02] dark:hover:bg-[#F0EBE4]/[0.02] transition-colors cursor-pointer -mx-6 px-6 rounded-xl"
+            className="group flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 py-6 border-b border-border hover:bg-secondary/30 transition-colors cursor-pointer -mx-4 sm:-mx-6 px-4 sm:px-6 rounded-2xl"
           >
             
-            {/* Thumbnail (Optional based on data) */}
+            {/* Thumbnail */}
             {entry.imageUrl ? (
-              <Image 
-                src={entry.imageUrl} 
-                alt={entry.name}
-                width={400}
-                height={400}
-                // Rectangular aspect ratio for world elements (locations, artifacts) looks more serious than circles
-                className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-lg object-cover border border-[#E8E0D5] dark:border-[#242424] shrink-0"
-              />
+              <div className="relative w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-xl overflow-hidden border border-border shrink-0 bg-secondary/20">
+                <Image 
+                  src={entry.imageUrl} 
+                  alt={entry.name}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 96px"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
             ) : (
-              // Empty state placeholder
-              <div className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-lg border border-dashed border-[#E8E0D5] dark:border-[#242424] bg-transparent flex items-center justify-center shrink-0">
-                <BookOpen className="w-6 h-6 text-[#9C8870]/30 dark:text-[#5C5652]/30" />
+              <div className="w-full sm:w-[96px] h-[120px] sm:h-[96px] rounded-xl border border-dashed border-border bg-secondary/10 flex items-center justify-center shrink-0">
+                <BookOpen className="w-6 h-6 text-muted-foreground/40" />
               </div>
             )}
 
@@ -142,20 +142,20 @@ export default function WorldPage() {
             <div className="flex flex-col flex-1 justify-center min-w-0">
               
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[10px] uppercase tracking-[0.15em] text-[#C8973F] font-bold">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-brand font-bold">
                   {entry.type}
                 </span>
-                <span className="w-1 h-1 rounded-full bg-[#E8E0D5] dark:bg-[#242424]"></span>
-                <span className="text-[11px] font-serif italic text-[#9C8870] dark:text-[#5C5652]">
+                <span className="w-1 h-1 rounded-full bg-border"></span>
+                <span className="text-[11px] font-serif italic text-muted-foreground">
                   {entry.category}
                 </span>
               </div>
               
-              <h3 className="text-[20px] font-semibold tracking-tight text-[#1A1008] dark:text-[#F0EBE4] mb-2 truncate group-hover:text-[#C8973F] transition-colors">
+              <h3 className="text-lg font-serif font-semibold tracking-tight text-foreground mb-1.5 truncate group-hover:text-brand transition-colors">
                 {entry.name}
               </h3>
               
-              <p className="text-[13.5px] leading-relaxed text-[#9C8870] dark:text-[#5C5652] line-clamp-2">
+              <p className="text-xs sm:text-[13.5px] leading-relaxed text-muted-foreground line-clamp-2">
                 {entry.snippet}
               </p>
             </div>
@@ -165,7 +165,7 @@ export default function WorldPage() {
 
         {filteredEntries.length === 0 && (
           <div className="py-12 text-center flex flex-col items-center">
-            <span className="text-[13px] text-[#9C8870] dark:text-[#5C5652]">No entries found in this category.</span>
+            <span className="text-xs text-muted-foreground font-serif italic">No entries found in this category.</span>
           </div>
         )}
       </div>

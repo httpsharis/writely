@@ -88,6 +88,7 @@ const DraftWidget = ({ draft }: { draft: DashboardDoc | null }) => !draft ? (
                         <div className="flex items-center gap-3 text-sm text-muted-foreground font-medium">
                             <span className="uppercase text-[10px] font-bold text-brand border border-brand/30 bg-brand/5 px-2 py-0.5 rounded-sm">{draft.status || "Draft"}</span>
                             <span className="flex items-center gap-1.5 italic font-serif"><Clock className="w-4 h-4" /> {new Date(draft.updatedAt).toLocaleDateString()}</span>
+                            <span className="flex items-center gap-1.5 italic font-serif" suppressHydrationWarning><Clock className="w-4 h-4" /> {new Date(draft.updatedAt).toLocaleDateString()}</span>
                             <span className="flex items-center gap-1.5 italic font-serif"><span className="font-sans text-[11px] font-bold uppercase opacity-60">Words:</span> {draft.wordCount?.toLocaleString() || "0"}</span>
                         </div>
                     </div>
@@ -146,6 +147,7 @@ const RecentList = ({ files }: { files: DashboardDoc[] }) => {
                             <button key={f._id} onClick={() => router.push(`/project/${f.type === 'chapter' ? f.parentId : f._id}`)} className="group flex items-center justify-between p-3 -mx-3 rounded-2xl hover:bg-secondary/30 transition-all text-left">
                                 <div className="flex items-center gap-5"><div className={`flex items-center justify-center h-12 w-12 rounded-xl bg-secondary/30 border-l-[3px] shrink-0 ${c}`}><I className="w-5 h-5" /></div>
                                     <div className="flex flex-col min-w-0"><span className="font-bold text-sm truncate group-hover:text-brand transition-colors">{f.title}</span><span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{f.type} • {new Date(f.updatedAt).toLocaleDateString()}</span></div>
+                                    <div className="flex flex-col min-w-0"><span className="font-bold text-sm truncate group-hover:text-brand transition-colors">{f.title}</span><span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest" suppressHydrationWarning>{f.type} • {new Date(f.updatedAt).toLocaleDateString()}</span></div>
                                 </div>
                                 <ArrowRight className="w-5 h-5 text-brand opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                             </button>

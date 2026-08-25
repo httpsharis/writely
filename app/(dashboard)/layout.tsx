@@ -1,24 +1,22 @@
 import { MobileBottomBar } from "@/components/shared/MobileBottomBar";
-import { AppSidebar } from "@/components/shared/Sidebar"; // <-- Notice the capitalized "Sidebar" file name!
+import { AppSidebar } from "@/components/shared/Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen w-full bg-[#0B0D14] overflow-hidden">
+    <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
       
       {/* Desktop Sidebar: Visible only on larger screens */}
       <div className="hidden md:block shrink-0">
         <AppSidebar />
       </div>
 
-      {/* Main Writing Canvas: Scrolls independently */}
-      <main className="flex-1 min-w-0 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8">
+      {/* Main Writing Canvas: Scrolls independently with generous bottom clearance for mobile bar */}
+      <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 md:p-8 pb-48 md:pb-8 overscroll-contain">
         {children}
       </main>
 
-      {/* Mobile Bottom Bar: Visible only on small screens */}
-      <div className="md:hidden fixed bottom-0 w-full z-50">
-        <MobileBottomBar />
-      </div>
+      {/* Mobile Bottom Bar: Rendered on mobile screens */}
+      <MobileBottomBar />
 
     </div>
   );

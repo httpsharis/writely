@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Image as ImageIcon, Target, Link2, Check } from "lucide-react";
+import { Image as ImageIcon, Target, Link2, Check, UploadCloud } from "lucide-react";
 import InlineEdit from "@/components/ui/InlineEdit";
 import type { ExtendedProject } from "../hooks/useProjectHub";
 
@@ -57,48 +57,49 @@ export function ProjectSidebar({
 
   const handleLinkSave = () => {
     if (coverInput.trim()) {
-      onUpdate("coverImage", coverInput);
+      onUpdate("coverImage", coverInput.trim());
       setShowCoverInput(false);
     }
   };
 
   return (
     <div className="flex flex-col">
-      {/* 🟢 MOBILE FIX: Constrained width on mobile so it doesn't take up the whole screen */}
-      <div className="group relative mb-6 mx-auto lg:mx-0 w-48 sm:w-56 lg:w-full flex aspect-[2/3] flex-col items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#1b1a21]">
+      {/* Responsive Cover Art Container */}
+      <div className="group relative mb-6 mx-auto lg:mx-0 w-48 sm:w-56 lg:w-full flex aspect-[2/3] flex-col items-center justify-center overflow-hidden rounded-2xl border border-border bg-secondary/20 shadow-sm">
         {project.coverImage ? (
           <Image
             src={project.coverImage}
             alt="Cover"
             fill
-            sizes="(max-width: 768px) 192px, (max-width: 1024px) 224px, 264px"
-            className="object-cover"
+            sizes="(max-width: 768px) 192px, (max-width: 1024px) 224px, 280px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <>
-            <ImageIcon className="h-8 w-8 opacity-50 text-[#5c5868]" />
-            <span className="text-[13px] text-[#5c5868] mt-2">No cover</span>
+            <ImageIcon className="h-8 w-8 opacity-40 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground mt-2 font-medium">No cover art</span>
           </>
         )}
 
         {!isReadOnly && !showCoverInput && (
           <div
             onClick={() => setShowCoverInput(true)}
-            className="absolute inset-0 flex cursor-pointer items-center justify-center bg-[#131217]/80 text-xs font-medium text-[#c9975a] opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-2 bg-black/60 text-xs font-bold uppercase tracking-wider text-white opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-[2px]"
           >
-            Upload Cover
+            <UploadCloud className="w-5 h-5 text-brand" />
+            <span>Update Cover</span>
           </div>
         )}
 
         {showCoverInput && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#131217]/95 p-4">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-card/95 p-4 backdrop-blur-md">
             <input
               autoFocus
               value={coverInput}
               onChange={(e) => setCoverInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLinkSave()}
-              placeholder="https://..."
-              className="w-full rounded border border-white/10 bg-[#1b1a21] px-2 py-1.5 text-[11px] outline-none"
+              placeholder="Paste image URL https://..."
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-brand"
             />
             <input
               type="file"
@@ -110,31 +111,32 @@ export function ProjectSidebar({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full rounded bg-[#29272f] py-1.5 text-[10px] transition-colors hover:bg-[#c9975a] hover:text-[#131217]"
+              className="w-full rounded-lg bg-secondary py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
             >
-              {isUploading ? "Uploading..." : "Upload from Computer"}
+              {isUploading ? "Uploading..." : "Upload from Device"}
             </button>
             <div className="mt-1 flex w-full gap-2">
               <button
                 onClick={() => setShowCoverInput(false)}
-                className="flex-1 text-[10px] text-[#948fa0]"
+                className="flex-1 text-xs text-muted-foreground hover:text-foreground py-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLinkSave}
-                className="flex-1 rounded bg-[#c9975a] py-1 text-[10px] font-bold text-[#131217]"
+                className="flex-1 rounded-lg bg-foreground py-1.5 text-xs font-bold text-background hover:bg-foreground/90 transition-all"
               >
-                Save Link
+                Save
               </button>
             </div>
           </div>
         )}
       </div>
 
-      <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
+      {/* Status & Target Words */}
+      <div className="mb-4 flex items-center justify-between border-b border-border pb-4">
         {isReadOnly ? (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[#c9975a]">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-brand">
             {project.status}
           </span>
         ) : (
@@ -146,40 +148,38 @@ export function ProjectSidebar({
                 e.target.value as "draft" | "published" | "archived",
               )
             }
-            className="cursor-pointer bg-transparent text-[10px] font-bold uppercase tracking-widest text-[#c9975a] outline-none"
+            className="cursor-pointer bg-transparent text-[10px] font-bold uppercase tracking-widest text-brand outline-none hover:opacity-80"
           >
-            <option value="draft" className="bg-[#131217]">
+            <option value="draft" className="bg-card text-foreground">
               Drafting
             </option>
-            <option value="published" className="bg-[#131217]">
+            <option value="published" className="bg-card text-foreground">
               Published
             </option>
-            <option value="archived" className="bg-[#131217]">
+            <option value="archived" className="bg-card text-foreground">
               Archived
             </option>
           </select>
         )}
 
         <div className="group flex items-center gap-2">
-          <Target className="h-3.5 w-3.5 text-editor-text-tertiary" />
+          <Target className="h-3.5 w-3.5 text-muted-foreground" />
           <InlineEdit
             isReadOnly={isReadOnly}
             type="number"
             value={String(project.targetWords ?? 5000)}
             onSave={(val) => onUpdate("targetWords", parseInt(val, 10) || 0)}
-            className="font-['JetBrains_Mono'] text-[11px] text-editor-text-tertiary group-hover:text-editor-text-primary"
+            className="font-mono text-xs text-muted-foreground group-hover:text-foreground"
           />
         </div>
       </div>
 
-      <div className="mb-4 rounded-lg border border-white/5 bg-white/5 p-3">
-        <label className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-[#5c5868]">
-          <span>
-            Public Link ({project.type === "novel" ? "Novel" : "Chapter"}) -{" "}
-            {project.title}
-          </span>
+      {/* Public Share URL */}
+      <div className="mb-6 rounded-xl border border-border bg-secondary/15 p-3.5">
+        <label className="mb-2 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span>Public Link ({project.type === "novel" ? "Novel" : "Chapter"})</span>
           {project.status !== "published" && (
-            <span className="text-rose-400/80">Draft</span>
+            <span className="text-amber-500 font-bold">Draft</span>
           )}
         </label>
         <div className="flex items-center gap-2">
@@ -187,15 +187,16 @@ export function ProjectSidebar({
             type="text"
             readOnly
             value={shareUrl}
-            className="flex-1 rounded border border-white/10 bg-black/20 px-2 py-1.5 text-[10px] text-[#ede9e2] outline-none"
+            className="flex-1 rounded-lg border border-border bg-background/80 px-2.5 py-1.5 font-mono text-[11px] text-foreground outline-none select-all"
             onClick={(e) => (e.target as HTMLInputElement).select()}
           />
           <button
             onClick={handleCopy}
-            className="flex items-center justify-center rounded bg-white/10 p-1.5 text-[#ede9e2] transition-colors hover:bg-[#ede9e2] hover:text-black"
+            title="Copy Public Link"
+            className="flex items-center justify-center rounded-lg bg-secondary p-2 text-foreground transition-colors hover:bg-foreground hover:text-background"
           >
             {copied ? (
-              <Check className="h-3.5 w-3.5" />
+              <Check className="h-3.5 w-3.5 text-green-500" />
             ) : (
               <Link2 className="h-3.5 w-3.5" />
             )}
@@ -203,16 +204,17 @@ export function ProjectSidebar({
         </div>
       </div>
 
-      <h4 className="mb-2 mt-2 text-[10px] font-bold uppercase tracking-widest text-editor-text-tertiary">
+      {/* Synopsis Section */}
+      <h4 className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
         Synopsis
       </h4>
       <InlineEdit
         isReadOnly={isReadOnly}
         multiline
-        placeholder={isReadOnly ? "" : "Write a synopsis..."}
+        placeholder={isReadOnly ? "No synopsis provided." : "Write a brief synopsis..."}
         value={project.synopsis || ""}
         onSave={(val) => onUpdate("synopsis", val)}
-        className="-ml-2 m-0 p-2 font-serif text-[14.5px] italic leading-[1.7] text-editor-text-secondary"
+        className="-ml-2 m-0 p-2 font-serif text-[14.5px] italic leading-[1.7] text-muted-foreground hover:text-foreground"
       />
     </div>
   );

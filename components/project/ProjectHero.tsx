@@ -1,5 +1,6 @@
 import { ImageIcon } from "lucide-react";
 import Image from "next/image";
+import { getBookCoverUrl } from "@/lib/cloudinary";
 
 export interface ProjectStats {
   chapters: number;
@@ -25,12 +26,14 @@ export function ProjectHero({ project }: ProjectHeroProps) {
   return (
     <div className="flex flex-col md:flex-row gap-6 md:gap-10 mb-16 items-start">
       {/* Cover Image or Placeholder */}
-      <div className="w-32 h-48 md:w-40 md:h-56 shrink-0 rounded-xl border border-border/40 bg-secondary/20 flex items-center justify-center overflow-hidden">
+      <div className="relative w-32 h-48 md:w-40 md:h-56 shrink-0 rounded-xl border border-border/40 bg-secondary/20 flex items-center justify-center overflow-hidden">
         {project.coverImage ? (
           <Image
-            src={project.coverImage}
+            src={getBookCoverUrl(project.coverImage, 400)}
             alt={`${project.title} cover`}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 128px, 160px"
+            className="object-cover"
           />
         ) : (
           <div className="flex flex-col items-center text-muted-foreground">

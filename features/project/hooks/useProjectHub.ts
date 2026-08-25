@@ -12,7 +12,7 @@ import { useUploadImageMutation } from "@/redux/features/uploads/uploadApi";
 
 /** Extended Document type to include populated relational fields */
 export type ExtendedProject = Document & {
-  owner?: string;
+  owner?: string | { _id?: string; id?: string };
   children?: Document[];
   chapters?: Document[];
   authorNote?: string;
@@ -38,7 +38,7 @@ export function useProjectHub(projectId: string) {
     isLoading: isDocLoading,
     error,
   } = useGetDocumentByIdQuery(projectId, {
-    skip: !projectId || projectId === "undefined" || !authData?.user,
+    skip: !projectId || projectId === "undefined",
   });
 
   const [updateDocument] = useUpdateDocumentMutation();
@@ -52,9 +52,18 @@ export function useProjectHub(projectId: string) {
   // 1. Unified Loading State
   const isLoading = isUserLoading || isDocLoading;
 
-  // 2. Strict Authorization (Prevents UI flicker by waiting for load)
-  const isReadOnly =
-    isLoading || !authData?.user || authData.user._id !== project?.owner;
+  // 2. Normalize IDs for robust ownership matching
+  const currentUserId = authData?.user?._id || authData?.user?.id;
+  const projectOwnerId = 
+    typeof project?.owner === "object" && project?.owner !== null
+      ? project.owner._id || project.owner.id
+      : project?.owner;
+
+  const isOwner = Boolean(
+    currentUserId && projectOwnerId && String(currentUserId) === String(projectOwnerId)
+  );
+
+  const isReadOnly = isLoading ? false : (!isOwner);
 
   // 3. Derived State
   const isPublished = project?.status === "published";

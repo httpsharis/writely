@@ -45,7 +45,7 @@ export function LibraryLayout() {
   if (isLoading) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-[#c9975a]" />
+        <Loader2 className="h-7 w-7 animate-spin text-brand" />
       </div>
     );
   }
@@ -53,7 +53,7 @@ export function LibraryLayout() {
   if (error) {
     return (
       <div className="flex h-[50vh] w-full items-center justify-center">
-        <p className="font-serif text-lg text-[#5c5868]">Failed to load manuscripts.</p>
+        <p className="font-serif text-lg text-muted-foreground">Failed to load manuscripts.</p>
       </div>
     );
   }
