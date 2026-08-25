@@ -11,6 +11,12 @@
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Lora", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", monospace;
+  /* Editorial Typography (Self-hosted via next/font with zero CLS) */
+  --font-sans: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), var(--font-lora), ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono), monospace;
+  --font-fraunces: var(--font-fraunces), serif;
+  --font-lora: var(--font-lora), serif;
 
   /* Brand Accent */
   --color-brand: #C8973F;
