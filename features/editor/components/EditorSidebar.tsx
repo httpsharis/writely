@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Book, Users, StickyNote, Plus, Folder, Trash2, X } from "lucide-react";
+import { getAvatarUrl } from "@/lib/cloudinary";
 import { useEditorContext } from "../context/EditorContext";
 import { useTrashDocumentMutation } from "@/redux/features/documents/documentApi";
 import { useGetNovelCharactersQuery } from "@/redux/features/characters/characterApi";
@@ -212,7 +213,7 @@ export default function EditorSidebar() {
                   <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-editor-border-strong bg-editor-surface-raised font-['Fraunces'] text-[13px] text-editor-gold">
                     {char.avatarUrl ? (
                       <Image
-                        src={char.avatarUrl}
+                        src={getAvatarUrl(char.avatarUrl, 64)}
                         alt={char.name}
                         fill
                         sizes="32px"
