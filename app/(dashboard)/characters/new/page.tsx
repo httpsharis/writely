@@ -17,8 +17,11 @@ import {
   Book,
   Upload,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useCreateCharacterMutation } from "@/redux/features/characters/characterApi";
 import { useGetDocumentsQuery } from "@/redux/features/documents/documentApi";
+import { uploadToCloudinary } from "@/lib/uploadImage";
+import { getAvatarUrl } from "@/lib/cloudinary";
 
 export default function NewCharacterPage() {
   const router = useRouter();
@@ -29,6 +32,7 @@ export default function NewCharacterPage() {
   const novels = novelsData?.documents || [];
 
   const [createCharacter, { isLoading }] = useCreateCharacterMutation();
+  const [isUploading, setIsUploading] = useState(false);
 
   const [selectedNovelId, setSelectedNovelId] = useState(projectId || "global");
 
@@ -57,25 +61,32 @@ export default function NewCharacterPage() {
     setTraits(traits.filter(t => t !== traitToRemove));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image size should be less than 2MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsUploading(true);
+      toast.loading("Uploading portrait to Cloudinary...", { id: "char-upload" });
+      const uploadedUrl = await uploadToCloudinary(file);
+      setAvatarUrl(uploadedUrl);
+      toast.success("Portrait uploaded successfully!", { id: "char-upload" });
+    } catch (err: unknown) {
+      console.error("Cloudinary upload failed", err);
+      toast.error("Failed to upload portrait to Cloudinary.", { id: "char-upload" });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert("Please enter a character designation (name).");
+      toast.error("Please enter a character designation (name).");
       return;
     }
 
@@ -90,7 +101,7 @@ ${history || "No history defined."}`.trim();
 
     try {
       await createCharacter({
-        novelId: selectedNovelId,
+        novelId: selectedNovelId || "global",
         data: {
           name,
           role,
@@ -102,60 +113,62 @@ ${history || "No history defined."}`.trim();
         },
       }).unwrap();
 
+      toast.success(`Character "${name}" created!`);
       router.push(projectId ? `/project/${projectId}/characters` : `/characters`);
     } catch (err: unknown) {
       console.error("Failed to create character", err);
-      alert("Failed to save character. Please try again.");
+      toast.error("Failed to save character. Please try again.");
     }
   };
 
   const backLink = projectId ? `/project/${projectId}/characters` : `/characters`;
 
   return (
-    <div className="min-h-screen w-full overflow-y-auto bg-[#131217] text-[#ede9e2] px-8 py-12 pb-32 no-scrollbar font-sans">
+    <div className="min-h-screen w-full overflow-y-auto bg-background text-foreground px-4 sm:px-8 py-8 sm:py-12 pb-32 no-scrollbar font-sans">
       <div className="max-w-[800px] mx-auto flex flex-col w-full h-full gap-8">
         
         <div className="flex items-center justify-between shrink-0 mb-4">
           <Link
             href={backLink}
-            className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[#5c5868] hover:text-[#ede9e2] transition-colors w-fit group"
+            className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors w-fit group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Roster
           </Link>
         </div>
 
-        <div className="bg-[#1b1a21] border border-[rgba(255,255,255,0.07)] rounded-[32px] p-8 md:p-12 flex flex-col gap-12 shadow-2xl">
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-10 flex flex-col gap-10 sm:gap-12 shadow-xl">
           
-          <div className="flex flex-col gap-3">
-            <h1 className="font-serif text-[44px] font-medium text-[#ede9e2] tracking-tight flex items-center gap-3 leading-none">
+          <div className="flex flex-col gap-2">
+            <h1 className="font-serif text-3xl sm:text-4xl font-medium text-foreground tracking-tight flex items-center gap-3 leading-none">
               Draft Character
-              <Sparkles className="w-8 h-8 text-[#c9975a]" />
+              <Sparkles className="w-7 h-7 text-brand" />
             </h1>
-            <p className="text-[14px] text-[#948fa0] font-medium">
-              Establish the core identity, roles, and narrative traits.
+            <p className="text-sm text-muted-foreground font-medium">
+              Establish the core identity, narrative roles, and unique traits.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 sm:gap-10 items-start">
             
             <div className="md:col-span-4 flex flex-col gap-4">
-              <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
-                <ImageIcon className="w-3 h-3" /> Portrait Profile
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <ImageIcon className="w-3.5 h-3.5 text-brand" /> Portrait Profile
               </label>
 
-              <div className="w-full aspect-[3/4] rounded-2xl bg-[#29272f] border border-[rgba(255,255,255,0.07)] flex items-center justify-center overflow-hidden relative">
+              <div className="relative w-full aspect-[3/4] rounded-2xl bg-secondary/30 border border-border flex items-center justify-center overflow-hidden shadow-inner">
                 {avatarUrl ? (
                   <Image
-                    src={avatarUrl}
+                    src={getAvatarUrl(avatarUrl, 400)}
                     alt="Preview"
                     fill
+                    sizes="(max-width: 768px) 100vw, 250px"
                     className="object-cover object-top"
                   />
                 ) : (
-                  <div className="flex flex-col items-center gap-3 text-[#5c5868] p-4 text-center">
-                    <User className="w-12 h-12" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground p-4 text-center">
+                    <User className="w-12 h-12 opacity-40" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">
                       No Image
                     </span>
                   </div>
@@ -163,20 +176,22 @@ ${history || "No history defined."}`.trim();
               </div>
 
               <div className="flex gap-2">
-                <label className="flex-1 cursor-pointer bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold text-[#ede9e2] hover:bg-[#29272f] hover:border-[#c9975a] transition-all group">
-                  <Upload className="w-4 h-4 text-[#5c5868] group-hover:text-[#c9975a] transition-colors" />
-                  <span>Upload Image</span>
+                <label className="flex-1 cursor-pointer bg-secondary/40 border border-border rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-xs font-bold text-foreground hover:bg-secondary/70 hover:border-brand/40 transition-all group">
+                  <Upload className="w-4 h-4 text-muted-foreground group-hover:text-brand transition-colors" />
+                  <span>{isUploading ? "Uploading..." : "Upload Image"}</span>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
+                    disabled={isUploading}
                     className="hidden"
                   />
                 </label>
                 {avatarUrl && (
                   <button
+                    type="button"
                     onClick={() => setAvatarUrl("")}
-                    className="px-4 rounded-xl bg-red-400/10 text-red-400 text-[12px] font-bold hover:bg-red-400/20 transition-colors"
+                    className="px-4 rounded-xl bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-colors cursor-pointer"
                   >
                     Remove
                   </button>
@@ -184,33 +199,33 @@ ${history || "No history defined."}`.trim();
               </div>
             </div>
 
-            <div className="md:col-span-8 flex flex-col gap-8 w-full mt-2">
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
-                  Designation <span className="text-[#c9975a]">*</span>
+            <div className="md:col-span-8 flex flex-col gap-6 w-full">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Designation <span className="text-brand">*</span>
                 </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5c5868]" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Character Name"
-                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl pl-12 pr-4 py-4 text-[18px] text-[#ede9e2] font-serif focus:outline-none focus:border-[#c9975a] transition-colors"
+                    className="w-full bg-secondary/30 border border-border rounded-xl pl-11 pr-4 py-3.5 text-base text-foreground font-serif focus:outline-none focus:border-brand transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   Assigned Novel
                 </label>
                 <div className="relative">
-                  <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5c5868]" />
+                  <Book className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <select
                     value={selectedNovelId}
                     onChange={(e) => setSelectedNovelId(e.target.value)}
-                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl pl-12 pr-4 py-3.5 text-[14px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors appearance-none cursor-pointer"
+                    className="w-full bg-secondary/30 border border-border rounded-xl pl-11 pr-4 py-3 text-sm text-foreground focus:outline-none focus:border-brand transition-colors appearance-none cursor-pointer"
                   >
                     <option value="global">Global Cast (Not attached to a novel)</option>
                     {novels.map(novel => (
@@ -220,8 +235,8 @@ ${history || "No history defined."}`.trim();
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   Narrative Role
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -233,11 +248,12 @@ ${history || "No history defined."}`.trim();
                   ].map((r) => (
                     <button
                       key={r.id}
+                      type="button"
                       onClick={() => setRole(r.id)}
-                      className={`px-4 py-2.5 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border flex-1 min-w-[120px] ${
+                      className={`px-4 py-2.5 rounded-xl text-[11px] font-bold tracking-wider uppercase transition-all border flex-1 min-w-[100px] cursor-pointer ${
                         role === r.id
-                          ? "bg-[rgba(201,151,90,0.1)] border-[#c9975a] text-[#c9975a]"
-                          : "bg-[#131217] border-[rgba(255,255,255,0.07)] text-[#5c5868] hover:border-[rgba(255,255,255,0.15)] hover:text-[#ede9e2]"
+                          ? "bg-brand/15 border-brand text-brand"
+                          : "bg-secondary/20 border-border text-muted-foreground hover:border-border hover:text-foreground"
                       }`}
                     >
                       {r.label}
@@ -246,8 +262,8 @@ ${history || "No history defined."}`.trim();
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   Traits (Press Enter)
                 </label>
                 <div className="flex flex-col gap-2">
@@ -256,14 +272,14 @@ ${history || "No history defined."}`.trim();
                     value={traitsInput}
                     onChange={(e) => setTraitsInput(e.target.value)}
                     onKeyDown={handleAddTrait}
-                    placeholder="e.g. Stubborn, Brilliant..."
-                    className="w-full bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-xl px-4 py-3 text-[13px] text-[#ede9e2] focus:outline-none focus:border-[#c9975a] transition-colors"
+                    placeholder="e.g. Stubborn, Brilliant, Cynical..."
+                    className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-brand transition-colors"
                   />
                   <div className="flex flex-wrap gap-2 mt-1">
                     {traits.map(trait => (
-                      <span key={trait} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#29272f] border border-[rgba(255,255,255,0.05)] text-[11px] font-medium text-[#ede9e2]">
+                      <span key={trait} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/60 border border-border text-xs font-medium text-foreground">
                         {trait}
-                        <button onClick={() => removeTrait(trait)} className="text-[#5c5868] hover:text-red-400">&times;</button>
+                        <button type="button" onClick={() => removeTrait(trait)} className="text-muted-foreground hover:text-destructive cursor-pointer">&times;</button>
                       </span>
                     ))}
                   </div>
@@ -273,64 +289,64 @@ ${history || "No history defined."}`.trim();
             </div>
           </div>
 
-          <div className="w-full h-px bg-[rgba(255,255,255,0.07)] my-2"></div>
+          <div className="w-full h-px bg-border my-1"></div>
 
-          <div className="flex flex-col gap-10">
-            <div className="flex flex-col gap-4">
-              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#c9975a]" /> Physical Appearance
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Eye className="w-4 h-4 text-brand" /> Physical Appearance
               </label>
               <textarea
                 value={appearance}
                 onChange={(e) => setAppearance(e.target.value)}
                 placeholder="Detail their exact body type, facial features, scars, clothing style, and physical quirks..."
-                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#c9975a] transition-colors resize-y"
+                className="w-full min-h-[120px] bg-secondary/20 border border-border rounded-2xl p-4 text-sm font-serif text-foreground leading-relaxed focus:outline-none focus:border-brand transition-colors resize-y"
               />
             </div>
 
-            <div className="flex flex-col gap-4">
-              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
-                <Brain className="w-4 h-4 text-[#7cbf8e]" /> Personality & Flaws
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <Brain className="w-4 h-4 text-emerald-500" /> Personality & Flaws
               </label>
               <textarea
                 value={personality}
                 onChange={(e) => setPersonality(e.target.value)}
                 placeholder="Describe their fears, desires, how they speak, and their moral alignment..."
-                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#7cbf8e] transition-colors resize-y"
+                className="w-full min-h-[120px] bg-secondary/20 border border-border rounded-2xl p-4 text-sm font-serif text-foreground leading-relaxed focus:outline-none focus:border-emerald-500 transition-colors resize-y"
               />
             </div>
 
-            <div className="flex flex-col gap-4">
-              <label className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-[#e07a5f]" /> Backstory & History
+            <div className="flex flex-col gap-2">
+              <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-500" /> Backstory & History
               </label>
               <textarea
                 value={history}
                 onChange={(e) => setHistory(e.target.value)}
                 placeholder="Where did they come from? What past events shaped who they are today?"
-                className="w-full min-h-[140px] bg-[#131217] border border-[rgba(255,255,255,0.07)] rounded-2xl p-5 text-[15px] font-serif italic text-[#948fa0] leading-relaxed focus:outline-none focus:border-[#e07a5f] transition-colors resize-y"
+                className="w-full min-h-[120px] bg-secondary/20 border border-border rounded-2xl p-4 text-sm font-serif text-foreground leading-relaxed focus:outline-none focus:border-amber-500 transition-colors resize-y"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-[rgba(255,255,255,0.07)] mt-4">
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-border mt-2">
             <Link
               href={backLink}
-              className="px-6 py-3.5 rounded-full text-[13px] font-bold text-[#5c5868] hover:text-[#ede9e2] transition-colors uppercase tracking-wider"
+              className="px-6 py-3 rounded-full text-xs font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
             >
               Cancel
             </Link>
             <button
               onClick={handleSave}
-              disabled={!name || isLoading}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#c9975a] text-[#131217] hover:bg-[#d8a86c] transition-all font-bold shadow-[0_0_15px_rgba(201,151,90,0.3)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-[12px]"
+              disabled={!name || isLoading || isUploading}
+              className="flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all font-bold shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider text-xs cursor-pointer"
             >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+              {isLoading || isUploading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              <span>{isLoading ? "Saving..." : "Save Profile"}</span>
+              <span>{isLoading ? "Saving..." : isUploading ? "Uploading..." : "Save Profile"}</span>
             </button>
           </div>
         </div>

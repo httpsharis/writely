@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useUpdateCharacterMutation, useGetCharacterByIdQuery } from "@/redux/features/characters/characterApi";
 import { useGetDocumentsQuery } from "@/redux/features/documents/documentApi";
+import { uploadToCloudinary } from "@/lib/uploadImage";
 
 import { CharacterDetailHeader } from "@/features/characters/components/CharacterDetailHeader";
 import { CharacterDetailView } from "@/features/characters/components/CharacterDetailView";
@@ -23,6 +25,7 @@ export default function CharacterDetailsPage() {
   const novels = novelsData?.documents || [];
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [selectedNovelId, setSelectedNovelId] = useState(projectId || "global");
 
@@ -85,25 +88,32 @@ export default function CharacterDetailsPage() {
     setTraits(traits.filter(t => t !== traitToRemove));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image size should be less than 2MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsUploading(true);
+      toast.loading("Uploading portrait to Cloudinary...", { id: "char-upload" });
+      const uploadedUrl = await uploadToCloudinary(file);
+      setAvatarUrl(uploadedUrl);
+      toast.success("Portrait updated successfully!", { id: "char-upload" });
+    } catch (err: unknown) {
+      console.error("Cloudinary upload failed", err);
+      toast.error("Failed to upload portrait to Cloudinary.", { id: "char-upload" });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert("Please enter a character designation (name).");
+      toast.error("Please enter a character designation (name).");
       return;
     }
 
@@ -122,10 +132,11 @@ export default function CharacterDetailsPage() {
         },
       }).unwrap();
 
-      setIsEditing(false); // Switch back to view mode on success
+      toast.success(`Character "${name}" updated!`);
+      setIsEditing(false);
     } catch (err: unknown) {
       console.error("Failed to update character", err);
-      alert("Failed to save character. Please try again.");
+      toast.error("Failed to save character. Please try again.");
     }
   };
 
@@ -133,8 +144,8 @@ export default function CharacterDetailsPage() {
 
   if (isFetching) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#131217]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#c9975a]" />
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -142,7 +153,7 @@ export default function CharacterDetailsPage() {
   const assignedNovel = novels.find(n => n._id === selectedNovelId);
 
   return (
-    <div className="min-h-screen w-full overflow-y-auto bg-[#131217] text-[#ede9e2] px-8 md:px-12 py-12 pb-32 no-scrollbar font-sans">
+    <div className="min-h-screen w-full overflow-y-auto bg-background text-foreground px-4 sm:px-8 md:px-12 py-8 sm:py-12 pb-32 no-scrollbar font-sans">
       <div className="max-w-[900px] mx-auto flex flex-col w-full h-full gap-8">
         
         {/* Minimalist container */}
@@ -157,7 +168,7 @@ export default function CharacterDetailsPage() {
             assignedNovel={assignedNovel}
           />
 
-          <div className="w-full h-px bg-[rgba(255,255,255,0.03)] my-2"></div>
+          <div className="w-full h-px bg-border my-2"></div>
 
           {isEditing ? (
             <CharacterDetailEdit 
@@ -173,7 +184,7 @@ export default function CharacterDetailsPage() {
               handleImageUpload={handleImageUpload}
               selectedNovelId={selectedNovelId} setSelectedNovelId={setSelectedNovelId}
               novels={novels}
-              isLoading={isLoading}
+              isLoading={isLoading || isUploading}
               handleSave={handleSave}
               setIsEditing={setIsEditing}
             />

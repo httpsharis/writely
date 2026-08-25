@@ -1,5 +1,6 @@
 import { User, Eye, Brain, BookOpen } from "lucide-react";
 import Image from "next/image";
+import { getAvatarUrl } from "@/lib/cloudinary";
 
 interface CharacterDetailViewProps {
   avatarUrl: string;
@@ -23,35 +24,35 @@ export function CharacterDetailView({
   history,
 }: CharacterDetailViewProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start relative z-10 mt-10 px-2">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start relative z-10 mt-8 px-2">
       
       {/* Left Column: Portrait and Traits */}
-      <div className="lg:col-span-4 flex flex-col gap-10">
+      <div className="lg:col-span-4 flex flex-col gap-8">
         <div className="flex flex-col gap-6">
           {avatarUrl ? (
-            <div className="w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.05)]">
+            <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden shadow-xl border border-border bg-card">
               <Image
-                src={avatarUrl}
+                src={getAvatarUrl(avatarUrl, 600)}
                 alt={name}
-                width={400}
-                height={400}
-                className="w-full h-full object-cover object-top"
+                fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
+                className="object-cover object-top"
               />
             </div>
           ) : (
-            <div className="w-full aspect-[3/4] rounded-2xl bg-[#17161b] border border-[rgba(255,255,255,0.03)] flex flex-col items-center justify-center text-[#5c5868] gap-4 shadow-inner">
+            <div className="w-full aspect-[3/4] rounded-2xl bg-secondary/30 border border-border flex flex-col items-center justify-center text-muted-foreground gap-4">
               <User className="w-12 h-12 opacity-50" />
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No Portrait</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">No Portrait</span>
             </div>
           )}
         </div>
 
         {traits.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <span className="text-[10px] font-bold text-[#5c5868] uppercase tracking-widest">Core Traits</span>
-            <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-col gap-3">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Core Traits</span>
+            <div className="flex flex-wrap gap-2">
               {traits.map(trait => (
-                <span key={trait} className="px-3.5 py-1.5 rounded-full bg-[#17161b] border border-[rgba(201,151,90,0.15)] text-[11px] font-bold tracking-wide text-[#c9975a]">
+                <span key={trait} className="px-3.5 py-1.5 rounded-full bg-secondary/40 border border-border text-[11px] font-bold tracking-wide text-brand">
                   {trait}
                 </span>
               ))}
@@ -61,37 +62,37 @@ export function CharacterDetailView({
       </div>
 
       {/* Right Column: Bio Details */}
-      <div className="lg:col-span-8 flex flex-col gap-14 pt-2">
+      <div className="lg:col-span-8 flex flex-col gap-10 sm:gap-14 pt-2">
         {/* Physical Appearance */}
-        <div className="flex flex-col gap-4 group">
-          <h3 className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2.5">
-            <Eye className="w-4 h-4 text-[#c9975a] opacity-80 group-hover:opacity-100 transition-opacity" /> 
+        <div className="flex flex-col gap-3 group">
+          <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2.5">
+            <Eye className="w-4 h-4 text-brand opacity-80 group-hover:opacity-100 transition-opacity" /> 
             Physical Appearance
           </h3>
-          <p className="font-serif text-[18px] leading-[1.8] text-[#ede9e2]/90 whitespace-pre-wrap font-light">
-            {appearance || <span className="italic text-[#5c5868] font-sans text-[14px]">No physical appearance documented.</span>}
+          <p className="font-serif text-[17px] sm:text-[18px] leading-[1.8] text-foreground/90 whitespace-pre-wrap font-normal">
+            {appearance || <span className="italic text-muted-foreground font-sans text-sm">No physical appearance documented.</span>}
           </p>
         </div>
 
         {/* Personality & Flaws */}
-        <div className="flex flex-col gap-4 group">
-          <h3 className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2.5">
-            <Brain className="w-4 h-4 text-[#7cbf8e] opacity-80 group-hover:opacity-100 transition-opacity" /> 
+        <div className="flex flex-col gap-3 group">
+          <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2.5">
+            <Brain className="w-4 h-4 text-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" /> 
             Personality & Flaws
           </h3>
-          <p className="font-serif text-[18px] leading-[1.8] text-[#ede9e2]/90 whitespace-pre-wrap font-light">
-            {personality || <span className="italic text-[#5c5868] font-sans text-[14px]">No personality documented.</span>}
+          <p className="font-serif text-[17px] sm:text-[18px] leading-[1.8] text-foreground/90 whitespace-pre-wrap font-normal">
+            {personality || <span className="italic text-muted-foreground font-sans text-sm">No personality documented.</span>}
           </p>
         </div>
 
         {/* Backstory & History */}
-        <div className="flex flex-col gap-4 group">
-          <h3 className="text-[11px] font-bold text-[#5c5868] uppercase tracking-widest flex items-center gap-2.5">
-            <BookOpen className="w-4 h-4 text-[#e07a5f] opacity-80 group-hover:opacity-100 transition-opacity" /> 
+        <div className="flex flex-col gap-3 group">
+          <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2.5">
+            <BookOpen className="w-4 h-4 text-amber-500 opacity-80 group-hover:opacity-100 transition-opacity" /> 
             Backstory & History
           </h3>
-          <p className="font-serif text-[18px] leading-[1.8] text-[#ede9e2]/90 whitespace-pre-wrap font-light">
-            {history || <span className="italic text-[#5c5868] font-sans text-[14px]">No history documented.</span>}
+          <p className="font-serif text-[17px] sm:text-[18px] leading-[1.8] text-foreground/90 whitespace-pre-wrap font-normal">
+            {history || <span className="italic text-muted-foreground font-sans text-sm">No history documented.</span>}
           </p>
         </div>
       </div>
